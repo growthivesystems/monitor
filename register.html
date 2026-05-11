@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .tc-row { display:flex; align-items:flex-start; gap:10px; margin-bottom:18px; }
+  .tc-row input[type=checkbox] { width:18px; height:18px; flex-shrink:0; margin-top:2px; accent-color:var(--gold); cursor:pointer; }
+  .tc-row label { font-size:0.83rem; color:var(--muted); cursor:pointer; }
+  .tc-row label a { color:var(--gold); }
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">GrowthIve <span>Monitor</span></div>
+    <div class="auth-tagline">Create your free business account</div>
+    <div id="msg"></div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="fullname" placeholder="John Doe">
+    </div>
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="bizname" placeholder="My Business Ltd">
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="you@example.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Min. 6 characters">
+    </div>
+    <div class="tc-row">
+      <input type="checkbox" id="tc">
+      <label for="tc">I have read and agree to the <a href="terms.html" target="_blank">Terms & Conditions</a> of GrowthIve Monitor.</label>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="doRegister()">Create Account →</button>
+    <div class="divider">or</div>
+    <p style="text-align:center;font-size:0.85rem;color:var(--muted);">
+      Already have an account? <a href="login.html" style="color:var(--gold);">Sign in</a>
+    </p>
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:10px;">
+      <a href="index.html" style="color:var(--muted);">← Back to Home</a>
+    </p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme','light');
+
+  async function doRegister() {
+    const fullname = document.getElementById('fullname').value.trim();
+    const bizname = document.getElementById('bizname').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const tc = document.getElementById('tc').checked;
+    const msg = document.getElementById('msg');
+    msg.innerHTML = '';
+
+    if (!fullname || !bizname || !email || !password) {
+      msg.innerHTML = '<div class="alert alert-danger">Please fill in all fields.</div>'; return;
+    }
+    if (password.length < 6) {
+      msg.innerHTML = '<div class="alert alert-danger">Password must be at least 6 characters.</div>'; return;
+    }
+    if (!tc) {
+      msg.innerHTML = '<div class="alert alert-danger">You must accept the Terms & Conditions to register.</div>'; return;
+    }
+
+    msg.innerHTML = '<div class="alert alert-gold">Creating your account…</div>';
+    const { data, error } = await _supabase.auth.signUp({ email, password });
+    if (error) {
+      msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return;
+    }
+
+    const userId = data.user?.id;
+    if (userId) {
+      await _supabase.from('profiles').upsert({ id: userId, full_name: fullname, business_name: bizname });
+    }
+    msg.innerHTML = '<div class="alert alert-success">Account created! Check your email to confirm, then <a href="login.html" style="color:var(--success);">sign in</a>.</div>';
+  }
+</script>
+</body>
+</html>

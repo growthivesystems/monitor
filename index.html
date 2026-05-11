@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrowthIve Monitor — Powered by GrowthIve Systems</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px 24px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.1) 0%, transparent 65%), var(--dark);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,168,76,0.03) 60px, rgba(201,168,76,0.03) 61px),
+                      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,168,76,0.03) 60px, rgba(201,168,76,0.03) 61px);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 8vw, 5.5rem);
+    font-weight: 700; line-height: 1.1;
+    color: var(--white); margin-bottom: 10px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero-title span { color: var(--gold); }
+  .hero-powered {
+    font-size: 0.8rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  .hero-desc {
+    max-width: 560px; color: var(--muted);
+    font-size: 1rem; line-height: 1.7; margin-bottom: 40px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .hero-btns {
+    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  .hero-ornament {
+    width: 80px; height: 1px;
+    background: var(--gold-border); margin: 28px auto;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+  .features {
+    padding: 80px 40px;
+    background: var(--dark2);
+    border-top: 1px solid var(--gold-border);
+  }
+  .features-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--gold); text-align: center;
+    margin-bottom: 8px;
+  }
+  .features-sub { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 48px; }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px; max-width: 1100px; margin: 0 auto;
+  }
+  .feature-card {
+    background: var(--dark3);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    transition: var(--transition);
+  }
+  .feature-card:hover { border-color: var(--gold); transform: translateY(-3px); box-shadow: var(--shadow-gold); }
+  .feature-icon { font-size: 2rem; margin-bottom: 14px; }
+  .feature-name { font-weight: 600; color: var(--white); margin-bottom: 8px; }
+  .feature-text { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+  .cta-section {
+    padding: 80px 40px; text-align: center;
+    background: radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 60%), var(--dark);
+    border-top: 1px solid var(--gold-border);
+  }
+  .cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--white); margin-bottom: 16px;
+  }
+  .cta-title span { color: var(--gold); }
+  .cta-desc { color: var(--muted); max-width: 500px; margin: 0 auto 32px; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-ornament"></div>
+  <div class="splash-logo">GrowthIve <span>Monitor</span></div>
+  <div class="splash-sub">Powered by GrowthIve Systems</div>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  <div class="splash-ornament"></div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">GrowthIve <span>Monitor</span></a>
+  <div class="navbar-spacer"></div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="register.html" class="btn btn-gold btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">✦ Business Management, Simplified ✦</div>
+  <h1 class="hero-title">GrowthIve <span>Monitor</span></h1>
+  <div class="hero-powered">Powered by GrowthIve Systems</div>
+  <p class="hero-desc">Your all-in-one digital business record management system. Track sales, monitor expenses, manage inventory, and grow smarter — all in one place.</p>
+  <div class="hero-btns">
+    <a href="register.html" class="btn btn-gold">🚀 Create Free Account</a>
+    <a href="login.html" class="btn btn-outline">Sign In →</a>
+  </div>
+  <div class="hero-ornament"></div>
+  <p style="color:var(--muted);font-size:0.8rem;">Trusted by traders, shop owners & entrepreneurs</p>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-title">Everything Your Business Needs</div>
+  <p class="features-sub">One platform. All the tools. Zero complexity.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <div class="feature-name">Daily Sales Recording</div>
+      <div class="feature-text">Record total daily sales quickly without entering products one by one. Fast and stress-free.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <div class="feature-name">Expense Tracker</div>
+      <div class="feature-text">Log all your business expenses and let the system automatically calculate your net profit or loss.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-name">Inventory Management</div>
+      <div class="feature-text">Track stock levels, get low-stock alerts, and never run out of your most important items.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <div class="feature-name">Reports & Analytics</div>
+      <div class="feature-text">Auto-generated weekly, monthly, and quarterly reports with visual charts and growth insights.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤝</div>
+      <div class="feature-name">Debt Tracking</div>
+      <div class="feature-text">Monitor money owed to you and money you owe others. Stay financially organized and accountable.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏆</div>
+      <div class="feature-name">Business Health Score</div>
+      <div class="feature-text">Get an auto-calculated score showing how healthy and profitable your business truly is.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📤</div>
+      <div class="feature-name">Export Reports</div>
+      <div class="feature-text">Download your business reports as PDF or Excel files for sharing or record keeping.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div class="feature-name">Business Calendar</div>
+      <div class="feature-text">Set reminders for payments, restocking, and important business events so nothing slips through.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="cta-title">Start Managing Your Business <span>Smarter</span></h2>
+  <p class="cta-desc">Join thousands of traders and business owners who use GrowthIve Monitor to track, grow and stay in control.</p>
+  <a href="register.html" class="btn btn-gold">Create Your Free Account →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-services">
+    <div class="footer-services-title">✨ More from GrowthIve Systems</div>
+    <p>GrowthIve Monitor is just one of our powerful business tools. Explore our full suite of services designed to help businesses grow, scale, and thrive in the digital age.</p>
+    <a href="YOUR_MAIN_WEBSITE_URL_HERE" target="_blank" class="btn btn-gold btn-sm">Visit GrowthIve Systems →</a>
+  </div>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand-name">GrowthIve <span>Monitor</span></div>
+      <p class="footer-desc">Your all-in-one digital business record management system. Track sales, expenses, inventory and grow smarter.</p>
+    </div>
+    <div>
+      <div class="footer-title">Product</div>
+      <ul class="footer-links">
+        <li><a href="register.html">Get Started Free</a></li>
+        <li><a href="login.html">Sign In</a></li>
+        <li><a href="terms.html">Terms & Conditions</a></li>
+        <li><a href="contact.html">Contact Support</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-title">Features</div>
+      <ul class="footer-links">
+        <li><a href="register.html">Sales Tracking</a></li>
+        <li><a href="register.html">Inventory Manager</a></li>
+        <li><a href="register.html">Business Reports</a></li>
+        <li><a href="register.html">Health Score</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-title">Powered By</div>
+      <p class="footer-desc" style="font-size:0.82rem;">GrowthIve Systems<br>Building tools that empower businesses everywhere.</p>
+      <a href="YOUR_MAIN_WEBSITE_URL_HERE" target="_blank" style="color:var(--gold);font-size:0.82rem;text-decoration:none;">growthivesystems.com →</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <span id="yr"></span> GrowthIve Monitor. Powered by <a href="YOUR_MAIN_WEBSITE_URL_HERE" target="_blank">GrowthIve Systems</a>.</span>
+    <span><a href="terms.html">Terms & Conditions</a> · <a href="contact.html">Support</a></span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  // Hide splash after load animation
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('splash').classList.add('hidden');
+    }, 2400);
+  });
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? '' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next || 'dark');
+    document.querySelector('.theme-toggle').textContent = next === 'light' ? '☀️' : '🌙';
+  }
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') { document.documentElement.setAttribute('data-theme','light'); document.querySelector('.theme-toggle').textContent = '☀️'; }
+  // If already logged in, redirect to dashboard
+  (async () => {
+    const { data: { user } } = await _supabase.auth.getUser();
+    if (user) window.location.href = 'dashboard.html';
+  })();
+</script>
+</body>
+</html>

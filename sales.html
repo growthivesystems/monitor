@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Sales — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Daily Sales</div>
+    <div class="page-subtitle">Record your daily sales totals quickly and easily.</div>
+
+    <div class="grid-2">
+      <!-- Entry Form -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Record Sale</div>
+        <div id="form-msg"></div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="sale-date">
+        </div>
+        <div class="form-group">
+          <label>Total Sales Amount (₦)</label>
+          <input type="number" id="sale-amount" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Total Quantity Sold (optional)</label>
+          <input type="number" id="sale-qty" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <textarea id="sale-notes" placeholder="e.g. Busy market day, sold out of rice…"></textarea>
+        </div>
+        <button class="btn btn-gold" onclick="saveSale()">Save Sale Record →</button>
+      </div>
+
+      <!-- Monthly Summary -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📊 This Month Summary</div>
+        <div class="grid-2" style="margin-bottom:0;">
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Total Sales</div>
+            <div class="card-value gold" id="month-total">₦0.00</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Entries</div>
+            <div class="card-value" id="month-count">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="modal-title" style="font-size:1.1rem;margin:0;">Sales History</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="month" id="filter-month" style="width:auto;" onchange="loadSales()">
+        </div>
+      </div>
+      <div id="sales-table"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('sales');
+  // Set default date to today
+  document.getElementById('sale-date').value = new Date().toISOString().split('T')[0];
+  // Set default filter to current month
+  const now = new Date();
+  document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  loadSales();
+})();
+
+async function loadSales() {
+  const month = document.getElementById('filter-month').value;
+  if (!month) return;
+  const [yr, mo] = month.split('-');
+  const start = `${yr}-${mo}-01`;
+  const end = new Date(yr, mo, 0).toISOString().split('T')[0];
+  const { data } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false });
+  const total = (data || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  document.getElementById('month-total').textContent = formatCurrency(total);
+  document.getElementById('month-count').textContent = (data || []).length;
+  const el = document.getElementById('sales-table');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded for this period.</p></div>'; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Amount</th><th>Qty</th><th>Notes</th><th>Action</th></tr></thead>
+    <tbody>${data.map(r => `
+      <tr>
+        <td>${formatDate(r.date)}</td>
+        <td style="color:var(--success);font-weight:600;">${formatCurrency(r.total_amount)}</td>
+        <td>${r.total_quantity || '—'}</td>
+        <td>${r.notes || '—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteSale('${r.id}')">Delete</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function saveSale() {
+  const date = document.getElementById('sale-date').value;
+  const amount = parseFloat(document.getElementById('sale-amount').value);
+  const qty = parseInt(document.getElementById('sale-qty').value) || null;
+  const notes = document.getElementById('sale-notes').value.trim();
+  const msg = document.getElementById('form-msg');
+  if (!date || isNaN(amount) || amount <= 0) {
+    msg.innerHTML = '<div class="alert alert-danger">Please enter a valid date and amount.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('sales').insert({ user_id: currentUser.id, date, total_amount: amount, total_quantity: qty, notes });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">Sale recorded successfully!</div>';
+  document.getElementById('sale-amount').value = '';
+  document.getElementById('sale-qty').value = '';
+  document.getElementById('sale-notes').value = '';
+  loadSales();
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+async function deleteSale(id) {
+  if (!confirm('Delete this sale record?')) return;
+  await _supabase.from('sales').delete().eq('id', id);
+  loadSales();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle" id="dash-date">Loading…</div>
+
+    <!-- KPI Cards -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">Today's Sales</div>
+        <div class="card-value gold" id="kpi-sales">₦0.00</div>
+        <div class="card-meta">Recorded today</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Expenses</div>
+        <div class="card-value danger" id="kpi-expenses">₦0.00</div>
+        <div class="card-meta">This month</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Net Profit / Loss</div>
+        <div class="card-value" id="kpi-profit">₦0.00</div>
+        <div class="card-meta">This month</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Outstanding Debts</div>
+        <div class="card-value danger" id="kpi-debts">₦0.00</div>
+        <div class="card-meta">Unpaid balances</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Recent Sales -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin:0;">Recent Sales</div>
+          <a href="sales.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div id="recent-sales"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Low Stock Alerts -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin:0;">⚠️ Low Stock Alerts</div>
+          <a href="inventory.html" class="btn btn-outline btn-sm">Manage</a>
+        </div>
+        <div id="low-stock"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Upcoming Reminders -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin:0;">📅 Upcoming Reminders</div>
+          <a href="calendar.html" class="btn btn-outline btn-sm">Calendar</a>
+        </div>
+        <div id="reminders-list"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Business Health -->
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Business Health Score</div>
+        <div class="health-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--dark3)" stroke-width="12"/>
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--gold)" stroke-width="12"
+              stroke-dasharray="377" id="health-arc" stroke-dashoffset="377" stroke-linecap="round"
+              style="transition:stroke-dashoffset 1.2s ease;"/>
+          </svg>
+          <div class="health-ring-label">
+            <div class="health-ring-value" id="health-val">—</div>
+            <div class="health-ring-text">/ 100</div>
+          </div>
+        </div>
+        <div id="health-label" style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Calculating…</div>
+        <a href="health-score.html" class="btn btn-outline btn-sm" style="margin-top:12px;">Full Report</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+  await initPage('dashboard');
+
+  const now = new Date();
+  document.getElementById('dash-date').textContent = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const today = now.toISOString().split('T')[0];
+
+  // Sales today
+  const { data: salesToday } = await _supabase.from('sales').select('total_amount').eq('user_id', user.id).eq('date', today);
+  const todaySales = (salesToday || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  document.getElementById('kpi-sales').textContent = formatCurrency(todaySales);
+
+  // Expenses this month
+  const { data: expMonth } = await _supabase.from('expenses').select('amount').eq('user_id', user.id).gte('date', startOfMonth);
+  const totalExp = (expMonth || []).reduce((s, r) => s + Number(r.amount), 0);
+  document.getElementById('kpi-expenses').textContent = formatCurrency(totalExp);
+
+  // Sales this month for profit
+  const { data: salesMonth } = await _supabase.from('sales').select('total_amount').eq('user_id', user.id).gte('date', startOfMonth);
+  const totalSales = (salesMonth || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  const profit = totalSales - totalExp;
+  const profitEl = document.getElementById('kpi-profit');
+  profitEl.textContent = formatCurrency(profit);
+  profitEl.className = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
+
+  // Debts
+  const { data: debts } = await _supabase.from('debts').select('amount').eq('user_id', user.id).eq('status','unpaid').eq('type','i_owe');
+  const totalDebt = (debts || []).reduce((s, r) => s + Number(r.amount), 0);
+  document.getElementById('kpi-debts').textContent = formatCurrency(totalDebt);
+
+  // Recent sales
+  const { data: recentSales } = await _supabase.from('sales').select('*').eq('user_id', user.id).order('date', { ascending: false }).limit(5);
+  const rsEl = document.getElementById('recent-sales');
+  if (!recentSales || recentSales.length === 0) {
+    rsEl.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded yet.</p></div>';
+  } else {
+    rsEl.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Amount</th><th>Notes</th></tr></thead><tbody>
+      ${recentSales.map(r => `<tr><td>${formatDate(r.date)}</td><td style="color:var(--success)">${formatCurrency(r.total_amount)}</td><td>${r.notes||'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  // Low stock
+  const { data: inv } = await _supabase.from('inventory').select('*').eq('user_id', user.id);
+  const lowStock = (inv || []).filter(i => i.quantity <= i.low_stock_threshold);
+  const lsEl = document.getElementById('low-stock');
+  if (lowStock.length === 0) {
+    lsEl.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>All stock levels are healthy.</p></div>';
+  } else {
+    lsEl.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>
+      ${lowStock.map(i => `<tr><td>${i.item_name}</td><td>${i.quantity}</td><td><span class="badge badge-danger">Low Stock</span></td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  // Reminders
+  const { data: reminders } = await _supabase.from('reminders').select('*').eq('user_id', user.id).gte('reminder_date', today).order('reminder_date').limit(5);
+  const remEl = document.getElementById('reminders-list');
+  if (!reminders || reminders.length === 0) {
+    remEl.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No upcoming reminders.</p></div>';
+  } else {
+    remEl.innerHTML = reminders.map(r => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--dark4);">
+        <div style="font-weight:500;color:var(--white2);font-size:0.9rem;">${r.title}</div>
+        <div style="font-size:0.8rem;color:var(--muted);">${formatDate(r.reminder_date)} ${r.note ? '· '+r.note : ''}</div>
+      </div>`).join('');
+  }
+
+  // Health score
+  let score = 50;
+  if (totalSales > 0) score += 20;
+  if (profit > 0) score += 20;
+  if (lowStock.length === 0) score += 10;
+  score = Math.min(score, 100);
+  document.getElementById('health-val').textContent = score;
+  const arc = document.getElementById('health-arc');
+  const circumference = 377;
+  arc.style.strokeDashoffset = circumference - (circumference * score / 100);
+  arc.style.stroke = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
+  document.getElementById('health-label').textContent = score >= 70 ? '🟢 Healthy Business' : score >= 40 ? '🟡 Needs Attention' : '🔴 Critical — Review Now';
+})();
+</script>
+</body>
+</html>

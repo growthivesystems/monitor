@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Inventory / Stock Manager</div>
+    <div class="page-subtitle">Track stock levels and get alerts when items run low.</div>
+
+    <!-- Low Stock Alert Banner -->
+    <div id="low-stock-banner"></div>
+
+    <div class="grid-2">
+      <!-- Add Item Form -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Add Stock Item</div>
+        <div id="form-msg"></div>
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="item-name" placeholder="e.g. Rice (50kg bag), Engine Oil…">
+        </div>
+        <div class="form-group">
+          <label>Current Quantity</label>
+          <input type="number" id="item-qty" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Unit Price (₦)</label>
+          <input type="number" id="item-price" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Low Stock Alert Threshold</label>
+          <input type="number" id="item-threshold" placeholder="5" min="1" value="5">
+        </div>
+        <button class="btn btn-gold" onclick="saveItem()">Add Item →</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📦 Stock Summary</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Total Items</div>
+            <div class="card-value gold" id="total-items">0</div>
+          </div>
+          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Low Stock Items</div>
+            <div class="card-value danger" id="low-count">0</div>
+          </div>
+          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Total Stock Value</div>
+            <div class="card-value gold" id="total-value">₦0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="modal-title" style="font-size:1.1rem;margin:0;">All Stock Items</div>
+        <input type="text" id="search-inv" placeholder="Search items…" style="width:200px;" oninput="filterTable()">
+      </div>
+      <div id="inv-table"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Update Stock Quantity</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label>Item</label>
+      <input type="text" id="edit-name" disabled style="opacity:0.6;">
+    </div>
+    <div class="form-group">
+      <label>New Quantity</label>
+      <input type="number" id="edit-qty" min="0">
+    </div>
+    <div class="form-group">
+      <label>New Unit Price (₦)</label>
+      <input type="number" id="edit-price" min="0" step="0.01">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-gold" onclick="updateItem()">Update →</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+let allItems = [];
+
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('inventory');
+  loadInventory();
+})();
+
+async function loadInventory() {
+  const { data } = await _supabase.from('inventory').select('*').eq('user_id', currentUser.id).order('item_name');
+  allItems = data || [];
+
+  const lowItems = allItems.filter(i => i.quantity <= i.low_stock_threshold);
+  document.getElementById('total-items').textContent = allItems.length;
+  document.getElementById('low-count').textContent = lowItems.length;
+  const totalVal = allItems.reduce((s, i) => s + (Number(i.quantity) * Number(i.unit_price || 0)), 0);
+  document.getElementById('total-value').textContent = formatCurrency(totalVal);
+
+  const banner = document.getElementById('low-stock-banner');
+  if (lowItems.length > 0) {
+    banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s)</strong> are running low: ${lowItems.map(i => i.item_name).join(', ')}</div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+
+  renderTable(allItems);
+}
+
+function filterTable() {
+  const q = document.getElementById('search-inv').value.toLowerCase();
+  renderTable(allItems.filter(i => i.item_name.toLowerCase().includes(q)));
+}
+
+function renderTable(items) {
+  const el = document.getElementById('inv-table');
+  if (!items || items.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>No stock items found.</p></div>'; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${items.map(r => {
+      const isLow = r.quantity <= r.low_stock_threshold;
+      return `<tr>
+        <td style="font-weight:500;">${r.item_name}</td>
+        <td style="font-weight:600;color:${isLow ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</td>
+        <td>${formatCurrency(r.unit_price)}</td>
+        <td style="color:var(--gold);">${formatCurrency(r.quantity * r.unit_price)}</td>
+        <td><span class="badge ${isLow ? 'badge-danger' : 'badge-success'}">${isLow ? 'Low Stock' : 'In Stock'}</span></td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('${r.id}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function saveItem() {
+  const item_name = document.getElementById('item-name').value.trim();
+  const quantity = parseInt(document.getElementById('item-qty').value);
+  const unit_price = parseFloat(document.getElementById('item-price').value) || 0;
+  const low_stock_threshold = parseInt(document.getElementById('item-threshold').value) || 5;
+  const msg = document.getElementById('form-msg');
+  if (!item_name || isNaN(quantity)) {
+    msg.innerHTML = '<div class="alert alert-danger">Please enter item name and quantity.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('inventory').insert({ user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">Item added!</div>';
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-qty').value = '';
+  document.getElementById('item-price').value = '';
+  loadInventory();
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+function openEdit(id, name, qty, price) {
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-qty').value = qty;
+  document.getElementById('edit-price').value = price;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+async function updateItem() {
+  const id = document.getElementById('edit-id').value;
+  const quantity = parseInt(document.getElementById('edit-qty').value);
+  const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
+  await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
+  closeModal();
+  loadInventory();
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this stock item?')) return;
+  await _supabase.from('inventory').delete().eq('id', id);
+  loadInventory();
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,350 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=de<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Health Score — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .score-hero {
+    text-align: center;
+    padding: 32px 24px;
+    background: radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 65%);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+  }
+  .big-ring { position: relative; width: 200px; height: 200px; margin: 0 auto 20px; }
+  .big-ring svg { transform: rotate(-90deg); }
+  .big-ring-label {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .big-score-val {
+    font-family: var(--font-display);
+    font-size: 3.2rem; font-weight: 700; color: var(--gold);
+    line-height: 1;
+  }
+  .big-score-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .grade-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .score-desc { color: var(--muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto; line-height: 1.7; }
+
+  .metric-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--dark4);
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-icon { font-size: 1.4rem; width: 36px; text-align: center; flex-shrink: 0; }
+  .metric-info { flex: 1; }
+  .metric-name { font-weight: 500; color: var(--white2); font-size: 0.9rem; }
+  .metric-desc { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .metric-bar-wrap { width: 120px; flex-shrink: 0; }
+  .metric-bar-bg { height: 6px; background: var(--dark3); border-radius: 3px; overflow: hidden; }
+  .metric-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .metric-pts { font-size: 0.82rem; font-weight: 600; color: var(--gold); width: 50px; text-align: right; flex-shrink: 0; }
+
+  .tip-card {
+    background: var(--dark3);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 0.87rem;
+    color: var(--white2);
+    line-height: 1.6;
+  }
+  .tip-card.danger { border-left-color: var(--danger); }
+  .tip-card.success { border-left-color: var(--success); }
+</style>
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Business Health Score</div>
+    <div class="page-subtitle">An auto-calculated score showing how healthy and profitable your business is this month.</div>
+
+    <!-- Big Score Hero -->
+    <div class="score-hero" id="score-hero">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Score Breakdown -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:4px;">📊 Score Breakdown</div>
+        <p style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">How each area contributes to your total score.</p>
+        <div id="metric-list"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Radar Chart -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">🕸️ Business Radar</div>
+        <canvas id="radar-chart" style="max-height:280px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+      <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">💡 Recommendations</div>
+      <div id="tips-list"><div class="spinner"></div></div>
+    </div>
+
+    <!-- History note -->
+    <div class="card" style="text-align:center;padding:20px;">
+      <p style="color:var(--muted);font-size:0.85rem;">
+        📅 Score is calculated based on your current month's data.<br>
+        Keep recording sales and expenses regularly for an accurate score.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+        <a href="sales.html" class="btn btn-outline btn-sm">➕ Add Sales</a>
+        <a href="expenses.html" class="btn btn-outline btn-sm">➕ Add Expenses</a>
+        <a href="inventory.html" class="btn btn-outline btn-sm">📦 Update Stock</a>
+        <a href="debts.html" class="btn btn-outline btn-sm">🤝 Manage Debts</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('health-score');
+  await calcScore();
+})();
+
+async function calcScore() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const today = now.toISOString().split('T')[0];
+
+  // Fetch all data
+  const [{ data: sales }, { data: expenses }, { data: debts }, { data: inventory }, { data: reminders }] = await Promise.all([
+    _supabase.from('sales').select('total_amount,date').eq('user_id', currentUser.id).gte('date', startOfMonth),
+    _supabase.from('expenses').select('amount').eq('user_id', currentUser.id).gte('date', startOfMonth),
+    _supabase.from('debts').select('amount,type,status').eq('user_id', currentUser.id),
+    _supabase.from('inventory').select('quantity,low_stock_threshold').eq('user_id', currentUser.id),
+    _supabase.from('reminders').select('id').eq('user_id', currentUser.id)
+  ]);
+
+  const totalSales = (sales || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  const totalExp = (expenses || []).reduce((s, r) => s + Number(r.amount), 0);
+  const profit = totalSales - totalExp;
+  const profitMargin = totalSales > 0 ? (profit / totalSales) * 100 : 0;
+  const salesDays = new Set((sales || []).map(r => r.date)).size;
+  const unpaidDebts = (debts || []).filter(r => r.status === 'unpaid' && r.type === 'i_owe').reduce((s, r) => s + Number(r.amount), 0);
+  const lowStockCount = (inventory || []).filter(i => i.quantity <= i.low_stock_threshold).length;
+  const totalInvItems = (inventory || []).length;
+  const hasReminders = (reminders || []).length > 0;
+
+  // ── SCORING METRICS (total = 100) ──
+
+  // 1. Sales Activity (20pts) — did you record sales regularly?
+  let salesScore = 0;
+  if (salesDays >= 20) salesScore = 20;
+  else if (salesDays >= 10) salesScore = 15;
+  else if (salesDays >= 5) salesScore = 10;
+  else if (salesDays >= 1) salesScore = 5;
+
+  // 2. Profitability (25pts) — is business making money?
+  let profitScore = 0;
+  if (profitMargin >= 30) profitScore = 25;
+  else if (profitMargin >= 15) profitScore = 20;
+  else if (profitMargin >= 5) profitScore = 12;
+  else if (profit > 0) profitScore = 8;
+  else if (profit === 0 && totalSales === 0) profitScore = 0;
+
+  // 3. Expense Tracking (20pts) — are expenses being recorded?
+  let expScore = 0;
+  const expCount = (expenses || []).length;
+  if (expCount >= 10) expScore = 20;
+  else if (expCount >= 5) expScore = 15;
+  else if (expCount >= 1) expScore = 8;
+
+  // 4. Debt Health (20pts) — low debt is good
+  let debtScore = 20;
+  if (unpaidDebts > totalSales * 0.5) debtScore = 5;
+  else if (unpaidDebts > totalSales * 0.2) debtScore = 10;
+  else if (unpaidDebts > 0) debtScore = 15;
+
+  // 5. Stock Management (10pts)
+  let stockScore = 0;
+  if (totalInvItems === 0) stockScore = 3;
+  else if (lowStockCount === 0) stockScore = 10;
+  else if (lowStockCount <= 2) stockScore = 6;
+  else stockScore = 3;
+
+  // 6. Planning / Reminders (5pts)
+  let planScore = hasReminders ? 5 : 0;
+
+  const total = salesScore + profitScore + expScore + debtScore + stockScore + planScore;
+
+  // ── GRADE ──
+  let grade, gradeColor, gradeDesc;
+  if (total >= 85) {
+    grade = '🏆 Excellent'; gradeColor = 'var(--success)';
+    gradeDesc = 'Your business is in outstanding health! Keep maintaining consistent records and managing costs.';
+  } else if (total >= 70) {
+    grade = '✅ Good'; gradeColor = 'var(--success)';
+    gradeDesc = 'Your business is doing well. A few improvements in tracking could push you higher.';
+  } else if (total >= 50) {
+    grade = '⚠️ Fair'; gradeColor = 'var(--gold)';
+    gradeDesc = 'Your business has potential but needs attention. Focus on recording sales daily and reducing debts.';
+  } else if (total >= 30) {
+    grade = '🔴 Poor'; gradeColor = 'var(--danger)';
+    gradeDesc = 'Your business needs urgent attention. Start recording all transactions and reviewing expenses.';
+  } else {
+    grade = '❌ Critical'; gradeColor = 'var(--danger)';
+    gradeDesc = 'Very little data recorded. Please start logging sales, expenses and inventory to get an accurate picture.';
+  }
+
+  // ── RENDER HERO ──
+  const circumference = 565; // 2π × 90
+  const offset = circumference - (circumference * total / 100);
+  document.getElementById('score-hero').innerHTML = `
+    <div class="big-ring">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="90" fill="none" stroke="var(--dark3)" stroke-width="14"/>
+        <circle cx="100" cy="100" r="90" fill="none" stroke="${gradeColor}" stroke-width="14"
+          stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+          stroke-linecap="round" id="big-arc"
+          style="transition: stroke-dashoffset 1.5s ease;"/>
+      </svg>
+      <div class="big-ring-label">
+        <div class="big-score-val" id="animated-score">0</div>
+        <div class="big-score-sub">out of 100</div>
+      </div>
+    </div>
+    <div class="grade-badge" style="background:${gradeColor}22;color:${gradeColor};border:1px solid ${gradeColor}44;">${grade}</div>
+    <p class="score-desc">${gradeDesc}</p>
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:12px;">Based on data from ${now.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</p>
+  `;
+
+  // Animate arc & number
+  setTimeout(() => {
+    document.getElementById('big-arc').style.strokeDashoffset = offset;
+    let count = 0;
+    const interval = setInterval(() => {
+      count += 2;
+      if (count >= total) { count = total; clearInterval(interval); }
+      document.getElementById('animated-score').textContent = count;
+    }, 30);
+  }, 200);
+
+  // ── RENDER METRICS ──
+  const metrics = [
+    { icon: '💰', name: 'Sales Activity', desc: `${salesDays} day(s) recorded this month`, score: salesScore, max: 20, color: 'var(--success)' },
+    { icon: '📈', name: 'Profitability', desc: `${profitMargin.toFixed(1)}% profit margin`, score: profitScore, max: 25, color: 'var(--gold)' },
+    { icon: '📋', name: 'Expense Tracking', desc: `${expCount} expense(s) logged this month`, score: expScore, max: 20, color: 'var(--info)' },
+    { icon: '🤝', name: 'Debt Health', desc: unpaidDebts > 0 ? `₦${Number(unpaidDebts).toLocaleString()} unpaid debt` : 'No outstanding debts', score: debtScore, max: 20, color: debtScore >= 15 ? 'var(--success)' : 'var(--danger)' },
+    { icon: '📦', name: 'Stock Management', desc: totalInvItems > 0 ? `${lowStockCount} low-stock item(s)` : 'No inventory added yet', score: stockScore, max: 10, color: lowStockCount === 0 ? 'var(--success)' : 'var(--danger)' },
+    { icon: '📅', name: 'Business Planning', desc: hasReminders ? 'Reminders set' : 'No reminders set yet', score: planScore, max: 5, color: hasReminders ? 'var(--success)' : 'var(--muted)' },
+  ];
+
+  document.getElementById('metric-list').innerHTML = metrics.map(m => `
+    <div class="metric-row">
+      <div class="metric-icon">${m.icon}</div>
+      <div class="metric-info">
+        <div class="metric-name">${m.name}</div>
+        <div class="metric-desc">${m.desc}</div>
+      </div>
+      <div class="metric-bar-wrap">
+        <div class="metric-bar-bg">
+          <div class="metric-bar-fill" style="width:${(m.score/m.max)*100}%;background:${m.color};"></div>
+        </div>
+      </div>
+      <div class="metric-pts">${m.score}/${m.max}</div>
+    </div>
+  `).join('');
+
+  // ── RADAR CHART ──
+  new Chart(document.getElementById('radar-chart'), {
+    type: 'radar',
+    data: {
+      labels: ['Sales', 'Profit', 'Expenses', 'Debt', 'Stock', 'Planning'],
+      datasets: [{
+        label: 'Your Score',
+        data: [
+          Math.round((salesScore/20)*100),
+          Math.round((profitScore/25)*100),
+          Math.round((expScore/20)*100),
+          Math.round((debtScore/20)*100),
+          Math.round((stockScore/10)*100),
+          Math.round((planScore/5)*100)
+        ],
+        backgroundColor: 'rgba(201,168,76,0.15)',
+        borderColor: 'var(--gold)',
+        pointBackgroundColor: 'var(--gold)',
+        pointBorderColor: '#fff',
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, color: 'var(--muted)', backdropColor: 'transparent', font: { size: 10 } },
+          grid: { color: 'rgba(201,168,76,0.1)' },
+          angleLines: { color: 'rgba(201,168,76,0.1)' },
+          pointLabels: { color: 'var(--muted)', font: { size: 11 } }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // ── TIPS ──
+  const tips = [];
+  if (salesDays < 5) tips.push({ type: 'danger', text: '📌 You have fewer than 5 sales days recorded this month. Try to record sales every day — even small amounts count.' });
+  else if (salesDays >= 20) tips.push({ type: 'success', text: '✅ Excellent sales recording consistency! Keep it up every day.' });
+
+  if (profitMargin < 10 && totalSales > 0) tips.push({ type: 'danger', text: '⚠️ Your profit margin is below 10%. Review your expenses — look for costs you can reduce or eliminate.' });
+  else if (profitMargin >= 30) tips.push({ type: 'success', text: '✅ Strong profit margin above 30%. Your business is generating good returns.' });
+
+  if (expCount === 0) tips.push({ type: 'danger', text: '📌 No expenses recorded this month. Even if expenses are low, logging them helps calculate your true profit.' });
+
+  if (unpaidDebts > 0) tips.push({ type: 'danger', text: `⚠️ You have ${formatCurrency(unpaidDebts)} in unpaid debts. Prioritise clearing these to improve your financial health.` });
+  else tips.push({ type: 'success', text: '✅ No outstanding debts. Excellent financial discipline!' });
+
+  if (totalInvItems === 0) tips.push({ type: 'danger', text: '📌 You have no inventory items added. Add your stock items to track levels and get low-stock alerts.' });
+  else if (lowStockCount > 0) tips.push({ type: 'danger', text: `⚠️ ${lowStockCount} item(s) are running low on stock. Restock soon to avoid losing sales.` });
+
+  if (!hasReminders) tips.push({ type: 'danger', text: '📌 Set business reminders for important dates like payment deadlines, restocking days, or market days.' });
+
+  if (tips.length === 0) tips.push({ type: 'success', text: '🏆 Everything looks great! Your business is well managed. Keep up the consistent record-keeping.' });
+
+  document.getElementById('tips-list').innerHTML = tips.map(t =>
+    `<div class="tip-card ${t.type}">${t.text}</div>`
+  ).join('');
+}
+</script>
+</body>
+</html>vice-width, initial-scale=1.0"/>
   <title>Business Health Score — GrowthIve Monitor</title>
   <link rel="stylesheet" href="css/style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>

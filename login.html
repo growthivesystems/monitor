@@ -5,60 +5,197 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .auth-wrap {
+    background: radial-gradient(ellipse at 60% 30%, rgba(201,168,76,0.08) 0%, transparent 60%), var(--dark);
+  }
+  .forgot-link {
+    background: none; border: none; color: var(--gold);
+    font-size: 0.82rem; cursor: pointer; font-family: var(--font-body);
+    padding: 0; text-decoration: underline;
+  }
+  .forgot-link:hover { color: var(--gold2); }
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 1rem; padding: 0;
+  }
+  .pw-wrap input { padding-right: 40px; }
+</style>
 </head>
 <body>
+
 <div class="auth-wrap">
   <div class="auth-card">
+
+    <!-- LOGO -->
     <div class="auth-logo">GrowthIve <span>Monitor</span></div>
-    <div class="auth-tagline">Sign in to your business dashboard</div>
+    <div class="auth-tagline">Powered by GrowthIve Systems</div>
+
+    <!-- ORNAMENT -->
+    <div style="width:50px;height:1px;background:var(--gold-border);margin:16px auto 24px;"></div>
+
+    <!-- MESSAGE BOX -->
     <div id="msg"></div>
+
+    <!-- EMAIL -->
     <div class="form-group">
       <label>Email Address</label>
-      <input type="email" id="email" placeholder="you@example.com">
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
     </div>
+
+    <!-- PASSWORD -->
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••">
+      <div class="pw-wrap">
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        <button class="pw-toggle" onclick="togglePw()" type="button" id="pw-eye">👁</button>
+      </div>
     </div>
-    <button class="btn btn-gold btn-full" onclick="doLogin()">Sign In →</button>
+
+    <!-- FORGOT PASSWORD -->
+    <div style="text-align:right;margin-top:-10px;margin-bottom:18px;">
+      <button class="forgot-link" onclick="forgotPassword()">Forgot Password?</button>
+    </div>
+
+    <!-- LOGIN BUTTON -->
+    <button class="btn btn-gold btn-full" onclick="doLogin()" id="login-btn">
+      Sign In →
+    </button>
+
     <div class="divider">or</div>
-    <p style="text-align:center;font-size:0.85rem;color:var(--muted);">
-      Don't have an account? <a href="register.html" style="color:var(--gold);">Create one free</a>
+
+    <!-- REGISTER LINK -->
+    <p style="text-align:center;font-size:0.88rem;color:var(--muted);">
+      Don't have an account?
+      <a href="register.html" style="color:var(--gold);font-weight:600;">Create one free</a>
     </p>
-    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:10px;">
-      <a href="index.html" style="color:var(--muted);">← Back to Home</a>
+
+    <!-- BACK HOME -->
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:14px;">
+      <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
+
+    <!-- POWERED BY -->
+    <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
+      <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
+        Powered by GrowthIve Systems
+      </span>
+    </div>
+
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light') document.documentElement.setAttribute('data-theme','light');
 
-  async function doLogin() {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const msg = document.getElementById('msg');
-    msg.innerHTML = '';
-    if (!email || !password) {
-      msg.innerHTML = '<div class="alert alert-danger">Please fill in all fields.</div>'; return;
-    }
-    msg.innerHTML = '<div class="alert alert-gold">Signing in…</div>';
-    const { error } = await _supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return;
-    }
-    window.location.href = 'dashboard.html';
+  // ── THEME ──
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+  // ── HANDLE EMAIL CONFIRMATION REDIRECT ──
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    document.getElementById('msg').innerHTML =
+      '<div class="alert alert-success">✅ Email confirmed! Signing you in…</div>';
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+  }
+  if (hash.includes('error=access_denied') || hash.includes('otp_expired')) {
+    document.getElementById('msg').innerHTML =
+      '<div class="alert alert-danger">⚠️ Your confirmation link has expired. Please <a href="register.html" style="color:var(--gold);">register again</a> or contact support.</div>';
   }
 
-  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
+  // ── IF ALREADY LOGGED IN → DASHBOARD ──
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     if (user) window.location.href = 'dashboard.html';
   })();
+
+  // ── LOGIN ──
+  async function doLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msg      = document.getElementById('msg');
+    const btn      = document.getElementById('login-btn');
+
+    msg.innerHTML = '';
+
+    if (!email || !password) {
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in both fields.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    msg.innerHTML = '<div class="alert alert-gold">⏳ Please wait…</div>';
+
+    const { error } = await _supabase.auth.signInWithPassword({ email, password });
+
+    btn.disabled = false;
+    btn.textContent = 'Sign In →';
+
+    if (error) {
+      let errMsg = error.message;
+      if (errMsg.includes('Email not confirmed'))
+        errMsg = '📧 Please check your email and confirm your account before signing in.';
+      else if (errMsg.includes('Invalid login credentials') || errMsg.includes('invalid'))
+        errMsg = '❌ Incorrect email or password. Please try again.';
+      else if (errMsg.includes('Too many requests'))
+        errMsg = '🚫 Too many attempts. Please wait a few minutes and try again.';
+      msg.innerHTML = `<div class="alert alert-danger">${errMsg}</div>`;
+      return;
+    }
+
+    msg.innerHTML = '<div class="alert alert-success">✅ Login successful! Redirecting…</div>';
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+  }
+
+  // ── FORGOT PASSWORD ──
+  async function forgotPassword() {
+    const email = document.getElementById('email').value.trim();
+    const msg   = document.getElementById('msg');
+
+    if (!email) {
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter your email address above first.</div>';
+      return;
+    }
+
+    msg.innerHTML = '<div class="alert alert-gold">⏳ Sending reset email…</div>';
+
+    const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://growthivesystems.github.io/monitor/settings.html'
+    });
+
+    if (error) {
+      msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+      return;
+    }
+
+    msg.innerHTML = '<div class="alert alert-success">✅ Password reset email sent! Check your inbox.</div>';
+  }
+
+  // ── SHOW / HIDE PASSWORD ──
+  function togglePw() {
+    const input = document.getElementById('password');
+    const eye   = document.getElementById('pw-eye');
+    if (input.type === 'password') {
+      input.type = 'text';
+      eye.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      eye.textContent = '👁';
+    }
+  }
+
+  // ── ENTER KEY ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
 </script>
 </body>
 </html>

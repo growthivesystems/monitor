@@ -2,16 +2,17 @@
 
 function renderSidebar(activePage) {
   const links = [
-    { href: 'dashboard.html', icon: '📊', label: 'Dashboard', id: 'dashboard' },
-    { href: 'sales.html', icon: '💰', label: 'Daily Sales', id: 'sales' },
-    { href: 'expenses.html', icon: '📋', label: 'Expenses', id: 'expenses' },
-    { href: 'debts.html', icon: '🤝', label: 'Debts', id: 'debts' },
-    { href: 'inventory.html', icon: '📦', label: 'Inventory', id: 'inventory' },
-    { href: 'reports.html', icon: '📈', label: 'Reports', id: 'reports' },
+    { href: 'dashboard.html',    icon: '📊', label: 'Dashboard',    id: 'dashboard' },
+    { href: 'sales.html',        icon: '💰', label: 'Daily Sales',  id: 'sales' },
+    { href: 'expenses.html',     icon: '📋', label: 'Expenses',     id: 'expenses' },
+    { href: 'debts.html',        icon: '🤝', label: 'Debts',        id: 'debts' },
+    { href: 'inventory.html',    icon: '📦', label: 'Inventory',    id: 'inventory' },
+    { href: 'purchases.html',    icon: '🛒', label: 'Purchases',    id: 'purchases' },
+    { href: 'reports.html',      icon: '📈', label: 'Reports',      id: 'reports' },
     { href: 'health-score.html', icon: '🏆', label: 'Health Score', id: 'health-score' },
-    { href: 'calendar.html', icon: '📅', label: 'Calendar', id: 'calendar' },
-    { href: 'settings.html', icon: '⚙️', label: 'Settings', id: 'settings' },
-    { href: 'contact.html', icon: '💬', label: 'Support', id: 'contact' },
+    { href: 'calendar.html',     icon: '📅', label: 'Calendar',     id: 'calendar' },
+    { href: 'settings.html',     icon: '⚙️', label: 'Settings',     id: 'settings' },
+    { href: 'contact.html',      icon: '💬', label: 'Support',      id: 'contact' },
   ];
 
   const el = document.getElementById('sidebar');
@@ -19,17 +20,17 @@ function renderSidebar(activePage) {
 
   el.innerHTML = `
     <span class="sidebar-label">Main Menu</span>
-    ${links.slice(0,5).map(l => `
+    ${links.slice(0,6).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
         <span class="icon">${l.icon}</span> ${l.label}
       </a>`).join('')}
     <span class="sidebar-label">Analytics</span>
-    ${links.slice(5,8).map(l => `
+    ${links.slice(6,9).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
         <span class="icon">${l.icon}</span> ${l.label}
       </a>`).join('')}
     <span class="sidebar-label">Account</span>
-    ${links.slice(8).map(l => `
+    ${links.slice(9).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
         <span class="icon">${l.icon}</span> ${l.label}
       </a>`).join('')}
@@ -61,6 +62,7 @@ function renderFooter() {
             <li><a href="sales.html">Daily Sales</a></li>
             <li><a href="reports.html">Reports</a></li>
             <li><a href="inventory.html">Inventory</a></li>
+            <li><a href="purchases.html">Purchases</a></li>
           </ul>
         </div>
         <div>

@@ -6,86 +6,275 @@
 <title>Register — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  .tc-row { display:flex; align-items:flex-start; gap:10px; margin-bottom:18px; }
-  .tc-row input[type=checkbox] { width:18px; height:18px; flex-shrink:0; margin-top:2px; accent-color:var(--gold); cursor:pointer; }
-  .tc-row label { font-size:0.83rem; color:var(--muted); cursor:pointer; }
-  .tc-row label a { color:var(--gold); }
+  .auth-wrap {
+    background: radial-gradient(ellipse at 40% 60%, rgba(201,168,76,0.08) 0%, transparent 60%), var(--dark);
+  }
+  .tc-row {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px;
+  }
+  .tc-row input[type=checkbox] {
+    width: 18px; height: 18px; flex-shrink: 0;
+    margin-top: 2px; accent-color: var(--gold); cursor: pointer;
+  }
+  .tc-row label { font-size: 0.83rem; color: var(--muted); cursor: pointer; }
+  .tc-row label a { color: var(--gold); }
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 1rem; padding: 0;
+  }
+  .pw-wrap input { padding-right: 40px; }
+  .strength-bar {
+    height: 4px; border-radius: 2px;
+    background: var(--dark4); margin-top: 6px; overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+  }
+  .strength-text { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
 </style>
 </head>
 <body>
+
 <div class="auth-wrap">
   <div class="auth-card">
+
+    <!-- LOGO -->
     <div class="auth-logo">GrowthIve <span>Monitor</span></div>
     <div class="auth-tagline">Create your free business account</div>
+
+    <!-- ORNAMENT -->
+    <div style="width:50px;height:1px;background:var(--gold-border);margin:16px auto 24px;"></div>
+
+    <!-- MESSAGE BOX -->
     <div id="msg"></div>
+
+    <!-- FULL NAME -->
     <div class="form-group">
       <label>Full Name</label>
-      <input type="text" id="fullname" placeholder="John Doe">
+      <input type="text" id="fullname" placeholder="John Doe" autocomplete="name">
     </div>
+
+    <!-- BUSINESS NAME -->
     <div class="form-group">
       <label>Business Name</label>
       <input type="text" id="bizname" placeholder="My Business Ltd">
     </div>
+
+    <!-- EMAIL -->
     <div class="form-group">
       <label>Email Address</label>
-      <input type="email" id="email" placeholder="you@example.com">
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
     </div>
+
+    <!-- PASSWORD -->
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="password" placeholder="Min. 6 characters">
+      <div class="pw-wrap">
+        <input type="password" id="password" placeholder="Min. 6 characters"
+               autocomplete="new-password" oninput="checkStrength()">
+        <button class="pw-toggle" onclick="togglePw()" type="button" id="pw-eye">👁</button>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+      <div class="strength-text" id="strength-text"></div>
     </div>
+
+    <!-- CONFIRM PASSWORD -->
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="password2" placeholder="Repeat your password"
+               autocomplete="new-password">
+        <button class="pw-toggle" onclick="togglePw2()" type="button" id="pw-eye2">👁</button>
+      </div>
+    </div>
+
+    <!-- TERMS & CONDITIONS -->
     <div class="tc-row">
       <input type="checkbox" id="tc">
-      <label for="tc">I have read and agree to the <a href="terms.html" target="_blank">Terms & Conditions</a> of GrowthIve Monitor.</label>
+      <label for="tc">
+        I have read and agree to the
+        <a href="terms.html" target="_blank">Terms & Conditions</a>
+        of GrowthIve Monitor.
+      </label>
     </div>
-    <button class="btn btn-gold btn-full" onclick="doRegister()">Create Account →</button>
+
+    <!-- REGISTER BUTTON -->
+    <button class="btn btn-gold btn-full" onclick="doRegister()" id="reg-btn">
+      Create Account →
+    </button>
+
     <div class="divider">or</div>
-    <p style="text-align:center;font-size:0.85rem;color:var(--muted);">
-      Already have an account? <a href="login.html" style="color:var(--gold);">Sign in</a>
+
+    <!-- LOGIN LINK -->
+    <p style="text-align:center;font-size:0.88rem;color:var(--muted);">
+      Already have an account?
+      <a href="login.html" style="color:var(--gold);font-weight:600;">Sign in</a>
     </p>
-    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:10px;">
-      <a href="index.html" style="color:var(--muted);">← Back to Home</a>
+
+    <!-- BACK HOME -->
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:14px;">
+      <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
+
+    <!-- POWERED BY -->
+    <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
+      <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
+        Powered by GrowthIve Systems
+      </span>
+    </div>
+
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light') document.documentElement.setAttribute('data-theme','light');
 
+  // ── THEME ──
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+  // ── IF ALREADY LOGGED IN → DASHBOARD ──
+  (async () => {
+    const { data: { user } } = await _supabase.auth.getUser();
+    if (user) window.location.href = 'dashboard.html';
+  })();
+
+  // ── PASSWORD STRENGTH ──
+  function checkStrength() {
+    const pw = document.getElementById('password').value;
+    const fill = document.getElementById('strength-fill');
+    const text = document.getElementById('strength-text');
+    let score = 0;
+    if (pw.length >= 6)  score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = [
+      { label: '', color: '', width: '0%' },
+      { label: 'Weak', color: '#e05555', width: '25%' },
+      { label: 'Fair', color: '#e0a855', width: '50%' },
+      { label: 'Good', color: '#5b9bd5', width: '75%' },
+      { label: 'Strong 💪', color: '#4caf7d', width: '100%' },
+    ];
+    const lvl = Math.min(score, 4);
+    fill.style.width = levels[lvl].width;
+    fill.style.background = levels[lvl].color;
+    text.textContent = pw.length === 0 ? '' : levels[lvl].label;
+    text.style.color = levels[lvl].color;
+  }
+
+  // ── SHOW/HIDE PASSWORD ──
+  function togglePw() {
+    const input = document.getElementById('password');
+    const eye   = document.getElementById('pw-eye');
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    eye.textContent = input.type === 'password' ? '👁' : '🙈';
+  }
+  function togglePw2() {
+    const input = document.getElementById('password2');
+    const eye   = document.getElementById('pw-eye2');
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    eye.textContent = input.type === 'password' ? '👁' : '🙈';
+  }
+
+  // ── REGISTER ──
   async function doRegister() {
     const fullname = document.getElementById('fullname').value.trim();
-    const bizname = document.getElementById('bizname').value.trim();
-    const email = document.getElementById('email').value.trim();
+    const bizname  = document.getElementById('bizname').value.trim();
+    const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-    const tc = document.getElementById('tc').checked;
-    const msg = document.getElementById('msg');
+    const password2= document.getElementById('password2').value;
+    const tc       = document.getElementById('tc').checked;
+    const msg      = document.getElementById('msg');
+    const btn      = document.getElementById('reg-btn');
+
     msg.innerHTML = '';
 
-    if (!fullname || !bizname || !email || !password) {
-      msg.innerHTML = '<div class="alert alert-danger">Please fill in all fields.</div>'; return;
+    // ── VALIDATION ──
+    if (!fullname || !bizname || !email || !password || !password2) {
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in all fields.</div>'; return;
     }
     if (password.length < 6) {
-      msg.innerHTML = '<div class="alert alert-danger">Password must be at least 6 characters.</div>'; return;
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
+    }
+    if (password !== password2) {
+      msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
     }
     if (!tc) {
-      msg.innerHTML = '<div class="alert alert-danger">You must accept the Terms & Conditions to register.</div>'; return;
+      msg.innerHTML = '<div class="alert alert-danger">📄 You must accept the Terms & Conditions to register.</div>'; return;
     }
 
-    msg.innerHTML = '<div class="alert alert-gold">Creating your account…</div>';
-    const { data, error } = await _supabase.auth.signUp({ email, password });
+    btn.disabled = true;
+    btn.textContent = 'Creating account…';
+    msg.innerHTML = '<div class="alert alert-gold">⏳ Setting up your account, please wait…</div>';
+
+    // ── SIGN UP ──
+    const { data, error } = await _supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: 'https://growthivesystems.github.io/monitor/login.html',
+        data: {
+          full_name: fullname,
+          business_name: bizname
+        }
+      }
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Create Account →';
+
     if (error) {
-      msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return;
+      let errMsg = error.message;
+      if (errMsg.includes('already registered') || errMsg.includes('already exists'))
+        errMsg = '⚠️ This email is already registered. <a href="login.html" style="color:var(--gold);">Sign in instead</a>.';
+      msg.innerHTML = `<div class="alert alert-danger">${errMsg}</div>`;
+      return;
     }
 
+    // ── SAVE PROFILE ──
     const userId = data.user?.id;
     if (userId) {
-      await _supabase.from('profiles').upsert({ id: userId, full_name: fullname, business_name: bizname });
+      await _supabase.from('profiles').upsert({
+        id: userId,
+        full_name: fullname,
+        business_name: bizname
+      });
     }
-    msg.innerHTML = '<div class="alert alert-success">Account created! Check your email to confirm, then <a href="login.html" style="color:var(--success);">sign in</a>.</div>';
+
+    // ── SUCCESS ──
+    msg.innerHTML = `
+      <div class="alert alert-success">
+        ✅ Account created successfully!<br><br>
+        📧 A confirmation email has been sent to <strong>${email}</strong>.<br>
+        Please check your inbox and click the link to activate your account, then
+        <a href="login.html" style="color:var(--success);font-weight:600;">sign in here</a>.
+      </div>`;
+
+    // Clear form
+    document.getElementById('fullname').value = '';
+    document.getElementById('bizname').value  = '';
+    document.getElementById('email').value    = '';
+    document.getElementById('password').value = '';
+    document.getElementById('password2').value= '';
+    document.getElementById('tc').checked     = false;
+    document.getElementById('strength-fill').style.width = '0%';
+    document.getElementById('strength-text').textContent = '';
   }
+
+  // ── ENTER KEY ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doRegister();
+  });
+
 </script>
 </body>
 </html>

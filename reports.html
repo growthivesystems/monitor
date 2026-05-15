@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .report-tab { padding:8px 18px; border-radius:20px; cursor:pointer; font-size:0.85rem; font-weight:500; border:1px solid var(--gold-border); background:transparent; color:var(--muted); transition:var(--transition); font-family:var(--font-body); }
+  .report-tab.active { background:var(--gold); color:var(--dark); border-color:var(--gold); font-weight:600; }
+  canvas { max-height: 280px; }
+</style>
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Reports & Analytics</div>
+    <div class="page-subtitle">Weekly, monthly and quarterly performance insights.</div>
+
+    <!-- Period Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+      <button class="report-tab active" onclick="setPeriod('monthly', this)">Monthly</button>
+      <button class="report-tab" onclick="setPeriod('weekly', this)">Weekly</button>
+      <button class="report-tab" onclick="setPeriod('quarterly', this)">Quarterly</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid-4" id="report-kpis">
+      <div class="card"><div class="card-title">Total Sales</div><div class="card-value gold" id="r-sales">₦0.00</div></div>
+      <div class="card"><div class="card-title">Total Expenses</div><div class="card-value danger" id="r-expenses">₦0.00</div></div>
+      <div class="card"><div class="card-title">Net Profit/Loss</div><div class="card-value" id="r-profit">₦0.00</div></div>
+      <div class="card"><div class="card-title">Outstanding Debt</div><div class="card-value danger" id="r-debt">₦0.00</div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Sales vs Expenses</div>
+        <canvas id="chart-bar"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">Profit/Loss Trend</div>
+        <canvas id="chart-line"></canvas>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="card">
+      <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">📤 Export Report</div>
+      <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px;">Download your report as a printable summary.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="exportCSV()">📊 Export CSV</button>
+        <button class="btn btn-outline" onclick="window.print()">🖨️ Print / Save PDF</button>
+      </div>
+    </div>
+
+    <!-- Detailed Table -->
+    <div class="card">
+      <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">Detailed Breakdown</div>
+      <div id="report-table"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+let currentPeriod = 'monthly';
+let barChart, lineChart;
+let reportData = { sales: [], expenses: [] };
+
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('reports');
+  loadReport();
+})();
+
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.report-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadReport();
+}
+
+function getDateRange() {
+  const now = new Date();
+  let start, end = now.toISOString().split('T')[0];
+  if (currentPeriod === 'weekly') {
+    const d = new Date(now); d.setDate(d.getDate() - 6);
+    start = d.toISOString().split('T')[0];
+  } else if (currentPeriod === 'monthly') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  } else {
+    start = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1).toISOString().split('T')[0];
+  }
+  return { start, end };
+}
+
+async function loadReport() {
+  const { start, end } = getDateRange();
+  const { data: sales } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date');
+  const { data: expenses } = await _supabase.from('expenses').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date');
+  const { data: debts } = await _supabase.from('debts').select('amount').eq('user_id', currentUser.id).eq('status','unpaid').eq('type','i_owe');
+
+  reportData = { sales: sales || [], expenses: expenses || [] };
+  const totalSales = reportData.sales.reduce((s, r) => s + Number(r.total_amount), 0);
+  const totalExp = reportData.expenses.reduce((s, r) => s + Number(r.amount), 0);
+  const profit = totalSales - totalExp;
+  const totalDebt = (debts || []).reduce((s, r) => s + Number(r.amount), 0);
+
+  document.getElementById('r-sales').textContent = formatCurrency(totalSales);
+  document.getElementById('r-expenses').textContent = formatCurrency(totalExp);
+  const pEl = document.getElementById('r-profit');
+  pEl.textContent = formatCurrency(profit);
+  pEl.className = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
+  document.getElementById('r-debt').textContent = formatCurrency(totalDebt);
+
+  // Build chart labels (last 7 days or weeks or months)
+  const labels = [];
+  const salesByLabel = {};
+  const expByLabel = {};
+
+  if (currentPeriod === 'weekly') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+      labels.push(label); salesByLabel[key] = 0; expByLabel[key] = 0;
+    }
+    reportData.sales.forEach(r => { if (salesByLabel[r.date] !== undefined) salesByLabel[r.date] += Number(r.total_amount); });
+    reportData.expenses.forEach(r => { if (expByLabel[r.date] !== undefined) expByLabel[r.date] += Number(r.amount); });
+  } else {
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      labels.push(d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }));
+      salesByLabel[key] = 0; expByLabel[key] = 0;
+    }
+    reportData.sales.forEach(r => { const k = r.date.substring(0,7); if (salesByLabel[k] !== undefined) salesByLabel[k] += Number(r.total_amount); });
+    reportData.expenses.forEach(r => { const k = r.date.substring(0,7); if (expByLabel[k] !== undefined) expByLabel[k] += Number(r.amount); });
+  }
+
+  const sVals = Object.values(salesByLabel);
+  const eVals = Object.values(expByLabel);
+  const pVals = sVals.map((s, i) => s - eVals[i]);
+
+  const chartDefaults = { responsive: true, plugins: { legend: { labels: { color: '#888880' } } }, scales: { x: { ticks: { color: '#888880' }, grid: { color: 'rgba(201,168,76,0.06)' } }, y: { ticks: { color: '#888880' }, grid: { color: 'rgba(201,168,76,0.06)' } } } };
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Sales', data: sVals, backgroundColor: 'rgba(76,175,125,0.6)', borderColor: 'var(--success)', borderWidth: 1 },
+      { label: 'Expenses', data: eVals, backgroundColor: 'rgba(224,85,85,0.6)', borderColor: 'var(--danger)', borderWidth: 1 }
+    ]}, options: chartDefaults
+  });
+
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById('chart-line'), {
+    type: 'line',
+    data: { labels, datasets: [{
+      label: 'Profit/Loss', data: pVals,
+      borderColor: '#c9a84c', backgroundColor: 'rgba(201,168,76,0.08)',
+      tension: 0.4, fill: true, pointBackgroundColor: '#c9a84c'
+    }]}, options: chartDefaults
+  });
+
+  // Table
+  const el = document.getElementById('report-table');
+  const combined = [
+    ...reportData.sales.map(r => ({ date: r.date, desc: r.notes || 'Sales Record', type: 'Sale', amount: r.total_amount, positive: true })),
+    ...reportData.expenses.map(r => ({ date: r.date, desc: r.description, type: 'Expense', amount: r.amount, positive: false }))
+  ].sort((a, b) => b.date.localeCompare(a.date));
+
+  if (combined.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📈</div><p>No data for this period.</p></div>'; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
+    <tbody>${combined.map(r => `
+      <tr>
+        <td>${formatDate(r.date)}</td>
+        <td>${r.desc}</td>
+        <td><span class="badge ${r.positive ? 'badge-success' : 'badge-danger'}">${r.type}</span></td>
+        <td style="color:${r.positive ? 'var(--success)' : 'var(--danger)'};font-weight:600;">${r.positive ? '+' : '-'}${formatCurrency(r.amount)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function exportCSV() {
+  const rows = [['Date','Description','Type','Amount']];
+  reportData.sales.forEach(r => rows.push([r.date, r.notes || 'Sales Record', 'Sale', r.total_amount]));
+  reportData.expenses.forEach(r => rows.push([r.date, r.description, 'Expense', r.amount]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `growthive-report-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>

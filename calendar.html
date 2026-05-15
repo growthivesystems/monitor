@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Calendar — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .cal-grid-wrap { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+  @media(max-width:900px){ .cal-grid-wrap { grid-template-columns: 1fr; } }
+
+  /* Calendar */
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .cal-month-label {
+    font-family: var(--font-display); font-size: 1.4rem;
+    color: var(--gold); font-weight: 700;
+  }
+  .cal-nav-btn {
+    background: var(--dark3); border: 1px solid var(--gold-border);
+    color: var(--gold); padding: 8px 14px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 1rem; transition: var(--transition);
+    font-family: var(--font-body);
+  }
+  .cal-nav-btn:hover { background: var(--gold); color: var(--dark); }
+
+  .cal-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 8px;
+  }
+  .cal-weekday {
+    text-align: center; font-size: 0.72rem; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 0;
+  }
+  .cal-weekday:first-child { color: var(--danger); }
+  .cal-weekday:last-child { color: var(--gold); }
+
+  .cal-days {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day {
+    min-height: 70px; padding: 6px;
+    background: var(--dark3); border: 1px solid transparent;
+    border-radius: var(--radius-sm); cursor: pointer;
+    transition: var(--transition); position: relative;
+    font-size: 0.82rem;
+  }
+  .cal-day:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .cal-day.today { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+  .cal-day.has-events { border-color: rgba(201,168,76,0.4); }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.selected { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+  .cal-day-num {
+    font-weight: 700; color: var(--white2); font-size: 0.85rem;
+    line-height: 1;
+  }
+  .cal-day.today .cal-day-num {
+    background: var(--gold); color: var(--dark);
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem;
+  }
+  .cal-day-events { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
+  .cal-event-dot {
+    font-size: 0.65rem; padding: 1px 4px;
+    border-radius: 3px; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; line-height: 1.4;
+  }
+  .cal-event-dot.type-payment { background: rgba(224,85,85,0.25); color: #e05555; }
+  .cal-event-dot.type-restock { background: rgba(91,155,213,0.25); color: #5b9bd5; }
+  .cal-event-dot.type-meeting { background: rgba(201,168,76,0.25); color: var(--gold); }
+  .cal-event-dot.type-reminder { background: rgba(76,175,125,0.25); color: var(--success); }
+  .cal-event-dot.type-other { background: rgba(150,150,150,0.2); color: var(--muted); }
+
+  /* Side Panel */
+  .side-panel-sticky { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 16px; }
+
+  .reminder-form-title {
+    font-size: 1rem; font-weight: 600; color: var(--white);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Reminder list */
+  .reminder-item {
+    padding: 12px; background: var(--dark3);
+    border: 1px solid var(--gold-border); border-radius: var(--radius-sm);
+    margin-bottom: 10px; transition: var(--transition);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .reminder-item:hover { border-color: var(--gold); }
+  .reminder-type-badge {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .reminder-content { flex: 1; }
+  .reminder-title-text { font-size: 0.88rem; font-weight: 600; color: var(--white2); }
+  .reminder-meta { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+  .reminder-overdue { color: var(--danger); }
+  .reminder-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  .type-colors { payment: '#e05555'; restock: '#5b9bd5'; meeting: '#c9a84c'; reminder: '#4caf7d'; other: '#888'; }
+
+  .selected-day-panel { }
+  .selected-day-title {
+    font-size: 0.88rem; font-weight: 600; color: var(--gold);
+    margin-bottom: 12px; letter-spacing: 0.05em;
+    text-transform: uppercase; font-size: 0.75rem;
+  }
+
+  .mini-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.73rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+      <div class="page-title" style="margin:0;">📅 Business Calendar</div>
+      <button class="btn btn-gold btn-sm" onclick="openAddForm()">+ Add Reminder</button>
+    </div>
+    <div class="page-subtitle">Schedule payments, restock dates, meetings and important business events.</div>
+
+    <div id="page-msg"></div>
+
+    <div class="cal-grid-wrap">
+      <!-- Calendar -->
+      <div>
+        <div class="card">
+          <div class="cal-header">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)">◀</button>
+            <div class="cal-month-label" id="cal-month-label">Month Year</div>
+            <button class="cal-nav-btn" onclick="changeMonth(1)">▶</button>
+          </div>
+          <div class="cal-weekdays">
+            <div class="cal-weekday">Sun</div>
+            <div class="cal-weekday">Mon</div>
+            <div class="cal-weekday">Tue</div>
+            <div class="cal-weekday">Wed</div>
+            <div class="cal-weekday">Thu</div>
+            <div class="cal-weekday">Fri</div>
+            <div class="cal-weekday">Sat</div>
+          </div>
+          <div class="cal-days" id="cal-days"></div>
+
+          <!-- Legend -->
+          <div class="mini-legend" style="margin-top:14px;">
+            <div class="legend-item"><div class="legend-dot" style="background:#e05555;"></div> Payment</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#5b9bd5;"></div> Restock</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#c9a84c;"></div> Meeting</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4caf7d;"></div> Reminder</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#888;"></div> Other</div>
+          </div>
+        </div>
+
+        <!-- Selected day events -->
+        <div class="card" id="selected-day-card" style="display:none;">
+          <div class="selected-day-title" id="selected-day-title">Events on this day</div>
+          <div id="selected-day-events"></div>
+        </div>
+      </div>
+
+      <!-- Side Panel -->
+      <div class="side-panel-sticky">
+        <!-- Add Reminder Form -->
+        <div class="card" id="add-form-card">
+          <div class="reminder-form-title">➕ Add Reminder</div>
+          <div id="form-msg"></div>
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="r-title" placeholder="e.g. Pay supplier, Restock sugar…">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="r-date">
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="r-type">
+              <option value="payment">💳 Payment Due</option>
+              <option value="restock">📦 Restock</option>
+              <option value="meeting">🤝 Meeting</option>
+              <option value="reminder" selected>🔔 General Reminder</option>
+              <option value="other">📌 Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Note (optional)</label>
+            <textarea id="r-note" placeholder="Extra details…" style="min-height:70px;"></textarea>
+          </div>
+          <button class="btn btn-gold btn-full" onclick="saveReminder()">Save Reminder →</button>
+        </div>
+
+        <!-- Upcoming Reminders -->
+        <div class="card">
+          <div class="card-title">🔔 Upcoming Reminders</div>
+          <div id="upcoming-list"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Overdue -->
+        <div class="card" id="overdue-card" style="display:none;">
+          <div class="card-title" style="color:var(--danger);">⚠️ Overdue</div>
+          <div id="overdue-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+let allReminders = [];
+let viewYear, viewMonth;
+let selectedDate = null;
+
+const TYPE_COLORS = {
+  payment: '#e05555', restock: '#5b9bd5',
+  meeting: '#c9a84c', reminder: '#4caf7d', other: '#888'
+};
+const TYPE_LABELS = {
+  payment: '💳 Payment', restock: '📦 Restock',
+  meeting: '🤝 Meeting', reminder: '🔔 Reminder', other: '📌 Other'
+};
+
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('calendar');
+
+  const now = new Date();
+  viewYear = now.getFullYear();
+  viewMonth = now.getMonth();
+
+  document.getElementById('r-date').value = now.toISOString().split('T')[0];
+
+  await loadReminders();
+  renderCalendar();
+  renderUpcoming();
+  renderOverdue();
+})();
+
+async function loadReminders() {
+  const { data } = await _supabase.from('reminders').select('*').eq('user_id', currentUser.id).order('reminder_date');
+  allReminders = data || [];
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  selectedDate = null;
+  document.getElementById('selected-day-card').style.display = 'none';
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+
+  const grid = document.getElementById('cal-days');
+  let html = '';
+
+  // Previous month filler
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvents = allReminders.filter(r => r.reminder_date === dateStr);
+    const isToday = dateStr === today;
+    const isSelected = dateStr === selectedDate;
+
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (dayEvents.length > 0) cls += ' has-events';
+    if (isSelected) cls += ' selected';
+
+    const eventDots = dayEvents.slice(0, 3).map(r =>
+      `<div class="cal-event-dot type-${r.type || 'other'}" title="${r.title}">${r.title}</div>`
+    ).join('');
+    const moreCount = dayEvents.length > 3 ? `<div style="font-size:0.6rem;color:var(--muted);">+${dayEvents.length-3} more</div>` : '';
+
+    html += `
+      <div class="${cls}" onclick="selectDay('${dateStr}')">
+        <div class="cal-day-num">${d}</div>
+        <div class="cal-day-events">${eventDots}${moreCount}</div>
+      </div>
+    `;
+  }
+
+  // Fill remaining cells
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  let nextD = 1;
+  for (let i = firstDay + daysInMonth; i < totalCells; i++, nextD++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${nextD}</div></div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function selectDay(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+
+  const dayEvents = allReminders.filter(r => r.reminder_date === dateStr);
+  const card = document.getElementById('selected-day-card');
+  const title = document.getElementById('selected-day-title');
+  const content = document.getElementById('selected-day-events');
+
+  // Format the date
+  const d = new Date(dateStr + 'T00:00:00');
+  title.textContent = `Events on ${d.toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long'})}`;
+
+  // Pre-fill the add form with this date
+  document.getElementById('r-date').value = dateStr;
+
+  if (dayEvents.length === 0) {
+    content.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:0.85rem;">
+      No events on this day. <button class="btn btn-gold btn-sm" style="margin-top:8px;" onclick="openAddForm()">+ Add one</button>
+    </div>`;
+  } else {
+    content.innerHTML = dayEvents.map(r => renderReminderItem(r)).join('');
+  }
+
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderReminderItem(r) {
+  const color = TYPE_COLORS[r.type] || '#888';
+  const label = TYPE_LABELS[r.type] || r.type;
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = r.reminder_date < today;
+  return `
+    <div class="reminder-item">
+      <div class="reminder-type-badge" style="background:${color};"></div>
+      <div class="reminder-content">
+        <div class="reminder-title-text">${r.title}</div>
+        <div class="reminder-meta">
+          ${label} · <span class="${overdue ? 'reminder-overdue' : ''}">${formatDate(r.reminder_date)}</span>
+          ${overdue ? ' ⚠️ Overdue' : ''}
+          ${r.note ? `<br>${r.note}` : ''}
+        </div>
+      </div>
+      <div class="reminder-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')">✕</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderUpcoming() {
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = allReminders.filter(r => r.reminder_date >= today).slice(0, 10);
+  const el = document.getElementById('upcoming-list');
+  if (upcoming.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No upcoming reminders.</p></div>';
+    return;
+  }
+  el.innerHTML = upcoming.map(r => renderReminderItem(r)).join('');
+}
+
+function renderOverdue() {
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = allReminders.filter(r => r.reminder_date < today);
+  const card = document.getElementById('overdue-card');
+  if (overdue.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  document.getElementById('overdue-list').innerHTML = overdue.map(r => renderReminderItem(r)).join('');
+}
+
+function openAddForm() {
+  document.getElementById('add-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('r-title').focus();
+}
+
+async function saveReminder() {
+  const title = document.getElementById('r-title').value.trim();
+  const reminder_date = document.getElementById('r-date').value;
+  const type = document.getElementById('r-type').value;
+  const note = document.getElementById('r-note').value.trim();
+  const msg = document.getElementById('form-msg');
+
+  if (!title || !reminder_date) {
+    msg.innerHTML = '<div class="alert alert-danger">Please fill in the title and date.</div>'; return;
+  }
+
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('reminders').insert({
+    user_id: currentUser.id, title, reminder_date, type, note: note || null
+  });
+
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+
+  msg.innerHTML = '<div class="alert alert-success">✅ Reminder saved!</div>';
+  document.getElementById('r-title').value = '';
+  document.getElementById('r-note').value = '';
+
+  await loadReminders();
+  renderCalendar();
+  renderUpcoming();
+  renderOverdue();
+
+  // Refresh selected day if applicable
+  if (selectedDate) selectDay(selectedDate);
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+async function deleteReminder(id) {
+  if (!confirm('Delete this reminder?')) return;
+  await _supabase.from('reminders').delete().eq('id', id);
+  await loadReminders();
+  renderCalendar();
+  renderUpcoming();
+  renderOverdue();
+  if (selectedDate) selectDay(selectedDate);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+</script>
+</body>
+</html>

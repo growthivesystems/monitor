@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expenses — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Expense Tracker</div>
+    <div class="page-subtitle">Log all your business expenses to calculate net profit accurately.</div>
+
+    <div class="grid-2">
+      <!-- Form -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Add Expense</div>
+        <div id="form-msg"></div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="exp-date">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="exp-desc" placeholder="e.g. Generator fuel, Rent, Stock purchase…">
+        </div>
+        <div class="form-group">
+          <label>Amount (₦)</label>
+          <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <button class="btn btn-gold" onclick="saveExpense()">Save Expense →</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📊 Monthly Summary</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Total Expenses</div>
+            <div class="card-value danger" id="month-total">₦0.00</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Entries</div>
+            <div class="card-value" id="month-count">0</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);text-align:center;">
+          <div class="card-title">Net Profit / Loss</div>
+          <div class="card-value" id="month-profit">₦0.00</div>
+          <div class="card-meta">Sales minus Expenses</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="modal-title" style="font-size:1.1rem;margin:0;">Expense History</div>
+        <input type="month" id="filter-month" style="width:auto;" onchange="loadExpenses()">
+      </div>
+      <div id="exp-table"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('expenses');
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  loadExpenses();
+})();
+
+async function loadExpenses() {
+  const month = document.getElementById('filter-month').value;
+  if (!month) return;
+  const [yr, mo] = month.split('-');
+  const start = `${yr}-${mo}-01`;
+  const end = new Date(yr, mo, 0).toISOString().split('T')[0];
+
+  const { data: exps } = await _supabase.from('expenses').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false });
+  const { data: sales } = await _supabase.from('sales').select('total_amount').eq('user_id', currentUser.id).gte('date', start).lte('date', end);
+
+  const totalExp = (exps || []).reduce((s, r) => s + Number(r.amount), 0);
+  const totalSales = (sales || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  const profit = totalSales - totalExp;
+
+  document.getElementById('month-total').textContent = formatCurrency(totalExp);
+  document.getElementById('month-count').textContent = (exps || []).length;
+  const profEl = document.getElementById('month-profit');
+  profEl.textContent = formatCurrency(profit);
+  profEl.className = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
+
+  const el = document.getElementById('exp-table');
+  if (!exps || exps.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No expenses recorded for this period.</p></div>'; return;
+  }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Action</th></tr></thead>
+    <tbody>${exps.map(r => `
+      <tr>
+        <td>${formatDate(r.date)}</td>
+        <td>${r.description}</td>
+        <td style="color:var(--danger);font-weight:600;">${formatCurrency(r.amount)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${r.id}')">Delete</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function saveExpense() {
+  const date = document.getElementById('exp-date').value;
+  const description = document.getElementById('exp-desc').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const msg = document.getElementById('form-msg');
+  if (!date || !description || isNaN(amount) || amount <= 0) {
+    msg.innerHTML = '<div class="alert alert-danger">Please fill in all fields correctly.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('expenses').insert({ user_id: currentUser.id, date, description, amount });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">Expense saved!</div>';
+  document.getElementById('exp-desc').value = '';
+  document.getElementById('exp-amount').value = '';
+  loadExpenses();
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  await _supabase.from('expenses').delete().eq('id', id);
+  loadExpenses();
+}
+</script>
+</body>
+</html>

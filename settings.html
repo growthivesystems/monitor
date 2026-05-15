@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .settings-section {
+    margin-bottom: 28px;
+  }
+  .settings-section-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--gold-border);
+  }
+  .settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.07);
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-label { font-size: 0.9rem; color: var(--white2); font-weight: 500; }
+  .settings-row-desc { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle {
+    position: relative; width: 44px; height: 24px; cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--dark4); border-radius: 24px;
+    transition: var(--transition);
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; left: 3px; bottom: 3px;
+    background: var(--muted); border-radius: 50%;
+    transition: var(--transition);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--gold); }
+  .toggle input:checked + .toggle-slider:before {
+    transform: translateX(20px); background: var(--dark);
+  }
+  .danger-zone {
+    border: 1px solid rgba(224,85,85,0.25);
+    border-radius: var(--radius);
+    padding: 20px;
+    background: rgba(224,85,85,0.04);
+  }
+  .avatar-wrap {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+  }
+  .avatar-circle {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--dark3); border: 2px solid var(--gold-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: var(--gold); font-weight: 700;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 1rem; padding: 0;
+  }
+  .pw-wrap input { padding-right: 40px; }
+  .tab-bar {
+    display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .stab {
+    padding: 8px 18px; border-radius: 20px; cursor: pointer;
+    font-size: 0.84rem; font-weight: 500;
+    border: 1px solid var(--gold-border);
+    background: transparent; color: var(--muted);
+    transition: var(--transition); font-family: var(--font-body);
+  }
+  .stab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 600; }
+  .stab-panel { display: none; }
+  .stab-panel.active { display: block; }
+</style>
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Settings</div>
+    <div class="page-subtitle">Manage your account, security and preferences.</div>
+
+    <!-- Global message -->
+    <div id="global-msg"></div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="stab active" onclick="showTab('profile', this)">👤 Profile</button>
+      <button class="stab" onclick="showTab('security', this)">🔒 Security</button>
+      <button class="stab" onclick="showTab('preferences', this)">⚙️ Preferences</button>
+      <button class="stab" onclick="showTab('danger', this)">⚠️ Danger Zone</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PROFILE ═══ -->
+    <div class="stab-panel active" id="tab-profile">
+      <div class="card">
+        <div class="settings-section-title">Your Profile</div>
+
+        <div class="avatar-wrap">
+          <div class="avatar-circle" id="avatar-display">?</div>
+          <div>
+            <div style="font-size:0.88rem;color:var(--white2);font-weight:500;" id="profile-name-display">Loading…</div>
+            <div style="font-size:0.8rem;color:var(--muted);" id="profile-email-display"></div>
+          </div>
+        </div>
+
+        <div id="profile-msg"></div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="p-fullname" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>Business Name</label>
+          <input type="text" id="p-bizname" placeholder="Your business name">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="p-email" placeholder="you@example.com" disabled
+            style="opacity:0.5;cursor:not-allowed;" title="Email cannot be changed here">
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">
+            Email changes are managed via Supabase authentication.
+          </div>
+        </div>
+
+        <button class="btn btn-gold" onclick="saveProfile()">Save Profile →</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ SECURITY ═══ -->
+    <div class="stab-panel" id="tab-security">
+      <div class="card">
+        <div class="settings-section-title">Change Password</div>
+        <div id="pw-msg"></div>
+
+        <!-- Reset password via email (works even if not logged in) -->
+        <div id="reset-form-section">
+          <div class="form-group">
+            <label>New Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="new-pw" placeholder="Min. 6 characters">
+              <button class="pw-toggle" onclick="togglePw('new-pw','eye1')" type="button" id="eye1">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="confirm-pw" placeholder="Repeat new password">
+              <button class="pw-toggle" onclick="togglePw('confirm-pw','eye2')" type="button" id="eye2">👁</button>
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="updatePassword()">Update Password →</button>
+        </div>
+
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
+          <div class="settings-section-title">Send Reset Link</div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+            Prefer to reset via email? We'll send a secure link to your inbox.
+          </p>
+          <button class="btn btn-outline" onclick="sendResetEmail()">📧 Send Reset Email</button>
+          <div id="reset-email-msg" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:0;">
+        <div class="settings-section-title">Active Sessions</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Current Session</div>
+            <div class="settings-row-desc" id="session-info">Loading…</div>
+          </div>
+          <span class="badge badge-success">Active</span>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-danger btn-sm" onclick="signOutAll()">Sign Out All Devices</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PREFERENCES ═══ -->
+    <div class="stab-panel" id="tab-preferences">
+      <div class="card">
+        <div class="settings-section-title">Display</div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Dark Mode</div>
+            <div class="settings-row-desc">Toggle between dark and light theme</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-theme" onchange="toggleTheme()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Currency Symbol</div>
+            <div class="settings-row-desc">Currently set to Nigerian Naira (₦)</div>
+          </div>
+          <select id="currency-select" onchange="saveCurrency()" style="width:auto;">
+            <option value="₦">₦ Naira</option>
+            <option value="$">$ Dollar</option>
+            <option value="€">€ Euro</option>
+            <option value="£">£ Pound</option>
+            <option value="GH₵">GH₵ Cedi</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Low Stock Alert Threshold</div>
+            <div class="settings-row-desc">Default warning level for inventory items</div>
+          </div>
+          <input type="number" id="stock-threshold" value="5" min="1" max="100"
+            style="width:80px;text-align:center;" onchange="saveThreshold()">
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:0;">
+        <div class="settings-section-title">Notifications</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Low Stock Alerts</div>
+            <div class="settings-row-desc">Show warnings when items are running low</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-stock-alert" checked onchange="savePref('stockAlert', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Debt Due Reminders</div>
+            <div class="settings-row-desc">Highlight overdue debt records</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-debt-alert" checked onchange="savePref('debtAlert', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ DANGER ZONE ═══ -->
+    <div class="stab-panel" id="tab-danger">
+      <div class="card">
+        <div class="settings-section-title" style="color:var(--danger);">⚠️ Danger Zone</div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:20px;">
+          These actions are permanent and cannot be undone. Please proceed with extreme caution.
+        </p>
+
+        <div class="danger-zone" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:600;color:var(--white2);margin-bottom:4px;">Clear All Data</div>
+              <div style="font-size:0.82rem;color:var(--muted);">
+                Permanently delete all your sales, expenses, debts, inventory and reminders.<br>
+                Your account and profile will remain.
+              </div>
+            </div>
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+          </div>
+        </div>
+
+        <div class="danger-zone">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:600;color:var(--danger);margin-bottom:4px;">Delete Account</div>
+              <div style="font-size:0.82rem;color:var(--muted);">
+                Permanently delete your account and all associated data.<br>
+                This cannot be recovered.
+              </div>
+            </div>
+            <button class="btn btn-danger" onclick="deleteAccount()">💀 Delete Account</button>
+          </div>
+        </div>
+
+        <div id="danger-msg" style="margin-top:14px;"></div>
+      </div>
+
+      <!-- Sign Out -->
+      <div class="card" style="margin-top:0;">
+        <div class="settings-section-title">Session</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Sign Out</div>
+            <div class="settings-row-desc">Log out of your account on this device</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="doSignOut()">Sign Out →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="main-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ── INLINE SUPABASE INIT (fallback if supabase.js not loaded yet) ──
+  const SUPA_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdWhwd2l5emV2dWh6Y2Rzam1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDA3NzcsImV4cCI6MjA5NDA3Njc3N30.YVIC1qcywVycAEOIQeg0WfDyFzFnqfRPP-WMbcM2QC4';
+</script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentUser;
+
+// ── HANDLE PASSWORD RESET FROM EMAIL LINK ──
+(async () => {
+  const hash = window.location.hash;
+
+  // If coming from reset email link
+  if (hash.includes('access_token') || hash.includes('type=recovery')) {
+    // Supabase automatically sets the session from the hash
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) {
+      document.getElementById('global-msg').innerHTML =
+        '<div class="alert alert-success">🔑 Password reset link verified! Please set your new password below.</div>';
+      // Auto-switch to security tab
+      showTab('security', document.querySelectorAll('.stab')[1]);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }
+
+  if (hash.includes('error=access_denied') || hash.includes('otp_expired')) {
+    document.getElementById('global-msg').innerHTML =
+      '<div class="alert alert-danger">⚠️ Your reset link has expired. Please request a new one from the <a href="login.html" style="color:var(--gold);">login page</a>.</div>';
+    showTab('security', document.querySelectorAll('.stab')[1]);
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+})();
+
+// ── INIT PAGE ──
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('settings');
+  loadProfile();
+  loadPrefs();
+  loadSessionInfo();
+})();
+
+// ── TABS ──
+function showTab(name, btn) {
+  document.querySelectorAll('.stab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── LOAD PROFILE ──
+async function loadProfile() {
+  const { data } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (data) {
+    document.getElementById('p-fullname').value = data.full_name || '';
+    document.getElementById('p-bizname').value = data.business_name || '';
+    document.getElementById('profile-name-display').textContent = data.full_name || 'No name set';
+    document.getElementById('profile-email-display').textContent = currentUser.email || '';
+    document.getElementById('p-email').value = currentUser.email || '';
+    // Avatar initial
+    const av = document.getElementById('avatar-display');
+    if (data.full_name) {
+      av.textContent = data.full_name.charAt(0).toUpperCase();
+    }
+  }
+}
+
+// ── SAVE PROFILE ──
+async function saveProfile() {
+  const full_name = document.getElementById('p-fullname').value.trim();
+  const business_name = document.getElementById('p-bizname').value.trim();
+  const msg = document.getElementById('profile-msg');
+  if (!full_name || !business_name) {
+    msg.innerHTML = '<div class="alert alert-danger">Please fill in both fields.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('profiles').update({ full_name, business_name }).eq('id', currentUser.id);
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  document.getElementById('profile-name-display').textContent = full_name;
+  document.getElementById('avatar-display').textContent = full_name.charAt(0).toUpperCase();
+  msg.innerHTML = '<div class="alert alert-success">✅ Profile updated successfully!</div>';
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+// ── UPDATE PASSWORD ──
+async function updatePassword() {
+  const newPw = document.getElementById('new-pw').value;
+  const confirmPw = document.getElementById('confirm-pw').value;
+  const msg = document.getElementById('pw-msg');
+  if (!newPw || newPw.length < 6) {
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
+  }
+  if (newPw !== confirmPw) {
+    msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Updating…</div>';
+  const { error } = await _supabase.auth.updateUser({ password: newPw });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">✅ Password updated! Please sign in again.</div>';
+  document.getElementById('new-pw').value = '';
+  document.getElementById('confirm-pw').value = '';
+  setTimeout(async () => {
+    await _supabase.auth.signOut();
+    window.location.href = 'login.html';
+  }, 2000);
+}
+
+// ── SEND RESET EMAIL ──
+async function sendResetEmail() {
+  const msg = document.getElementById('reset-email-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Sending…</div>';
+  const { error } = await _supabase.auth.resetPasswordForEmail(currentUser.email, {
+    redirectTo: 'https://growthivesystems.github.io/monitor/settings.html'
+  });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">✅ Reset email sent to ' + currentUser.email + '</div>';
+}
+
+// ── SESSION INFO ──
+async function loadSessionInfo() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  const el = document.getElementById('session-info');
+  if (session) {
+    const d = new Date(session.expires_at * 1000);
+    el.textContent = `Signed in as ${currentUser.email} · Expires ${d.toLocaleDateString('en-GB')}`;
+  } else {
+    el.textContent = 'No active session found.';
+  }
+}
+
+// ── SIGN OUT ALL ──
+async function signOutAll() {
+  if (!confirm('Sign out from all devices?')) return;
+  await _supabase.auth.signOut({ scope: 'global' });
+  window.location.href = 'login.html';
+}
+
+// ── SIGN OUT ──
+async function doSignOut() {
+  await _supabase.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── PREFERENCES ──
+function loadPrefs() {
+  const theme = localStorage.getItem('theme');
+  document.getElementById('toggle-theme').checked = theme === 'light';
+
+  const currency = localStorage.getItem('currency') || '₦';
+  document.getElementById('currency-select').value = currency;
+
+  const threshold = localStorage.getItem('stockThreshold') || '5';
+  document.getElementById('stock-threshold').value = threshold;
+
+  const stockAlert = localStorage.getItem('stockAlert') !== 'false';
+  document.getElementById('toggle-stock-alert').checked = stockAlert;
+
+  const debtAlert = localStorage.getItem('debtAlert') !== 'false';
+  document.getElementById('toggle-debt-alert').checked = debtAlert;
+}
+
+function toggleTheme() {
+  const isLight = document.getElementById('toggle-theme').checked;
+  if (isLight) {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+function saveCurrency() {
+  const val = document.getElementById('currency-select').value;
+  localStorage.setItem('currency', val);
+  showGlobalMsg('✅ Currency preference saved.');
+}
+
+function saveThreshold() {
+  const val = document.getElementById('stock-threshold').value;
+  localStorage.setItem('stockThreshold', val);
+  showGlobalMsg('✅ Stock threshold saved.');
+}
+
+function savePref(key, val) {
+  localStorage.setItem(key, val);
+  showGlobalMsg('✅ Preference saved.');
+}
+
+// ── CLEAR ALL DATA ──
+async function clearAllData() {
+  if (!confirm('This will permanently delete ALL your sales, expenses, debts, inventory and reminders. Your account stays. Continue?')) return;
+  if (!confirm('Are you absolutely sure? This CANNOT be undone.')) return;
+  const msg = document.getElementById('danger-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Clearing all data…</div>';
+  const uid = currentUser.id;
+  await Promise.all([
+    _supabase.from('sales').delete().eq('user_id', uid),
+    _supabase.from('expenses').delete().eq('user_id', uid),
+    _supabase.from('debts').delete().eq('user_id', uid),
+    _supabase.from('inventory').delete().eq('user_id', uid),
+    _supabase.from('reminders').delete().eq('user_id', uid),
+  ]);
+  msg.innerHTML = '<div class="alert alert-success">✅ All data cleared successfully.</div>';
+}
+
+// ── DELETE ACCOUNT ──
+async function deleteAccount() {
+  if (!confirm('This will PERMANENTLY delete your account and all data. This cannot be undone. Continue?')) return;
+  const typed = prompt('Type DELETE to confirm:');
+  if (typed !== 'DELETE') { alert('Cancelled — you did not type DELETE.'); return; }
+  const msg = document.getElementById('danger-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Deleting account…</div>';
+  const uid = currentUser.id;
+  // Clear all data first
+  await Promise.all([
+    _supabase.from('sales').delete().eq('user_id', uid),
+    _supabase.from('expenses').delete().eq('user_id', uid),
+    _supabase.from('debts').delete().eq('user_id', uid),
+    _supabase.from('inventory').delete().eq('user_id', uid),
+    _supabase.from('reminders').delete().eq('user_id', uid),
+    _supabase.from('profiles').delete().eq('id', uid),
+  ]);
+  await _supabase.auth.signOut();
+  alert('Your account has been deleted. Goodbye.');
+  window.location.href = 'index.html';
+}
+
+// ── HELPERS ──
+function togglePw(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  eye.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+function showGlobalMsg(text) {
+  const el = document.getElementById('global-msg');
+  el.innerHTML = `<div class="alert alert-success">${text}</div>`;
+  setTimeout(() => el.innerHTML = '', 3000);
+}
+
+// Theme on load
+const saved = localStorage.getItem('theme');
+if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+</script>
+</body>
+</html>

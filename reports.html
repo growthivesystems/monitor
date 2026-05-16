@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -10,6 +10,12 @@
   .report-tab { padding:8px 18px; border-radius:20px; cursor:pointer; font-size:0.85rem; font-weight:500; border:1px solid var(--gold-border); background:transparent; color:var(--muted); transition:var(--transition); font-family:var(--font-body); }
   .report-tab.active { background:var(--gold); color:var(--dark); border-color:var(--gold); font-weight:600; }
   canvas { max-height: 280px; }
+  .source-note {
+    font-size:0.75rem; color:var(--muted);
+    padding:6px 12px; background:var(--dark3);
+    border-radius:20px; border:1px solid var(--gold-border);
+    display:inline-block; margin-bottom:16px;
+  }
 </style>
 </head>
 <body>
@@ -29,20 +35,62 @@
 
     <!-- KPIs -->
     <div class="grid-4" id="report-kpis">
-      <div class="card"><div class="card-title">Total Sales</div><div class="card-value gold" id="r-sales">₦0.00</div></div>
-      <div class="card"><div class="card-title">Total Expenses</div><div class="card-value danger" id="r-expenses">₦0.00</div></div>
-      <div class="card"><div class="card-title">Net Profit/Loss</div><div class="card-value" id="r-profit">₦0.00</div></div>
-      <div class="card"><div class="card-title">Outstanding Debt</div><div class="card-value danger" id="r-debt">₦0.00</div></div>
+      <div class="card">
+        <div class="card-title">POS Revenue</div>
+        <div class="card-value gold" id="r-pos-sales">₦0.00</div>
+        <div class="card-meta">From purchase transactions</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Confirmed Sales</div>
+        <div class="card-value" style="color:var(--info);" id="r-confirmed-sales">₦0.00</div>
+        <div class="card-meta">Manual daily records</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Expenses</div>
+        <div class="card-value danger" id="r-expenses">₦0.00</div>
+        <div class="card-meta">Logged expenses</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Net Profit / Loss</div>
+        <div class="card-value" id="r-profit">₦0.00</div>
+        <div class="card-meta">Confirmed sales − expenses</div>
+      </div>
+    </div>
+
+    <!-- Payment breakdown -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">Cash Sales</div>
+        <div class="card-value success" id="r-cash">₦0.00</div>
+        <div class="card-meta">POS: cash payments</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Transfer Sales</div>
+        <div class="card-value" style="color:var(--info);" id="r-transfer">₦0.00</div>
+        <div class="card-meta">POS: transfer payments</div>
+      </div>
+      <div class="card">
+        <div class="card-title">POS Card Sales</div>
+        <div class="card-value" style="color:var(--gold2);" id="r-pos">₦0.00</div>
+        <div class="card-meta">POS: card payments</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Outstanding Debt</div>
+        <div class="card-value danger" id="r-debt">₦0.00</div>
+        <div class="card-meta">Unpaid balances</div>
+      </div>
     </div>
 
     <!-- Charts -->
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">Sales vs Expenses</div>
+        <div class="card-title">POS Revenue vs Expenses</div>
+        <div class="source-note">📊 Revenue = purchase_transactions · Expenses = expenses table</div>
         <canvas id="chart-bar"></canvas>
       </div>
       <div class="card">
-        <div class="card-title">Profit/Loss Trend</div>
+        <div class="card-title">Profit / Loss Trend</div>
+        <div class="source-note">📊 Based on confirmed daily sales records</div>
         <canvas id="chart-line"></canvas>
       </div>
     </div>
@@ -59,7 +107,10 @@
 
     <!-- Detailed Table -->
     <div class="card">
-      <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">Detailed Breakdown</div>
+      <div class="modal-title" style="font-size:1.1rem;margin-bottom:4px;">Detailed Breakdown</div>
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">
+        Shows POS transactions, confirmed daily records, and expenses combined.
+      </p>
       <div id="report-table"><div class="spinner"></div></div>
     </div>
   </div>
@@ -74,7 +125,7 @@
 let currentUser;
 let currentPeriod = 'monthly';
 let barChart, lineChart;
-let reportData = { sales: [], expenses: [] };
+let reportData = { transactions: [], confirmedSales: [], expenses: [] };
 
 (async () => {
   currentUser = await requireAuth();
@@ -106,92 +157,203 @@ function getDateRange() {
 
 async function loadReport() {
   const { start, end } = getDateRange();
-  const { data: sales } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date');
-  const { data: expenses } = await _supabase.from('expenses').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date');
-  const { data: debts } = await _supabase.from('debts').select('amount').eq('user_id', currentUser.id).eq('status','unpaid').eq('type','i_owe');
 
-  reportData = { sales: sales || [], expenses: expenses || [] };
-  const totalSales = reportData.sales.reduce((s, r) => s + Number(r.total_amount), 0);
-  const totalExp = reportData.expenses.reduce((s, r) => s + Number(r.amount), 0);
-  const profit = totalSales - totalExp;
-  const totalDebt = (debts || []).reduce((s, r) => s + Number(r.amount), 0);
+  // ── Fetch all three sources ──
+  const [
+    { data: transactions },   // live POS sales
+    { data: confirmedSales }, // manual daily records
+    { data: expenses },       // expenses
+    { data: debts }           // debts
+  ] = await Promise.all([
+    _supabase.from('purchase_transactions')
+      .select('*').eq('user_id', currentUser.id)
+      .gte('date', start).lte('date', end).order('date'),
+    _supabase.from('sales')
+      .select('*').eq('user_id', currentUser.id)
+      .gte('date', start).lte('date', end).order('date'),
+    _supabase.from('expenses')
+      .select('*').eq('user_id', currentUser.id)
+      .gte('date', start).lte('date', end).order('date'),
+    _supabase.from('debts')
+      .select('amount').eq('user_id', currentUser.id)
+      .eq('status','unpaid').eq('type','i_owe')
+  ]);
 
-  document.getElementById('r-sales').textContent = formatCurrency(totalSales);
-  document.getElementById('r-expenses').textContent = formatCurrency(totalExp);
+  reportData = {
+    transactions:   transactions   || [],
+    confirmedSales: confirmedSales || [],
+    expenses:       expenses       || []
+  };
+
+  // ── KPI Totals ──
+  const totalPOSSales   = reportData.transactions.reduce((s,r)   => s + Number(r.total_amount||0), 0);
+  const totalConfirmed  = reportData.confirmedSales.reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalExp        = reportData.expenses.reduce((s,r)       => s + Number(r.amount||0), 0);
+  const profit          = totalConfirmed - totalExp; // profit from confirmed records
+  const totalDebt       = (debts||[]).reduce((s,r)               => s + Number(r.amount||0), 0);
+
+  // Payment breakdown from POS transactions
+  const totalCash     = reportData.transactions.filter(r => r.payment_method === 'cash').reduce((s,r)     => s + Number(r.total_amount||0), 0);
+  const totalTransfer = reportData.transactions.filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalPOSCard  = reportData.transactions.filter(r => r.payment_method === 'pos').reduce((s,r)      => s + Number(r.total_amount||0), 0);
+
+  document.getElementById('r-pos-sales').textContent       = formatCurrency(totalPOSSales);
+  document.getElementById('r-confirmed-sales').textContent = formatCurrency(totalConfirmed);
+  document.getElementById('r-expenses').textContent        = formatCurrency(totalExp);
+  document.getElementById('r-cash').textContent            = formatCurrency(totalCash);
+  document.getElementById('r-transfer').textContent        = formatCurrency(totalTransfer);
+  document.getElementById('r-pos').textContent             = formatCurrency(totalPOSCard);
+  document.getElementById('r-debt').textContent            = formatCurrency(totalDebt);
+
   const pEl = document.getElementById('r-profit');
   pEl.textContent = formatCurrency(profit);
-  pEl.className = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
-  document.getElementById('r-debt').textContent = formatCurrency(totalDebt);
+  pEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
 
-  // Build chart labels (last 7 days or weeks or months)
+  // ── Build chart labels & data ──
   const labels = [];
-  const salesByLabel = {};
-  const expByLabel = {};
+  const posByLabel      = {}; // POS revenue per period
+  const confirmedByLabel= {}; // confirmed sales per period
+  const expByLabel      = {}; // expenses per period
 
   if (currentPeriod === 'weekly') {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      const label = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
-      labels.push(label); salesByLabel[key] = 0; expByLabel[key] = 0;
+      const key   = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric' });
+      labels.push(label);
+      posByLabel[key]       = 0;
+      confirmedByLabel[key] = 0;
+      expByLabel[key]       = 0;
     }
-    reportData.sales.forEach(r => { if (salesByLabel[r.date] !== undefined) salesByLabel[r.date] += Number(r.total_amount); });
-    reportData.expenses.forEach(r => { if (expByLabel[r.date] !== undefined) expByLabel[r.date] += Number(r.amount); });
+    reportData.transactions.forEach(r => {
+      if (posByLabel[r.date] !== undefined) posByLabel[r.date] += Number(r.total_amount||0);
+    });
+    reportData.confirmedSales.forEach(r => {
+      if (confirmedByLabel[r.date] !== undefined) confirmedByLabel[r.date] += Number(r.total_amount||0);
+    });
+    reportData.expenses.forEach(r => {
+      if (expByLabel[r.date] !== undefined) expByLabel[r.date] += Number(r.amount||0);
+    });
   } else {
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      labels.push(d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }));
-      salesByLabel[key] = 0; expByLabel[key] = 0;
+      labels.push(d.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }));
+      posByLabel[key]       = 0;
+      confirmedByLabel[key] = 0;
+      expByLabel[key]       = 0;
     }
-    reportData.sales.forEach(r => { const k = r.date.substring(0,7); if (salesByLabel[k] !== undefined) salesByLabel[k] += Number(r.total_amount); });
-    reportData.expenses.forEach(r => { const k = r.date.substring(0,7); if (expByLabel[k] !== undefined) expByLabel[k] += Number(r.amount); });
+    reportData.transactions.forEach(r => {
+      const k = r.date.substring(0,7);
+      if (posByLabel[k] !== undefined) posByLabel[k] += Number(r.total_amount||0);
+    });
+    reportData.confirmedSales.forEach(r => {
+      const k = r.date.substring(0,7);
+      if (confirmedByLabel[k] !== undefined) confirmedByLabel[k] += Number(r.total_amount||0);
+    });
+    reportData.expenses.forEach(r => {
+      const k = r.date.substring(0,7);
+      if (expByLabel[k] !== undefined) expByLabel[k] += Number(r.amount||0);
+    });
   }
 
-  const sVals = Object.values(salesByLabel);
-  const eVals = Object.values(expByLabel);
-  const pVals = sVals.map((s, i) => s - eVals[i]);
+  const posVals       = Object.values(posByLabel);
+  const confirmedVals = Object.values(confirmedByLabel);
+  const eVals         = Object.values(expByLabel);
+  const pVals         = confirmedVals.map((s,i) => s - eVals[i]); // profit from confirmed
 
-  const chartDefaults = { responsive: true, plugins: { legend: { labels: { color: '#888880' } } }, scales: { x: { ticks: { color: '#888880' }, grid: { color: 'rgba(201,168,76,0.06)' } }, y: { ticks: { color: '#888880' }, grid: { color: 'rgba(201,168,76,0.06)' } } } };
+  const chartDefaults = {
+    responsive: true,
+    plugins: { legend: { labels: { color:'#888880' } } },
+    scales: {
+      x: { ticks:{ color:'#888880' }, grid:{ color:'rgba(201,168,76,0.06)' } },
+      y: { ticks:{ color:'#888880' }, grid:{ color:'rgba(201,168,76,0.06)' } }
+    }
+  };
 
+  // Bar chart — POS revenue vs expenses
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('chart-bar'), {
     type: 'bar',
-    data: { labels, datasets: [
-      { label: 'Sales', data: sVals, backgroundColor: 'rgba(76,175,125,0.6)', borderColor: 'var(--success)', borderWidth: 1 },
-      { label: 'Expenses', data: eVals, backgroundColor: 'rgba(224,85,85,0.6)', borderColor: 'var(--danger)', borderWidth: 1 }
-    ]}, options: chartDefaults
+    data: {
+      labels,
+      datasets: [
+        { label: 'POS Revenue',       data: posVals,  backgroundColor:'rgba(76,175,125,0.6)',  borderColor:'var(--success)', borderWidth:1 },
+        { label: 'Confirmed Sales',   data: confirmedVals, backgroundColor:'rgba(100,160,220,0.5)', borderColor:'var(--info)', borderWidth:1 },
+        { label: 'Expenses',          data: eVals,    backgroundColor:'rgba(224,85,85,0.6)',   borderColor:'var(--danger)',  borderWidth:1 }
+      ]
+    },
+    options: chartDefaults
   });
 
+  // Line chart — profit/loss trend from confirmed records
   if (lineChart) lineChart.destroy();
   lineChart = new Chart(document.getElementById('chart-line'), {
     type: 'line',
-    data: { labels, datasets: [{
-      label: 'Profit/Loss', data: pVals,
-      borderColor: '#c9a84c', backgroundColor: 'rgba(201,168,76,0.08)',
-      tension: 0.4, fill: true, pointBackgroundColor: '#c9a84c'
-    }]}, options: chartDefaults
+    data: {
+      labels,
+      datasets: [{
+        label: 'Profit/Loss (Confirmed)',
+        data: pVals,
+        borderColor:'#c9a84c',
+        backgroundColor:'rgba(201,168,76,0.08)',
+        tension: 0.4, fill: true,
+        pointBackgroundColor:'#c9a84c'
+      }]
+    },
+    options: chartDefaults
   });
 
-  // Table
-  const el = document.getElementById('report-table');
+  // ── Detailed Breakdown Table ──
+  // Merge all three sources with type labels
+  const el       = document.getElementById('report-table');
   const combined = [
-    ...reportData.sales.map(r => ({ date: r.date, desc: r.notes || 'Sales Record', type: 'Sale', amount: r.total_amount, positive: true })),
-    ...reportData.expenses.map(r => ({ date: r.date, desc: r.description, type: 'Expense', amount: r.amount, positive: false }))
-  ].sort((a, b) => b.date.localeCompare(a.date));
+    ...reportData.transactions.map(r => ({
+      date:     r.date,
+      desc:     Array.isArray(r.items)
+                  ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
+                  : (r.notes || 'POS Transaction'),
+      type:     `POS · ${r.payment_method || ''}`,
+      amount:   r.total_amount,
+      positive: true,
+      badge:    'badge-success'
+    })),
+    ...reportData.confirmedSales.map(r => ({
+      date:     r.date,
+      desc:     r.notes || 'Daily Sales Record',
+      type:     'Manual Record',
+      amount:   r.total_amount,
+      positive: true,
+      badge:    'badge-info'
+    })),
+    ...reportData.expenses.map(r => ({
+      date:     r.date,
+      desc:     r.description || 'Expense',
+      type:     'Expense',
+      amount:   r.amount,
+      positive: false,
+      badge:    'badge-danger'
+    }))
+  ].sort((a,b) => b.date.localeCompare(a.date));
 
   if (combined.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📈</div><p>No data for this period.</p></div>'; return;
+    el.innerHTML = '<div class="empty-state"><div class="icon">📈</div><p>No data for this period.</p></div>';
+    return;
   }
+
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
-    <tbody>${combined.map(r => `
-      <tr>
+    <thead>
+      <tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr>
+    </thead>
+    <tbody>
+      ${combined.map(r => `<tr>
         <td>${formatDate(r.date)}</td>
-        <td>${r.desc}</td>
-        <td><span class="badge ${r.positive ? 'badge-success' : 'badge-danger'}">${r.type}</span></td>
-        <td style="color:${r.positive ? 'var(--success)' : 'var(--danger)'};font-weight:600;">${r.positive ? '+' : '-'}${formatCurrency(r.amount)}</td>
+        <td style="font-size:0.85rem;">${r.desc}</td>
+        <td><span class="badge ${r.badge}" style="font-size:0.72rem;text-transform:capitalize;">${r.type}</span></td>
+        <td style="color:${r.positive ? 'var(--success)' : 'var(--danger)'};font-weight:600;">
+          ${r.positive ? '+' : '-'}${formatCurrency(r.amount)}
+        </td>
       </tr>`).join('')}
     </tbody>
   </table></div>`;
@@ -199,11 +361,18 @@ async function loadReport() {
 
 function exportCSV() {
   const rows = [['Date','Description','Type','Amount']];
-  reportData.sales.forEach(r => rows.push([r.date, r.notes || 'Sales Record', 'Sale', r.total_amount]));
-  reportData.expenses.forEach(r => rows.push([r.date, r.description, 'Expense', r.amount]));
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  reportData.transactions.forEach(r => {
+    const desc = Array.isArray(r.items)
+      ? r.items.map(i => `${i.name} x${i.qty}`).join(' | ')
+      : (r.notes || 'POS Transaction');
+    rows.push([r.date, desc, `POS-${r.payment_method||''}`, r.total_amount]);
+  });
+  reportData.confirmedSales.forEach(r => rows.push([r.date, r.notes || 'Daily Record', 'Manual', r.total_amount]));
+  reportData.expenses.forEach(r => rows.push([r.date, r.description || 'Expense', 'Expense', `-${r.amount}`]));
+  const csv  = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
   a.download = `growthive-report-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
 }

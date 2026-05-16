@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .faq-wrap { max-width: 820px; margin: 0 auto; padding: 48px 24px; }
+
+  .faq-hero { text-align: center; margin-bottom: 40px; }
+  .faq-hero .page-title { margin-bottom: 8px; }
+  .faq-hero p { color: var(--muted); font-size: 0.92rem; max-width: 520px; margin: 0 auto 24px; line-height: 1.7; }
+
+  .faq-search {
+    width: 100%; max-width: 480px;
+    margin: 0 auto 40px;
+    display: block;
+    background: var(--dark2);
+    border: 1px solid var(--gold-border);
+    color: var(--white);
+    padding: 12px 18px;
+    border-radius: 30px;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .faq-search:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+
+  .faq-section { margin-bottom: 36px; }
+  .faq-section-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem; font-weight: 600;
+    color: var(--gold); margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--gold-border);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .faq-item {
+    background: var(--dark2);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .faq-item:hover { border-color: var(--gold); }
+  .faq-item.active { border-color: var(--gold); }
+
+  .faq-question {
+    width: 100%; background: none; border: none;
+    padding: 16px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; text-align: left;
+    color: var(--white2); font-family: var(--font-body);
+    font-size: 0.9rem; font-weight: 500;
+    transition: color 0.3s;
+    gap: 12px;
+  }
+  .faq-question:hover { color: var(--gold); }
+  .faq-item.active .faq-question { color: var(--gold); }
+
+  .faq-chevron {
+    font-size: 0.8rem; color: var(--muted);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+  }
+  .faq-item.active .faq-chevron { transform: rotate(180deg); color: var(--gold); }
+
+  .faq-answer {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    padding: 0 18px;
+    color: var(--muted); font-size: 0.87rem; line-height: 1.8;
+  }
+  .faq-item.active .faq-answer {
+    max-height: 600px;
+    padding: 0 18px 16px;
+  }
+  .faq-answer p { margin-bottom: 8px; }
+  .faq-answer ul { padding-left: 18px; margin-bottom: 8px; }
+  .faq-answer li { margin-bottom: 4px; }
+  .faq-answer strong { color: var(--white2); }
+  .faq-answer .highlight {
+    background: var(--gold-dim);
+    border-left: 3px solid var(--gold);
+    padding: 8px 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 8px 0;
+    font-size: 0.85rem;
+  }
+
+  .no-results {
+    text-align: center; padding: 40px;
+    color: var(--muted); font-size: 0.9rem;
+  }
+
+  .faq-footer {
+    text-align: center; margin-top: 48px;
+    padding: 32px; background: var(--dark2);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius);
+  }
+  .faq-footer p { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">GrowthIve <span>Monitor</span></a>
+  <div class="navbar-spacer"></div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+</nav>
+
+<div class="faq-wrap">
+  <div class="faq-hero">
+    <div class="page-title">Frequently Asked Questions</div>
+    <p>Everything you need to know about using GrowthIve Monitor to manage your business records effectively.</p>
+    <input type="text" class="faq-search" id="faq-search" placeholder="🔍 Search questions…" oninput="searchFAQ()">
+  </div>
+
+  <div id="faq-content"></div>
+
+  <div class="faq-footer">
+    <div class="page-title" style="font-size:1.2rem;margin-bottom:8px;">Still have questions?</div>
+    <p>Can't find what you're looking for? Our support team is here to help you.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <a href="contact.html" class="btn btn-gold">📧 Contact Support</a>
+      <a href="dashboard.html" class="btn btn-outline">Go to Dashboard →</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script>
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? '' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next || 'dark');
+    document.querySelector('.theme-toggle').textContent = next === 'light' ? '☀️' : '🌙';
+  }
+  if (saved === 'light') document.querySelector('.theme-toggle').textContent = '☀️';
+
+  const faqData = [
+    {
+      section: '🚀 Getting Started',
+      items: [
+        {
+          q: 'What is GrowthIve Monitor?',
+          a: `<p>GrowthIve Monitor is a digital business record management system designed for small and medium-sized business owners in Nigeria and across Africa. It helps you track daily sales, log expenses, manage inventory, record debts, and understand how your business is performing — all in one place.</p>
+              <p>It is built by <strong>GrowthIve Systems</strong> to make business record-keeping simple, even if you are not a tech person.</p>`
+        },
+        {
+          q: 'How do I create an account?',
+          a: `<p>Creating an account is simple and free:</p>
+              <ul>
+                <li>Go to the <strong>Register page</strong> from the homepage</li>
+                <li>Enter your full name, business name, email address, and a password</li>
+                <li>Tick the Terms & Conditions checkbox</li>
+                <li>Click <strong>Create Account</strong></li>
+                <li>Check your email inbox for a confirmation link and click it</li>
+              </ul>
+              <p>Once your email is confirmed, you can log in and start using the app immediately.</p>`
+        },
+        {
+          q: 'How do I confirm my email address?',
+          a: `<p>After registering, a confirmation email is sent to the email address you provided. Open that email and click the <strong>"Confirm your email"</strong> link inside it.</p>
+              <div class="highlight">⚠️ If you do not see the email, check your <strong>Spam</strong> or <strong>Promotions</strong> folder. Sometimes it takes up to 2 minutes to arrive.</div>
+              <p>You must confirm your email before you can log in. If the link has expired, register again with the same email.</p>`
+        },
+        {
+          q: 'How do I log in?',
+          a: `<p>Go to the <strong>Login page</strong>, enter your registered email address and password, then click <strong>Sign In</strong>. If your email is confirmed, you will be logged in and directed to your welcome screen.</p>
+              <p>If you get an error saying "Email not confirmed", please check your inbox and click the confirmation link first.</p>`
+        },
+        {
+          q: 'How do I reset my password if I forget it?',
+          a: `<p>On the Login page, click <strong>"Forgot Password?"</strong>. Enter your registered email address in the email field first, then click that button. A password reset link will be sent to your email.</p>
+              <p>Click the link in that email and you will be able to set a new password. The link expires after 1 hour, so use it quickly.</p>`
+        },
+        {
+          q: 'What is the Welcome page I see after registering?',
+          a: `<p>The first time you log in after registering, you will see a personalised <strong>Welcome page</strong> that greets you by name and confirms your business is set up. It gives you a quick overview of what the app can do and lets you either read the FAQ or skip straight to the dashboard.</p>
+              <p>After your first login, you will instead see a <strong>Welcome Back</strong> screen each time you log in, showing smart alerts, reminders, and your key business stats from that day.</p>`
+        }
+      ]
+    },
+    {
+      section: '💰 Daily Sales',
+      items: [
+        {
+          q: 'How do I record my daily sales?',
+          a: `<p>Go to <strong>Daily Sales</strong> in the sidebar. You will see a form where you can break down your sales by payment type:</p>
+              <ul>
+                <li><strong>Cash</strong> — money received physically</li>
+                <li><strong>Transfer</strong> — bank transfers to your account</li>
+                <li><strong>POS 1, POS 2, POS 3</strong> — sales from each of your POS machines</li>
+              </ul>
+              <p>The system automatically adds them all up and shows your total sales for the day. Fill in whichever sources apply — you do not need to fill all of them.</p>`
+        },
+        {
+          q: 'What is the Cash Float Tracker and how does it work?',
+          a: `<p>The Cash Float Tracker helps you know exactly how much physical cash you should have in your register or safe at the end of each day. This is especially useful if your business handles a lot of cash and also gives out cash to POS customers.</p>
+              <ul>
+                <li><strong>Opening Balance</strong> — how much cash was in your register at the start of the day</li>
+                <li><strong>Cash Paid Out</strong> — cash given as change, given to POS cash-out customers, or paid to suppliers in cash</li>
+                <li><strong>Closing Balance</strong> — automatically calculated as: Opening Balance + Cash Sales − Cash Paid Out</li>
+              </ul>
+              <div class="highlight">Example: You started with ₦50,000. You made ₦100,000 cash sales. You paid out ₦30,000 in change and POS cash-outs. Your closing cash balance = ₦50,000 + ₦100,000 − ₦30,000 = <strong>₦120,000</strong></div>`
+        },
+        {
+          q: 'I have multiple POS machines. How do I record them separately?',
+          a: `<p>GrowthIve Monitor has three separate POS fields on the sales entry form: <strong>POS 1, POS 2, and POS 3</strong>. Enter the total received from each machine separately. The system adds all POS totals together and includes them in your overall daily total.</p>
+              <p>This way you can see exactly how much came through each POS machine every day and compare them over time.</p>`
+        },
+        {
+          q: 'Can I record sales for a past date?',
+          a: `<p>Yes. On the sales entry form, simply click the <strong>Date field</strong> and select any past date. This is useful if you forgot to record sales from a previous day. The system will save it under the correct date and include it in the correct monthly totals.</p>`
+        },
+        {
+          q: 'Can I delete a wrong sales entry?',
+          a: `<p>Yes. In the <strong>Sales History</strong> table at the bottom of the Daily Sales page, each record has a <strong>Delete button</strong>. Click it and confirm to remove that entry permanently. This cannot be undone, so make sure you are deleting the correct record.</p>`
+        },
+        {
+          q: 'What does "Total Quantity Sold" mean?',
+          a: `<p>This is an optional field where you can enter the number of units or items you sold during the day. For example, if you sold 24 bottles of wine, you can enter 24. This helps you track how many products you move each day, separate from the money value.</p>
+              <p>It is not required — you can leave it blank and only record the money amounts if that is easier for your business.</p>`
+        }
+      ]
+    },
+    {
+      section: '📋 Expenses',
+      items: [
+        {
+          q: 'How do I log a business expense?',
+          a: `<p>Go to <strong>Expenses</strong> in the sidebar. Fill in the date, a description of what the expense was for, and the amount. Click <strong>Save Expense</strong>. Examples of expenses include: rent, generator fuel, staff salary, stock purchase, transport, utility bills.</p>
+              <p>The more accurately you record expenses, the more accurate your profit calculations will be.</p>`
+        },
+        {
+          q: 'How is my profit or loss calculated?',
+          a: `<p>GrowthIve Monitor calculates your profit or loss automatically using this formula:</p>
+              <div class="highlight"><strong>Profit / Loss = Total Sales − Total Expenses</strong></div>
+              <p>If your sales are higher than your expenses, you are making a profit. If expenses exceed sales, you are running at a loss. This is shown on the Expenses page and the Dashboard for the current month.</p>`
+        },
+        {
+          q: 'Can I edit an expense after saving it?',
+          a: `<p>Currently, expenses cannot be edited after saving. If you made a mistake, delete the wrong entry using the <strong>Delete button</strong> in the expense history table, then add a new correct entry. We recommend double-checking the amount before saving.</p>`
+        },
+        {
+          q: 'How do I view expenses from a previous month?',
+          a: `<p>On the Expenses page, there is a <strong>month filter</strong> at the top of the history table. Click it and select the month and year you want to view. The table will update to show only expenses from that period along with the totals.</p>`
+        }
+      ]
+    },
+    {
+      section: '📦 Inventory & Stock',
+      items: [
+        {
+          q: 'How do I add a stock item?',
+          a: `<p>Go to <strong>Inventory</strong> in the sidebar. Fill in the item name, current quantity, unit price, and the low stock threshold. Click <strong>Add to Stock List</strong>. The item will appear in your stock list immediately.</p>
+              <p>You can add as many items as you need. There is no limit on the number of stock items.</p>`
+        },
+        {
+          q: 'What is the low stock threshold?',
+          a: `<p>The low stock threshold is the minimum quantity you set for each item. When your stock quantity reaches or falls below this number, the system will show a <strong>Low Stock alert</strong> on both the Inventory page and your Dashboard.</p>
+              <div class="highlight">Example: If you set the threshold to 5 for a wine item, and you only have 4 bottles left, the system will alert you to restock.</div>`
+        },
+        {
+          q: 'Why do I need to verify my email to edit stock?',
+          a: `<p>Stock editing is protected by email verification to prevent staff members or other people who have access to a device from secretly changing stock quantities to cover up theft or errors.</p>
+              <p>When you click <strong>Edit</strong> on any stock item, a verification link is sent to your registered email. You must click that link before the edit form opens. This ensures that only the account owner can make changes to stock levels.</p>`
+        },
+        {
+          q: 'Can staff members record new stock additions without verification?',
+          a: `<p>Yes. Adding new stock items does not require email verification — only <strong>editing existing items</strong> requires it. This means a trusted staff member can add new items to the list, but cannot secretly change quantities of items already recorded.</p>`
+        },
+        {
+          q: 'How do I update stock after a restock delivery?',
+          a: `<p>Click the <strong>Edit button</strong> next to the item you restocked. After email verification, update the quantity to the new total and save. For example, if you had 3 bottles and received 20 more, enter 23 as the new quantity.</p>`
+        }
+      ]
+    },
+    {
+      section: '🤝 Debt Tracker',
+      items: [
+        {
+          q: 'How do I record a debt?',
+          a: `<p>Go to <strong>Debts</strong> in the sidebar. Enter the name of the person or business, the amount, select the debt type, optionally add a due date, and click <strong>Add Debt Record</strong>.</p>`
+        },
+        {
+          q: 'What is the difference between "They owe me" and "I owe them"?',
+          a: `<p><strong>They owe me (Credit)</strong> — This is money that someone else owes you. For example, a customer bought goods on credit and has not paid yet. This is money coming TO you.</p>
+              <p><strong>I owe them (Debit)</strong> — This is money you owe to someone else. For example, you bought goods from a supplier on credit and haven't paid yet. This is money going FROM you.</p>
+              <div class="highlight">Your <strong>Net Debt Position</strong> = Total owed to you − Total you owe. A positive number means you are owed more than you owe.</div>`
+        },
+        {
+          q: 'How do I mark a debt as paid?',
+          a: `<p>In the Unpaid debts tab, each record has a <strong>✓ Paid button</strong>. Click it to mark that debt as settled. It will move to the Paid tab where you can see your full payment history. This cannot be undone, so only mark as paid when the money has actually been received or paid.</p>`
+        },
+        {
+          q: 'Can I set a due date for a debt?',
+          a: `<p>Yes. When adding a debt record, there is an optional <strong>Due Date field</strong>. If a debt is overdue — meaning the due date has passed and it is still unpaid — the system will show it as an alert on your Welcome Back screen each time you log in.</p>`
+        }
+      ]
+    },
+    {
+      section: '📈 Reports & Analytics',
+      items: [
+        {
+          q: 'How do reports work?',
+          a: `<p>Go to <strong>Reports</strong> in the sidebar. The system automatically pulls your sales and expense data and displays it in charts and tables. You can switch between <strong>Weekly, Monthly, and Quarterly</strong> views using the tab buttons at the top.</p>
+              <p>Reports show total sales, total expenses, net profit or loss, and a breakdown of every transaction in that period.</p>`
+        },
+        {
+          q: 'What is the difference between weekly, monthly, and quarterly reports?',
+          a: `<ul>
+                <li><strong>Weekly</strong> — shows the last 7 days of sales and expenses with a day-by-day chart</li>
+                <li><strong>Monthly</strong> — shows the current month's data from the 1st to today</li>
+                <li><strong>Quarterly</strong> — shows the last 3 months of data for a bigger picture view</li>
+              </ul>
+              <p>Use weekly for close daily monitoring, monthly for end-of-month reviews, and quarterly for spotting trends and growth patterns.</p>`
+        },
+        {
+          q: 'How do I export my reports?',
+          a: `<p>On the Reports page, scroll to the <strong>Export Report section</strong>. Click <strong>Export CSV</strong> to download all your sales and expense data as a spreadsheet file that can be opened in Excel or Google Sheets. You can also click <strong>Print / Save PDF</strong> to save or print a formatted version of the report.</p>`
+        }
+      ]
+    },
+    {
+      section: '🏆 Business Health Score',
+      items: [
+        {
+          q: 'How is the Business Health Score calculated?',
+          a: `<p>Your score is calculated out of 100 points based on 6 areas of your business:</p>
+              <ul>
+                <li><strong>Sales Activity (20 pts)</strong> — how many days this month you recorded sales</li>
+                <li><strong>Profitability (25 pts)</strong> — your profit margin percentage</li>
+                <li><strong>Expense Tracking (20 pts)</strong> — how many expenses you have logged</li>
+                <li><strong>Debt Health (20 pts)</strong> — how much unpaid debt you carry compared to sales</li>
+                <li><strong>Stock Management (10 pts)</strong> — whether your inventory is well stocked</li>
+                <li><strong>Business Planning (5 pts)</strong> — whether you have reminders set</li>
+              </ul>`
+        },
+        {
+          q: 'What does each score range mean?',
+          a: `<ul>
+                <li><strong>85–100 — Excellent 🏆</strong>: Your business is in outstanding health</li>
+                <li><strong>70–84 — Good ✅</strong>: Doing well with minor areas to improve</li>
+                <li><strong>50–69 — Fair ⚠️</strong>: Business has potential but needs attention</li>
+                <li><strong>30–49 — Poor 🔴</strong>: Urgent attention needed</li>
+                <li><strong>Below 30 — Critical ❌</strong>: Very little data recorded or serious issues</li>
+              </ul>`
+        },
+        {
+          q: 'How do I improve my Business Health Score?',
+          a: `<p>The Health Score page shows personalised tips based on your actual data. Common ways to improve your score:</p>
+              <ul>
+                <li>Record sales <strong>every day</strong>, even small amounts</li>
+                <li>Log all expenses — the more complete your records, the better</li>
+                <li>Keep debt levels low relative to your sales</li>
+                <li>Restock items before they hit the low stock threshold</li>
+                <li>Set reminders for important business dates</li>
+              </ul>`
+        }
+      ]
+    },
+    {
+      section: '📅 Business Calendar',
+      items: [
+        {
+          q: 'How do I add a reminder?',
+          a: `<p>Go to <strong>Calendar</strong> in the sidebar. Click the <strong>+ Add Reminder button</strong> or click directly on a date in the calendar. Fill in the title, date, reminder type, and an optional note. Click Save. The reminder will appear on the calendar and will show as an alert on your Welcome Back screen on the day it is due.</p>`
+        },
+        {
+          q: 'What types of reminders can I set?',
+          a: `<p>You can set reminders for any business event. Common examples include:</p>
+              <ul>
+                <li>Debt payment due dates (when to pay or collect)</li>
+                <li>Stock reorder reminders</li>
+                <li>Rent or utility bill payment dates</li>
+                <li>Market days or busy season preparation</li>
+                <li>Staff salary payment dates</li>
+                <li>Business meetings or supplier visits</li>
+              </ul>`
+        }
+      ]
+    },
+    {
+      section: '⚙️ Settings & Account',
+      items: [
+        {
+          q: 'How do I change my business name or full name?',
+          a: `<p>Go to <strong>Settings</strong> in the sidebar. You will see fields for your full name and business name. Update them and click <strong>Save Changes</strong>. Your new name will appear across the app immediately, including on the Welcome Back screen.</p>`
+        },
+        {
+          q: 'How do I switch between dark and light mode?',
+          a: `<p>Click the <strong>moon icon (🌙)</strong> in the top navbar. It will switch to light mode and change to a sun icon (☀️). Click again to switch back. Your preference is saved automatically and will be remembered even after you close the browser.</p>`
+        },
+        {
+          q: 'How do I change my password?',
+          a: `<p>Go to <strong>Settings</strong> in the sidebar. There is a Change Password section where you can enter your new password. Alternatively, log out and use the <strong>Forgot Password</strong> link on the login page to reset it via email.</p>`
+        },
+        {
+          q: 'How do I log out?',
+          a: `<p>Click the <strong>Sign Out button</strong> at the bottom of the sidebar on any page. You will be logged out and redirected to the login page. Your data is safely stored and will be there when you log back in.</p>`
+        }
+      ]
+    },
+    {
+      section: '💳 Billing & General',
+      items: [
+        {
+          q: 'Is GrowthIve Monitor free to use?',
+          a: `<p>Yes, GrowthIve Monitor is currently free to use. You can create an account, record unlimited sales and expenses, manage inventory, and access all features at no cost. Future premium features may be introduced, but core functionality will remain accessible.</p>`
+        },
+        {
+          q: 'Is my business data private and secure?',
+          a: `<p>Yes. Your data is stored securely on Supabase servers with Row Level Security enabled. This means only you — the account owner — can see your own business data. No other user or business can access your records. We do not sell or share your data with third parties.</p>`
+        },
+        {
+          q: 'How do I contact support if something is not working?',
+          a: `<p>Go to the <strong>Support page</strong> using the link at the bottom of the sidebar or footer. You can fill in the contact form and we will respond within 24 hours. You can also email us directly at <strong>growthivesystem@gmail.com</strong>.</p>`
+        },
+        {
+          q: 'Can I use GrowthIve Monitor on my phone?',
+          a: `<p>Yes. GrowthIve Monitor is fully responsive and works on smartphones, tablets, and desktop computers. Simply open your browser on your phone and go to the website. The sidebar collapses into a menu icon on smaller screens for easy navigation.</p>`
+        },
+        {
+          q: 'What happens to my data if I stop using the app?',
+          a: `<p>Your data remains stored safely as long as your account exists. If you want to delete your account and all associated data, contact our support team and we will process the deletion within 48 hours. You can also export your data as CSV from the Reports page before deleting.</p>`
+        }
+      ]
+    }
+  ];
+
+  function renderFAQ(data) {
+    const container = document.getElementById('faq-content');
+    if (data.length === 0) {
+      container.innerHTML = '<div class="no-results">No questions found matching your search. Try a different keyword.</div>';
+      return;
+    }
+    container.innerHTML = data.map(section => `
+      <div class="faq-section">
+        <div class="faq-section-title">${section.section}</div>
+        ${section.items.map((item, i) => `
+          <div class="faq-item" id="faq-${section.section}-${i}">
+            <button class="faq-question" onclick="toggleFAQ('faq-${section.section}-${i}')">
+              <span>${item.q}</span>
+              <span class="faq-chevron">▼</span>
+            </button>
+            <div class="faq-answer">${item.a}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  function toggleFAQ(id) {
+    const item = document.getElementById(id);
+    const isActive = item.classList.contains('active');
+    // Close all
+    document.querySelectorAll('.faq-item.active').forEach(el => el.classList.remove('active'));
+    // Open clicked if it was closed
+    if (!isActive) item.classList.add('active');
+  }
+
+  function searchFAQ() {
+    const q = document.getElementById('faq-search').value.toLowerCase().trim();
+    if (!q) { renderFAQ(faqData); return; }
+    const filtered = faqData.map(section => ({
+      ...section,
+      items: section.items.filter(item =>
+        item.q.toLowerCase().includes(q) || item.a.toLowerCase().includes(q)
+      )
+    })).filter(section => section.items.length > 0);
+    renderFAQ(filtered);
+  }
+
+  // Initial render
+  renderFAQ(faqData);
+</script>
+</body>
+</html>

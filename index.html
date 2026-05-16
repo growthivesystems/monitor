@@ -13,7 +13,13 @@
     text-align: center; padding: 40px 24px;
     background: radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.1) 0%, transparent 65%), var(--dark);
     position: relative; overflow: hidden;
- 60px, rgba(201,168,76,0.03) 60px, rgba(201,168,76,0.03) 61px);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,168,76,0.03) 60px, rgba(201,168,76,0.03) 61px),
+      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,168,76,0.03) 60px, rgba(201,168,76,0.03) 61px);
     pointer-events: none;
   }
   .hero-eyebrow {
@@ -44,6 +50,7 @@
   .hero-btns {
     display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
     animation: fadeUp 0.8s 0.4s ease both;
+    position: relative; z-index: 10;
   }
   .hero-ornament {
     width: 80px; height: 1px;
@@ -90,6 +97,15 @@
   }
   .cta-title span { color: var(--gold); }
   .cta-desc { color: var(--muted); max-width: 500px; margin: 0 auto 32px; }
+
+  /* ── SPLASH FIX ── */
+  #splash { pointer-events: all; }
+  #splash.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -129,7 +145,7 @@
     <a href="login.html" class="btn btn-outline">Sign In →</a>
   </div>
   <div class="hero-ornament"></div>
-  <p style="color:var(--muted);font-size:0.8rem;">Trusted by traders, shop owners & entrepreneurs</p>
+  <p style="color:var(--muted);font-size:0.8rem;position:relative;z-index:10;">Trusted by traders, shop owners & entrepreneurs</p>
 </section>
 
 <!-- FEATURES -->
@@ -233,12 +249,13 @@
 <script src="js/supabase.js"></script>
 <script>
   document.getElementById('yr').textContent = new Date().getFullYear();
-  // Hide splash after load animation
+
   window.addEventListener('load', () => {
     setTimeout(() => {
       document.getElementById('splash').classList.add('hidden');
     }, 2400);
   });
+
   function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'light' ? '' : 'light';
@@ -246,9 +263,13 @@
     localStorage.setItem('theme', next || 'dark');
     document.querySelector('.theme-toggle').textContent = next === 'light' ? '☀️' : '🌙';
   }
+
   const saved = localStorage.getItem('theme');
-  if (saved === 'light') { document.documentElement.setAttribute('data-theme','light'); document.querySelector('.theme-toggle').textContent = '☀️'; }
-  // If already logged in, redirect to dashboard
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.querySelector('.theme-toggle').textContent = '☀️';
+  }
+
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     if (user) window.location.href = 'dashboard.html';

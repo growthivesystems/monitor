@@ -14,36 +14,12 @@
     <div class="page-title">Dashboard</div>
     <div class="page-subtitle" id="dash-date">Loading…</div>
 
-    <!-- KPI Cards -->
+    <!-- ROW 1: Today's live KPIs (from purchase_transactions) -->
     <div class="grid-4">
       <div class="card">
         <div class="card-title">Today's Sales</div>
         <div class="card-value gold" id="kpi-sales">₦0.00</div>
-        <div class="card-meta" id="kpi-sales-meta">0 transactions today</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Total Expenses</div>
-        <div class="card-value danger" id="kpi-expenses">₦0.00</div>
-        <div class="card-meta">This month</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Net Profit / Loss</div>
-        <div class="card-value" id="kpi-profit">₦0.00</div>
-        <div class="card-meta">This month</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Outstanding Debts</div>
-        <div class="card-value danger" id="kpi-debts">₦0.00</div>
-        <div class="card-meta">Unpaid balances</div>
-      </div>
-    </div>
-
-    <!-- Secondary KPIs -->
-    <div class="grid-4">
-      <div class="card">
-        <div class="card-title">Monthly Revenue</div>
-        <div class="card-value gold" id="kpi-month-sales">₦0.00</div>
-        <div class="card-meta">All POS transactions</div>
+        <div class="card-meta" id="kpi-sales-meta">Live POS transactions</div>
       </div>
       <div class="card">
         <div class="card-title">Cash Sales Today</div>
@@ -62,11 +38,35 @@
       </div>
     </div>
 
+    <!-- ROW 2: Monthly confirmed KPIs (from sales table) -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">Monthly Revenue</div>
+        <div class="card-value gold" id="kpi-month-sales">₦0.00</div>
+        <div class="card-meta">Confirmed daily records</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Expenses</div>
+        <div class="card-value danger" id="kpi-expenses">₦0.00</div>
+        <div class="card-meta">This month</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Net Profit / Loss</div>
+        <div class="card-value" id="kpi-profit">₦0.00</div>
+        <div class="card-meta">Monthly revenue − expenses</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Outstanding Debts</div>
+        <div class="card-value danger" id="kpi-debts">₦0.00</div>
+        <div class="card-meta">Unpaid balances</div>
+      </div>
+    </div>
+
     <div class="grid-2">
-      <!-- Recent Transactions -->
+      <!-- Today's Live Transactions -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div class="card-title" style="margin:0;">Recent Transactions</div>
+          <div class="card-title" style="margin:0;">🛒 Today's Transactions</div>
           <a href="purchases.html" class="btn btn-outline btn-sm">View POS →</a>
         </div>
         <div id="recent-sales"><div class="spinner"></div></div>
@@ -111,6 +111,7 @@
         <a href="health-score.html" class="btn btn-outline btn-sm" style="margin-top:12px;">Full Report</a>
       </div>
     </div>
+
   </div>
 </div>
 <div id="main-footer"></div>
@@ -133,8 +134,9 @@
     now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
   // ══════════════════════════════════════════════
-  // TODAY'S SALES — from purchase_transactions
-  // Every POS sale made today, summed up
+  // ROW 1 — TODAY'S LIVE POS DATA
+  // Source: purchase_transactions
+  // Real-time sales happening today via POS
   // ══════════════════════════════════════════════
   const { data: txnsToday } = await _supabase
     .from('purchase_transactions')
@@ -146,29 +148,29 @@
   const todayCash     = (txnsToday||[]).filter(r => r.payment_method === 'cash').reduce((s,r) => s + Number(r.total_amount||0), 0);
   const todayTransfer = (txnsToday||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
   const todayPOS      = (txnsToday||[]).filter(r => r.payment_method === 'pos').reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const txnCount      = (txnsToday||[]).length;
 
   document.getElementById('kpi-sales').textContent      = formatCurrency(todaySales);
-  document.getElementById('kpi-sales-meta').textContent = `${(txnsToday||[]).length} transaction${(txnsToday||[]).length !== 1 ? 's' : ''} today`;
+  document.getElementById('kpi-sales-meta').textContent = `${txnCount} transaction${txnCount !== 1 ? 's' : ''} today`;
   document.getElementById('kpi-cash').textContent       = formatCurrency(todayCash);
   document.getElementById('kpi-transfer').textContent   = formatCurrency(todayTransfer);
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
 
   // ══════════════════════════════════════════════
-  // MONTHLY REVENUE — from purchase_transactions
-  // Sum of all POS transactions this month
+  // ROW 2 — MONTHLY CONFIRMED REVENUE
+  // Source: sales table (manual daily records)
+  // Owner-confirmed end-of-day totals for the month
   // ══════════════════════════════════════════════
-  const { data: txnsMonth } = await _supabase
-    .from('purchase_transactions')
+  const { data: salesMonth } = await _supabase
+    .from('sales')
     .select('total_amount')
     .eq('user_id', user.id)
     .gte('date', startOfMonth);
 
-  const totalMonthSales = (txnsMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalMonthSales = (salesMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
   document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
 
-  // ══════════════════════════════════════════════
-  // EXPENSES THIS MONTH
-  // ══════════════════════════════════════════════
+  // ── Expenses this month ──
   const { data: expMonth } = await _supabase
     .from('expenses')
     .select('amount')
@@ -178,17 +180,13 @@
   const totalExp = (expMonth||[]).reduce((s,r) => s + Number(r.amount||0), 0);
   document.getElementById('kpi-expenses').textContent = formatCurrency(totalExp);
 
-  // ══════════════════════════════════════════════
-  // NET PROFIT — monthly POS revenue minus expenses
-  // ══════════════════════════════════════════════
-  const profit    = totalMonthSales - totalExp;
-  const profitEl  = document.getElementById('kpi-profit');
+  // ── Net Profit = confirmed monthly sales − expenses ──
+  const profit   = totalMonthSales - totalExp;
+  const profitEl = document.getElementById('kpi-profit');
   profitEl.textContent = formatCurrency(profit);
   profitEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
 
-  // ══════════════════════════════════════════════
-  // OUTSTANDING DEBTS
-  // ══════════════════════════════════════════════
+  // ── Outstanding Debts ──
   const { data: debts } = await _supabase
     .from('debts')
     .select('amount')
@@ -200,19 +198,24 @@
   document.getElementById('kpi-debts').textContent = formatCurrency(totalDebt);
 
   // ══════════════════════════════════════════════
-  // RECENT TRANSACTIONS — from purchase_transactions
-  // Last 5 POS sales with items breakdown
+  // TODAY'S TRANSACTIONS WIDGET
+  // Source: purchase_transactions — live POS only
   // ══════════════════════════════════════════════
   const { data: recentTxns } = await _supabase
     .from('purchase_transactions')
     .select('*')
     .eq('user_id', user.id)
+    .eq('date', today)
     .order('created_at', { ascending: false })
     .limit(5);
 
   const rsEl = document.getElementById('recent-sales');
   if (!recentTxns || recentTxns.length === 0) {
-    rsEl.innerHTML = '<div class="empty-state"><div class="icon">🛒</div><p>No transactions yet. Make a sale from the <a href="purchases.html" style="color:var(--gold);">Sales Point</a>.</p></div>';
+    rsEl.innerHTML = `<div class="empty-state">
+      <div class="icon">🛒</div>
+      <p>No POS transactions today yet.<br>
+      <a href="purchases.html" style="color:var(--gold);">Go to Sales Point →</a></p>
+    </div>`;
   } else {
     rsEl.innerHTML = `<div class="table-wrap"><table>
       <thead>
@@ -223,17 +226,24 @@
           const itemList = Array.isArray(r.items)
             ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
             : r.notes || '—';
-          const timeStr = new Date(r.created_at).toLocaleString('en-GB', {
-            day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'
+          const timeStr  = new Date(r.created_at).toLocaleTimeString('en-GB', {
+            hour:'2-digit', minute:'2-digit'
           });
+          const payColor = r.payment_method === 'cash'     ? 'var(--success)'
+                         : r.payment_method === 'transfer' ? 'var(--info)'
+                         : 'var(--gold2)';
           const payBadge = r.payment_method
-            ? `<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid var(--gold-border);text-transform:capitalize;">${r.payment_method}</span>`
+            ? `<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;
+                background:rgba(201,168,76,0.12);color:${payColor};
+                border:1px solid var(--gold-border);text-transform:capitalize;">
+                ${r.payment_method}</span>`
             : '—';
           return `<tr>
-            <td style="font-size:0.82rem;">${timeStr}</td>
+            <td style="font-size:0.82rem;color:var(--muted);">${timeStr}</td>
             <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
             <td>${payBadge}</td>
-            <td style="font-size:0.78rem;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemList}</td>
+            <td style="font-size:0.78rem;color:var(--muted);max-width:160px;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemList}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -248,8 +258,9 @@
     .select('*')
     .eq('user_id', user.id);
 
-  const lowStock = (inv||[]).filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
-  const lsEl     = document.getElementById('low-stock');
+  const lowStock   = (inv||[]).filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
+  const outOfStock = (inv||[]).filter(i => Number(i.quantity) <= 0);
+  const lsEl       = document.getElementById('low-stock');
 
   if (lowStock.length === 0) {
     lsEl.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>All stock levels are healthy.</p></div>';
@@ -259,8 +270,8 @@
       <tbody>
         ${lowStock.map(i => `<tr>
           <td>${i.item_name}</td>
-          <td style="color:${i.quantity <= 0 ? 'var(--danger)' : 'var(--gold)'};">${i.quantity}</td>
-          <td><span class="badge badge-danger">${i.quantity <= 0 ? 'Out of Stock' : 'Low Stock'}</span></td>
+          <td style="color:${Number(i.quantity) <= 0 ? 'var(--danger)' : 'var(--gold)'};">${i.quantity}</td>
+          <td><span class="badge badge-danger">${Number(i.quantity) <= 0 ? 'Out of Stock' : 'Low Stock'}</span></td>
         </tr>`).join('')}
       </tbody>
     </table></div>`;
@@ -290,33 +301,21 @@
 
   // ══════════════════════════════════════════════
   // BUSINESS HEALTH SCORE
-  // Based on real purchase_transactions revenue
+  // Today activity  → purchase_transactions
+  // Monthly profit  → sales − expenses
   // ══════════════════════════════════════════════
-  let score = 40; // base score
-
-  // Revenue this month > 0
-  if (totalMonthSales > 0) score += 15;
-
-  // Profitable this month
-  if (profit > 0) score += 20;
-
-  // Made sales today
-  if (todaySales > 0) score += 10;
-
-  // No out-of-stock items
-  const outOfStock = (inv||[]).filter(i => Number(i.quantity) <= 0);
-  if (outOfStock.length === 0) score += 10;
-
-  // Low stock items are manageable (less than 3)
-  if (lowStock.length < 3) score += 5;
-
+  let score = 40;
+  if (totalMonthSales > 0)     score += 15; // confirmed monthly sales exist
+  if (profit > 0)              score += 20; // profitable this month
+  if (todaySales > 0)          score += 10; // active POS today
+  if (outOfStock.length === 0) score += 10; // no out-of-stock items
+  if (lowStock.length < 3)     score += 5;  // stock well managed
   score = Math.min(score, 100);
 
   document.getElementById('health-val').textContent = score;
-  const arc          = document.getElementById('health-arc');
-  const circumference= 377;
-  arc.style.strokeDashoffset = circumference - (circumference * score / 100);
-  arc.style.stroke   = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
+  const arc = document.getElementById('health-arc');
+  arc.style.strokeDashoffset = 377 - (377 * score / 100);
+  arc.style.stroke = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
   document.getElementById('health-label').textContent =
     score >= 70 ? '🟢 Healthy Business' :
     score >= 40 ? '🟡 Needs Attention'  : '🔴 Critical — Review Now';

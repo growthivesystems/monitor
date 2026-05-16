@@ -82,6 +82,7 @@
   .empty-cart { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.88rem; }
   .empty-cart .icon { font-size: 2.5rem; margin-bottom: 8px; }
 
+  /* Receipt Modal */
   .receipt-modal {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.7); z-index: 1000;
@@ -98,6 +99,32 @@
   .receipt-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.85rem; color: var(--white2); }
   .receipt-total-line { display: flex; justify-content: space-between; padding: 10px 0; font-size: 1rem; font-weight: 700; color: var(--gold); border-top: 1px dashed var(--gold-border); margin-top: 8px; }
 
+  /* Print receipt */
+  .print-receipt-area {
+    display: none;
+    position: fixed; inset: 0; background: #fff; color: #111;
+    z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, serif;
+    overflow-y: auto;
+  }
+  @media print {
+    body * { visibility: hidden !important; }
+    .print-receipt-area, .print-receipt-area * { visibility: visible !important; }
+    .print-receipt-area {
+      position: fixed !important; top: 0; left: 0;
+      width: 100%; background: #fff !important;
+      color: #000 !important; padding: 40px !important;
+    }
+    .no-print { display: none !important; }
+  }
+  .pr-header { border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; }
+  .pr-biz { font-size: 1.6rem; font-weight: 700; }
+  .pr-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.92rem; }
+  .pr-row span:last-child { font-weight: 600; }
+  .pr-total { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 1.1rem; font-weight: 700; border-top: 2px solid #111; margin-top: 8px; }
+  .pr-footer { margin-top: 40px; text-align: center; font-size: 0.75rem; color: #888; border-top: 1px solid #ddd; padding-top: 16px; }
+  .print-close-btn { position: fixed; top: 16px; right: 20px; background: #111; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; z-index: 10000; }
+
   .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   .ftab {
     padding: 5px 14px; border-radius: 20px; font-size: 0.8rem;
@@ -107,9 +134,7 @@
   }
   .ftab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 600; }
 
-  .payment-method {
-    display: flex; gap: 10px; margin-bottom: 16px;
-  }
+  .payment-method { display: flex; gap: 10px; margin-bottom: 16px; }
   .pay-opt {
     flex: 1; padding: 10px; text-align: center;
     border: 1px solid var(--gold-border); border-radius: var(--radius-sm);
@@ -128,7 +153,7 @@
   <div class="main">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
       <div class="page-title" style="margin:0;">🛒 Purchases / Sales Point</div>
-      <a href="sales.html" class="btn btn-outline btn-sm">📋 View Sales History</a>
+      <a href="sales.html" class="btn btn-outline btn-sm">📋 View Daily Sales</a>
     </div>
     <div class="page-subtitle">Select items from your catalogue. Inventory is automatically updated on checkout.</div>
 
@@ -143,18 +168,15 @@
             <a href="inventory.html" class="btn btn-outline btn-sm">Manage Stock →</a>
           </div>
 
-          <!-- Search -->
           <div class="search-bar">
             <span class="s-icon">🔍</span>
             <input type="text" id="search-input" placeholder="Search items…" oninput="filterItems()">
           </div>
 
-          <!-- Category filters -->
           <div class="filter-tabs" id="cat-filters">
             <button class="ftab active" onclick="filterCat('all', this)">All</button>
           </div>
 
-          <!-- Items grid -->
           <div class="catalogue-grid" id="catalogue-grid">
             <div class="spinner"></div>
           </div>
@@ -179,13 +201,11 @@
             </div>
           </div>
 
-          <!-- Customer name (optional) -->
           <div class="form-group" style="margin-bottom:12px;">
             <label style="font-size:0.8rem;">Customer Name (optional)</label>
             <input type="text" id="customer-name" placeholder="Walk-in customer…">
           </div>
 
-          <!-- Payment method -->
           <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Payment Method</div>
           <div class="payment-method">
             <div class="pay-opt selected" onclick="selectPay(this,'cash')">
@@ -199,7 +219,6 @@
             </div>
           </div>
 
-          <!-- Notes -->
           <div class="form-group" style="margin-bottom:16px;">
             <label style="font-size:0.8rem;">Notes (optional)</label>
             <textarea id="sale-notes" placeholder="Additional notes…" style="min-height:60px;"></textarea>
@@ -218,7 +237,7 @@
           <div class="card-title">📊 Today's Stats</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div style="text-align:center;padding:12px;background:var(--dark3);border-radius:var(--radius-sm);">
-              <div class="card-title" style="font-size:0.75rem;">Sales Today</div>
+              <div class="card-title" style="font-size:0.75rem;">POS Sales Today</div>
               <div class="card-value success" id="stat-sales" style="font-size:1.1rem;">₦0.00</div>
             </div>
             <div style="text-align:center;padding:12px;background:var(--dark3);border-radius:var(--radius-sm);">
@@ -230,11 +249,11 @@
       </div>
     </div>
 
-    <!-- Recent Purchase Transactions -->
+    <!-- Recent Transactions — now from purchase_transactions -->
     <div class="card" style="margin-top:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="card-title" style="margin:0;">🧾 Recent Transactions</div>
-        <span style="font-size:0.8rem;color:var(--muted);">Last 20 sales</span>
+        <span style="font-size:0.8rem;color:var(--muted);">Last 20 POS sales</span>
       </div>
       <div id="txn-table"><div class="spinner"></div></div>
     </div>
@@ -242,7 +261,7 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- Receipt Modal -->
+<!-- ── In-app Receipt Modal ── -->
 <div class="receipt-modal" id="receipt-modal">
   <div class="receipt-box">
     <div class="receipt-header">
@@ -258,11 +277,31 @@
     <div style="font-size:0.78rem;color:var(--muted);text-align:center;margin-top:8px;" id="receipt-pay-method"></div>
     <div style="text-align:center;margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
       <button class="btn btn-gold" onclick="closeReceipt()">✅ Done</button>
-      <button class="btn btn-outline btn-sm" onclick="printReceipt()">🖨️ Print</button>
+      <button class="btn btn-outline btn-sm" onclick="openPrintReceipt()">🖨️ Print</button>
     </div>
     <div style="text-align:center;margin-top:16px;font-size:0.7rem;color:var(--muted);">
       Thank you for your business!<br>Powered by GrowthIve Monitor
     </div>
+  </div>
+</div>
+
+<!-- ── Print Receipt Overlay ── -->
+<div class="print-receipt-area" id="print-receipt-area">
+  <button class="print-close-btn no-print" onclick="closePrintReceipt()">✕ Close</button>
+  <div class="pr-header">
+    <div>
+      <div class="pr-biz" id="pr-biz-name">Business Name</div>
+      <div style="font-size:0.82rem;color:#555;margin-top:2px;">GrowthIve Monitor — POS Receipt</div>
+    </div>
+    <div style="text-align:right;font-size:0.8rem;color:#555;">
+      <div id="pr-date-line"></div>
+      <div id="pr-printed-on"></div>
+    </div>
+  </div>
+  <div style="font-size:1.1rem;font-weight:600;margin-bottom:20px;">Sales Transaction Receipt</div>
+  <div id="pr-body"></div>
+  <div class="pr-footer">
+    Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span>
   </div>
 </div>
 
@@ -272,11 +311,12 @@
 <script src="js/app.js"></script>
 <script>
 let currentUser;
-let allInventory = [];
+let allInventory    = [];
 let filteredInventory = [];
-let cart = {}; // { item_id: { item, qty } }
-let currentCat = 'all';
+let cart            = {};
+let currentCat      = 'all';
 let selectedPayment = 'cash';
+let lastReceipt     = null; // store last completed sale for printing
 
 (async () => {
   currentUser = await requireAuth();
@@ -287,6 +327,9 @@ let selectedPayment = 'cash';
   loadRecentTxns();
 })();
 
+/* ══════════════════════════════
+   CATALOGUE
+══════════════════════════════ */
 async function loadInventory() {
   const { data, error } = await _supabase
     .from('inventory')
@@ -312,7 +355,6 @@ async function loadInventory() {
     return;
   }
 
-  // Build category filter tabs
   const cats = ['all', ...new Set(allInventory.map(i => i.category).filter(Boolean))];
   const filterEl = document.getElementById('cat-filters');
   filterEl.innerHTML = cats.map((c, idx) =>
@@ -333,7 +375,7 @@ function filterCat(cat, btn) {
 function filterItems() {
   const q = document.getElementById('search-input').value.toLowerCase();
   filteredInventory = allInventory.filter(i => {
-    const matchCat = currentCat === 'all' || i.category === currentCat;
+    const matchCat    = currentCat === 'all' || i.category === currentCat;
     const matchSearch = !q || i.item_name.toLowerCase().includes(q) || (i.category||'').toLowerCase().includes(q);
     return matchCat && matchSearch;
   });
@@ -341,18 +383,19 @@ function filterItems() {
 }
 
 function renderCatalogue() {
-  const el = document.getElementById('catalogue-grid');
+  const el       = document.getElementById('catalogue-grid');
+  const currency = localStorage.getItem('currency') || '₦';
   if (filteredInventory.length === 0) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items match your search.</p></div>`;
     return;
   }
-  const currency = localStorage.getItem('currency') || '₦';
   el.innerHTML = filteredInventory.map(item => {
-    const oos = item.quantity <= 0;
-    const low = item.quantity > 0 && item.quantity <= (item.low_stock_threshold || 5);
+    const oos    = item.quantity <= 0;
+    const low    = item.quantity > 0 && item.quantity <= (item.low_stock_threshold || 5);
     const inCart = cart[item.id] ? cart[item.id].qty : 0;
     return `
-      <div class="catalogue-item${oos ? ' out-of-stock' : ''}" onclick="${oos ? "showOOS('" + item.item_name + "')" : "addToCart('" + item.id + "')"}">
+      <div class="catalogue-item${oos ? ' out-of-stock' : ''}"
+        onclick="${oos ? `showOOS('${item.item_name.replace(/'/g,"\\'")}')` : `addToCart('${item.id}')`}">
         ${oos ? '<div class="oos-badge">Out of Stock</div>' : ''}
         <div class="cat-icon">${getCatIcon(item.category)}</div>
         <div class="cat-name">${item.item_name}</div>
@@ -361,17 +404,16 @@ function renderCatalogue() {
           ${oos ? '❌ Out of stock' : low ? `⚠️ ${item.quantity} left` : `✅ ${item.quantity} in stock`}
           ${inCart > 0 ? `<br><span style="color:var(--gold);">🛒 ${inCart} in cart</span>` : ''}
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
 function getCatIcon(cat) {
   const icons = {
-    'Food': '🍔', 'Drinks': '🥤', 'Electronics': '📱', 'Clothing': '👗',
-    'Stationery': '📝', 'Medicines': '💊', 'Cosmetics': '💄', 'Hardware': '🔧',
-    'Groceries': '🛒', 'Beverages': '☕', 'Accessories': '👜', 'Furniture': '🪑',
-    'Shoes': '👟', 'Books': '📚', 'Toys': '🎮', 'Bakery': '🍞',
+    'Food':'🍔','Drinks':'🥤','Electronics':'📱','Clothing':'👗',
+    'Stationery':'📝','Medicines':'💊','Cosmetics':'💄','Hardware':'🔧',
+    'Groceries':'🛒','Beverages':'☕','Accessories':'👜','Furniture':'🪑',
+    'Shoes':'👟','Books':'📚','Toys':'🎮','Bakery':'🍞',
   };
   return icons[cat] || '📦';
 }
@@ -382,17 +424,16 @@ function showOOS(name) {
   setTimeout(() => msgEl.innerHTML = '', 4000);
 }
 
+/* ══════════════════════════════
+   CART
+══════════════════════════════ */
 function addToCart(itemId) {
   const item = allInventory.find(i => i.id === itemId);
   if (!item || item.quantity <= 0) return;
-
-  if (!cart[itemId]) {
-    cart[itemId] = { item, qty: 0 };
-  }
-  const maxQty = item.quantity;
-  if (cart[itemId].qty >= maxQty) {
+  if (!cart[itemId]) cart[itemId] = { item, qty: 0 };
+  if (cart[itemId].qty >= item.quantity) {
     const msgEl = document.getElementById('page-msg');
-    msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${maxQty}</strong> unit(s) of <strong>${item.item_name}</strong> available.</div>`;
+    msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${item.quantity}</strong> unit(s) of <strong>${item.item_name}</strong> available.</div>`;
     setTimeout(() => msgEl.innerHTML = '', 3000);
     return;
   }
@@ -403,7 +444,7 @@ function addToCart(itemId) {
 
 function changeQty(itemId, delta) {
   if (!cart[itemId]) return;
-  const item = allInventory.find(i => i.id === itemId);
+  const item   = allInventory.find(i => i.id === itemId);
   const newQty = cart[itemId].qty + delta;
   if (newQty <= 0) {
     delete cart[itemId];
@@ -426,28 +467,27 @@ function removeFromCart(itemId) {
 }
 
 function renderCart() {
-  const keys = Object.keys(cart);
-  const currency = localStorage.getItem('currency') || '₦';
-  const cartEmpty = document.getElementById('cart-empty');
-  const cartContent = document.getElementById('cart-content');
-  const checkoutBtn = document.getElementById('checkout-btn');
+  const keys       = Object.keys(cart);
+  const currency   = localStorage.getItem('currency') || '₦';
+  const cartEmpty  = document.getElementById('cart-empty');
+  const cartContent= document.getElementById('cart-content');
+  const checkoutBtn= document.getElementById('checkout-btn');
 
   if (keys.length === 0) {
-    cartEmpty.style.display = 'block';
-    cartContent.style.display = 'none';
-    checkoutBtn.disabled = true;
+    cartEmpty.style.display  = 'block';
+    cartContent.style.display= 'none';
+    checkoutBtn.disabled     = true;
     return;
   }
 
-  cartEmpty.style.display = 'none';
-  cartContent.style.display = 'block';
-  checkoutBtn.disabled = false;
+  cartEmpty.style.display  = 'none';
+  cartContent.style.display= 'block';
+  checkoutBtn.disabled     = false;
 
   let total = 0;
-  const cartItemsEl = document.getElementById('cart-items');
-  cartItemsEl.innerHTML = keys.map(id => {
+  document.getElementById('cart-items').innerHTML = keys.map(id => {
     const { item, qty } = cart[id];
-    const price = Number(item.selling_price || item.unit_price || 0);
+    const price    = Number(item.selling_price || item.unit_price || 0);
     const subtotal = price * qty;
     total += subtotal;
     return `
@@ -458,13 +498,13 @@ function renderCart() {
           <span class="cart-qty">${qty}</span>
           <button class="qty-btn" onclick="changeQty('${id}', 1)">+</button>
         </div>
-        <div class="cart-subtotal">${currency}${subtotal.toLocaleString('en-NG', {minimumFractionDigits:2})}</div>
+        <div class="cart-subtotal">${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
         <button class="remove-btn" onclick="removeFromCart('${id}')" title="Remove">✕</button>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
-  document.getElementById('cart-total').textContent = `${currency}${total.toLocaleString('en-NG', {minimumFractionDigits:2})}`;
+  document.getElementById('cart-total').textContent =
+    `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
 }
 
 function clearCart() {
@@ -481,80 +521,99 @@ function selectPay(el, method) {
   selectedPayment = method;
 }
 
+/* ══════════════════════════════
+   CHECKOUT — saves to purchase_transactions ONLY
+   Does NOT touch the sales table
+══════════════════════════════ */
 async function checkout() {
   const keys = Object.keys(cart);
   if (keys.length === 0) return;
 
-  const btn = document.getElementById('checkout-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Processing…';
+  const btn      = document.getElementById('checkout-btn');
+  btn.disabled   = true;
+  btn.textContent= '⏳ Processing…';
 
-  const currency = localStorage.getItem('currency') || '₦';
-  let total = 0;
-  const items = keys.map(id => {
+  const currency     = localStorage.getItem('currency') || '₦';
+  let   total        = 0;
+  const items        = keys.map(id => {
     const { item, qty } = cart[id];
-    const price = Number(item.selling_price || item.unit_price || 0);
-    total += price * qty;
-    return { item, qty, price, subtotal: price * qty };
+    const price    = Number(item.selling_price || item.unit_price || 0);
+    const subtotal = price * qty;
+    total += subtotal;
+    return { id: item.id, name: item.item_name, qty, price, subtotal };
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today        = new Date().toISOString().split('T')[0];
   const customerName = document.getElementById('customer-name').value.trim();
-  const notes = document.getElementById('sale-notes').value.trim();
-  const notesStr = [customerName ? `Customer: ${customerName}` : '', `Payment: ${selectedPayment}`, notes].filter(Boolean).join(' | ');
+  const notes        = document.getElementById('sale-notes').value.trim();
 
-  // 1. Record the sale
-  const { error: saleErr } = await _supabase.from('sales').insert({
-    user_id: currentUser.id,
-    date: today,
-    total_amount: total,
-    notes: notesStr
-  });
+  // ── Insert into purchase_transactions (NOT sales) ──
+  const { error: txnErr } = await _supabase
+    .from('purchase_transactions')
+    .insert({
+      user_id:        currentUser.id,
+      date:           today,
+      total_amount:   total,
+      payment_method: selectedPayment,
+      customer_name:  customerName || null,
+      notes:          notes || null,
+      items:          items   // stored as JSONB
+    });
 
-  if (saleErr) {
-    document.getElementById('page-msg').innerHTML = `<div class="alert alert-danger">Sale error: ${saleErr.message}</div>`;
-    btn.disabled = false;
-    btn.textContent = '✅ Complete Sale →';
+  if (txnErr) {
+    document.getElementById('page-msg').innerHTML =
+      `<div class="alert alert-danger">Transaction error: ${txnErr.message}</div>`;
+    btn.disabled   = false;
+    btn.textContent= '✅ Complete Sale →';
     return;
   }
 
-  // 2. Deduct inventory for each item
-  for (const { item, qty } of items) {
-    const newQty = item.quantity - qty;
-    await _supabase.from('inventory').update({ quantity: newQty }).eq('id', item.id).eq('user_id', currentUser.id);
-    // Update local reference
-    const localItem = allInventory.find(i => i.id === item.id);
-    if (localItem) localItem.quantity = newQty;
+  // ── Deduct inventory for each item ──
+  for (const { id, qty } of items) {
+    const localItem = allInventory.find(i => i.id === id);
+    if (!localItem) continue;
+    const newQty = localItem.quantity - qty;
+    await _supabase.from('inventory')
+      .update({ quantity: newQty })
+      .eq('id', id)
+      .eq('user_id', currentUser.id);
+    localItem.quantity = newQty;
   }
 
-  // 3. Show receipt
-  showReceipt(items, total, notesStr, currency);
+  // ── Store for printing ──
+  lastReceipt = { items, total, customerName, notes, payMethod: selectedPayment };
 
-  // 4. Reset
+  // ── Show in-app receipt ──
+  showReceiptModal(items, total, currency);
+
+  // ── Reset cart ──
   cart = {};
   renderCart();
   renderCatalogue();
   document.getElementById('customer-name').value = '';
-  document.getElementById('sale-notes').value = '';
+  document.getElementById('sale-notes').value    = '';
+
   loadTodayStats();
   loadRecentTxns();
 
-  btn.disabled = false;
-  btn.textContent = '✅ Complete Sale →';
+  btn.disabled   = false;
+  btn.textContent= '✅ Complete Sale →';
 }
 
-function showReceipt(items, total, notes, currency) {
+/* ══════════════════════════════
+   RECEIPT MODAL (in-app)
+══════════════════════════════ */
+function showReceiptModal(items, total, currency) {
   const now = new Date();
-  document.getElementById('receipt-date').textContent = now.toLocaleString('en-GB');
-  document.getElementById('receipt-total-display').textContent = `${currency}${total.toLocaleString('en-NG', {minimumFractionDigits:2})}`;
-  document.getElementById('receipt-pay-method').textContent = `Payment: ${selectedPayment.toUpperCase()}`;
+  document.getElementById('receipt-date').textContent         = now.toLocaleString('en-GB');
+  document.getElementById('receipt-total-display').textContent= `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
+  document.getElementById('receipt-pay-method').textContent   = `Payment: ${selectedPayment.toUpperCase()}`;
 
-  document.getElementById('receipt-lines').innerHTML = items.map(({ item, qty, price, subtotal }) => `
+  document.getElementById('receipt-lines').innerHTML = items.map(({ name, qty, subtotal }) => `
     <div class="receipt-line">
-      <span>${item.item_name} × ${qty}</span>
-      <span>${currency}${subtotal.toLocaleString('en-NG', {minimumFractionDigits:2})}</span>
-    </div>
-  `).join('');
+      <span>${name} × ${qty}</span>
+      <span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
+    </div>`).join('');
 
   document.getElementById('receipt-modal').classList.add('show');
 }
@@ -563,36 +622,110 @@ function closeReceipt() {
   document.getElementById('receipt-modal').classList.remove('show');
 }
 
-function printReceipt() {
-  window.print();
+/* ══════════════════════════════
+   PRINT RECEIPT (clean page)
+══════════════════════════════ */
+async function openPrintReceipt() {
+  if (!lastReceipt) return;
+  closeReceipt();
+
+  let bizName = 'My Business';
+  try {
+    const { data: profile } = await _supabase
+      .from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
+    if (profile?.business_name) bizName = profile.business_name;
+  } catch(e) {}
+
+  const currency = localStorage.getItem('currency') || '₦';
+  const now      = new Date();
+  const { items, total, customerName, notes, payMethod } = lastReceipt;
+
+  document.getElementById('pr-biz-name').textContent   = bizName;
+  document.getElementById('pr-date-line').textContent  = `Date: ${now.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('pr-printed-on').textContent = `Time: ${now.toLocaleTimeString('en-GB')}`;
+  document.getElementById('pr-footer-date').textContent= now.toLocaleDateString();
+
+  const rows = items.map(({ name, qty, price, subtotal }) =>
+    `<div class="pr-row"><span>${name} × ${qty} @ ${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</span><span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span></div>`
+  ).join('');
+
+  document.getElementById('pr-body').innerHTML = `
+    ${customerName ? `<div class="pr-row"><span>Customer</span><span>${customerName}</span></div>` : ''}
+    <div class="pr-row"><span>Payment Method</span><span>${payMethod.toUpperCase()}</span></div>
+    <div style="border-top:1px solid #eee;margin:8px 0;"></div>
+    ${rows}
+    <div class="pr-total"><span>TOTAL</span><span>${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}</span></div>
+    ${notes ? `<div class="pr-row" style="margin-top:8px;"><span>Notes</span><span>${notes}</span></div>` : ''}
+  `;
+
+  document.getElementById('print-receipt-area').style.display = 'block';
+  setTimeout(() => window.print(), 300);
 }
 
+function closePrintReceipt() {
+  document.getElementById('print-receipt-area').style.display = 'none';
+}
+
+/* ══════════════════════════════
+   TODAY'S STATS — from purchase_transactions
+══════════════════════════════ */
 async function loadTodayStats() {
-  const today = new Date().toISOString().split('T')[0];
-  const { data } = await _supabase.from('sales').select('total_amount').eq('user_id', currentUser.id).eq('date', today);
-  const total = (data || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  const today    = new Date().toISOString().split('T')[0];
   const currency = localStorage.getItem('currency') || '₦';
-  document.getElementById('stat-sales').textContent = `${currency}${total.toLocaleString('en-NG', {minimumFractionDigits:2})}`;
-  document.getElementById('stat-txns').textContent = (data || []).length;
+  const { data } = await _supabase
+    .from('purchase_transactions')
+    .select('total_amount')
+    .eq('user_id', currentUser.id)
+    .eq('date', today);
+
+  const total = (data||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  document.getElementById('stat-sales').textContent = `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
+  document.getElementById('stat-txns').textContent  = (data||[]).length;
 }
 
+/* ══════════════════════════════
+   RECENT TRANSACTIONS — from purchase_transactions
+══════════════════════════════ */
 async function loadRecentTxns() {
-  const { data } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
   const currency = localStorage.getItem('currency') || '₦';
+  const { data } = await _supabase
+    .from('purchase_transactions')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
   const el = document.getElementById('txn-table');
   if (!data || data.length === 0) {
     el.innerHTML = '<div class="empty-state"><div class="icon">🧾</div><p>No transactions yet. Complete a sale above to see it here.</p></div>';
     return;
   }
+
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Date & Time</th><th>Amount</th><th>Notes / Customer</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Date & Time</th>
+        <th>Amount</th>
+        <th>Payment</th>
+        <th>Customer</th>
+        <th>Items</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
     <tbody>
-      ${data.map(r => `
-        <tr>
-          <td>${new Date(r.created_at).toLocaleString('en-GB', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+      ${data.map(r => {
+        const itemList = Array.isArray(r.items)
+          ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
+          : '—';
+        return `<tr>
+          <td>${new Date(r.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
           <td style="color:var(--success);font-weight:700;">${currency}${Number(r.total_amount).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
-          <td>${r.notes || '—'}</td>
-        </tr>`).join('')}
+          <td><span style="text-transform:capitalize;">${r.payment_method||'—'}</span></td>
+          <td>${r.customer_name||'Walk-in'}</td>
+          <td style="font-size:0.8rem;color:var(--muted);">${itemList}</td>
+          <td>${r.notes||'—'}</td>
+        </tr>`;
+      }).join('')}
     </tbody>
   </table></div>`;
 }

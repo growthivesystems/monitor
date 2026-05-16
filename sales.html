@@ -1,10 +1,147 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Sales — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* ── Tab Toggle ── */
+  .record-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--gold-border);
+    width: fit-content;
+  }
+  .record-tab {
+    padding: 9px 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: var(--dark3);
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+  .record-tab.active {
+    background: var(--gold);
+    color: #000;
+  }
+  .record-tab:first-child { border-right: 1px solid var(--gold-border); }
+
+  /* ── Form panels ── */
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  /* ── Premium extras ── */
+  .source-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .source-total {
+    padding: 10px 14px;
+    background: var(--dark3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gold-border);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .section-label {
+    font-size: 0.72rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold);
+    margin: 16px 0 10px; font-weight: 600;
+    border-bottom: 1px solid var(--gold-border);
+    padding-bottom: 6px;
+  }
+  .float-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .closing-box {
+    padding: 12px 14px;
+    background: var(--dark3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gold-border);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 4px;
+  }
+
+  /* ── Update badge on existing record ── */
+  .update-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,165,0,0.12);
+    border: 1px solid var(--gold-border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem; color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  /* ── Print styles ── */
+  @media print {
+    body * { visibility: hidden !important; }
+    #print-receipt, #print-receipt * { visibility: visible !important; }
+    #print-receipt {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100%; height: auto;
+      background: #fff !important;
+      color: #000 !important;
+      padding: 40px !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      z-index: 99999;
+    }
+    .no-print { display: none !important; }
+  }
+
+  /* ── Print receipt overlay ── */
+  #print-receipt {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #fff; color: #111;
+    z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, serif;
+    overflow-y: auto;
+  }
+  #print-receipt .pr-header {
+    border-bottom: 2px solid #111;
+    padding-bottom: 16px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  #print-receipt .pr-biz { font-size: 1.6rem; font-weight: 700; }
+  #print-receipt .pr-sub { font-size: 0.82rem; color: #555; margin-top: 2px; }
+  #print-receipt .pr-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; }
+  #print-receipt .pr-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #eee;
+    font-size: 0.92rem;
+  }
+  #print-receipt .pr-row span:last-child { font-weight: 600; }
+  #print-receipt .pr-total {
+    display: flex; justify-content: space-between;
+    padding: 14px 0 0; font-size: 1.1rem; font-weight: 700;
+    border-top: 2px solid #111; margin-top: 8px;
+  }
+  #print-receipt .pr-footer {
+    margin-top: 40px; text-align: center;
+    font-size: 0.75rem; color: #888;
+    border-top: 1px solid #ddd; padding-top: 16px;
+  }
+  .print-close-btn {
+    position: fixed; top: 16px; right: 20px;
+    background: #111; color: #fff;
+    border: none; padding: 8px 18px;
+    border-radius: 6px; cursor: pointer;
+    font-size: 0.85rem; z-index: 10000;
+  }
+</style>
 </head>
 <body>
 <div id="main-navbar"></div>
@@ -12,55 +149,141 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="page-title">Daily Sales</div>
-    <div class="page-subtitle">Record your daily sales totals quickly and easily.</div>
+    <div class="page-subtitle">Record your daily sales. One record per day — saving again updates the existing entry.</div>
 
     <div class="grid-2">
-      <!-- Entry Form -->
+      <!-- ── Entry Form Card ── -->
       <div class="card">
-        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Record Sale</div>
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">➕ Record Today's Sales</div>
+
+        <!-- Tab Toggle -->
+        <div class="record-tabs">
+          <button class="record-tab active" id="tab-simple" onclick="switchTab('simple')">Simple Sales Record</button>
+          <button class="record-tab" id="tab-premium" onclick="switchTab('premium')">⭐ Premium Sales Record</button>
+        </div>
+
         <div id="form-msg"></div>
+        <div id="existing-badge" style="display:none;">
+          <div class="update-badge">⚠️ A record exists for this date — saving will update it.</div>
+        </div>
+
+        <!-- Shared: Date field -->
         <div class="form-group">
           <label>Date</label>
-          <input type="date" id="sale-date">
+          <input type="date" id="sale-date" onchange="checkExisting()">
         </div>
-        <div class="form-group">
-          <label>Total Sales Amount (₦)</label>
-          <input type="number" id="sale-amount" placeholder="0.00" min="0" step="0.01">
+
+        <!-- ══ SIMPLE PANEL ══ -->
+        <div class="form-panel active" id="panel-simple">
+          <div class="form-group">
+            <label>Total Sales Amount (₦)</label>
+            <input type="number" id="s-amount" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Total Quantity Sold (optional)</label>
+            <input type="number" id="s-qty" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Notes (optional)</label>
+            <textarea id="s-notes" placeholder="e.g. Busy market day, sold out of rice…"></textarea>
+          </div>
+          <button class="btn btn-gold btn-full" onclick="saveSale('simple')" style="margin-top:8px;">Save Sale Record →</button>
         </div>
-        <div class="form-group">
-          <label>Total Quantity Sold (optional)</label>
-          <input type="number" id="sale-qty" placeholder="0" min="0">
+
+        <!-- ══ PREMIUM PANEL ══ -->
+        <div class="form-panel" id="panel-premium">
+
+          <div class="section-label">💳 Sales by Payment Source</div>
+          <div class="source-grid">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>💵 Cash (₦)</label>
+              <input type="number" id="p-cash" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>📱 Transfer (₦)</label>
+              <input type="number" id="p-transfer" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>🖥️ POS 1 (₦)</label>
+              <input type="number" id="p-pos1" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>🖥️ POS 2 (₦)</label>
+              <input type="number" id="p-pos2" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>🖥️ POS 3 (₦)</label>
+              <input type="number" id="p-pos3" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>📦 Qty Sold</label>
+              <input type="number" id="p-qty" placeholder="0" min="0">
+            </div>
+          </div>
+
+          <div class="source-total">
+            <span style="font-size:0.82rem;color:var(--muted);">Total Sales (Auto)</span>
+            <span style="font-weight:700;color:var(--gold);font-family:var(--font-display);font-size:1.1rem;" id="p-auto-total">₦0.00</span>
+          </div>
+
+          <div class="section-label">💰 Cash Float Tracker</div>
+          <div class="float-row">
+            <div class="form-group">
+              <label>Opening Balance (₦)</label>
+              <input type="number" id="p-opening" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+            <div class="form-group">
+              <label>Cash Paid Out (₦)</label>
+              <input type="number" id="p-cashout" placeholder="Change, POS cash-outs…" min="0" step="0.01" oninput="calcPremium()">
+            </div>
+          </div>
+          <div class="closing-box">
+            <span style="font-size:0.82rem;color:var(--muted);">Closing Cash Balance</span>
+            <span style="font-weight:700;font-family:var(--font-display);font-size:1.1rem;" id="p-closing">₦0.00</span>
+          </div>
+
+          <div class="form-group" style="margin-top:16px;">
+            <label>Notes (optional)</label>
+            <textarea id="p-notes" placeholder="e.g. Busy market day, wine restock needed…"></textarea>
+          </div>
+
+          <button class="btn btn-gold btn-full" onclick="saveSale('premium')" style="margin-top:8px;">Save Premium Record →</button>
         </div>
-        <div class="form-group">
-          <label>Notes (optional)</label>
-          <textarea id="sale-notes" placeholder="e.g. Busy market day, sold out of rice…"></textarea>
-        </div>
-        <button class="btn btn-gold" onclick="saveSale()">Save Sale Record →</button>
       </div>
 
-      <!-- Monthly Summary -->
+      <!-- ── Monthly Summary ── -->
       <div class="card">
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📊 This Month Summary</div>
-        <div class="grid-2" style="margin-bottom:0;">
-          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
-            <div class="card-title">Total Sales</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Total Sales</div>
             <div class="card-value gold" id="month-total">₦0.00</div>
           </div>
-          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
-            <div class="card-title">Entries</div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Cash Sales</div>
+            <div class="card-value success" id="month-cash">₦0.00</div>
+          </div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Transfer Sales</div>
+            <div class="card-value" style="color:var(--info);" id="month-transfer">₦0.00</div>
+          </div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">POS Sales</div>
+            <div class="card-value" style="color:var(--gold2);" id="month-pos">₦0.00</div>
+          </div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Entries</div>
             <div class="card-value" id="month-count">0</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Sales Table -->
+    <!-- ── Sales History Table ── -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">Sales History</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="month" id="filter-month" style="width:auto;" onchange="loadSales()">
-        </div>
+        <input type="month" id="filter-month" style="width:auto;" onchange="loadSales()">
       </div>
       <div id="sales-table"><div class="spinner"></div></div>
     </div>
@@ -68,76 +291,291 @@
 </div>
 <div id="main-footer"></div>
 
+<!-- ── Print Receipt Overlay ── -->
+<div id="print-receipt">
+  <button class="print-close-btn no-print" onclick="closePrint()">✕ Close</button>
+  <div class="pr-header">
+    <div>
+      <div class="pr-biz" id="pr-biz-name">Business Name</div>
+      <div class="pr-sub" id="pr-biz-sub">Sales Receipt</div>
+    </div>
+    <div style="text-align:right;font-size:0.8rem;color:#555;">
+      <div id="pr-date-line"></div>
+      <div id="pr-printed-on"></div>
+    </div>
+  </div>
+  <div class="pr-title">Daily Sales Record</div>
+  <div id="pr-body"></div>
+  <div class="pr-footer">
+    Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
 let currentUser;
+let activeTab = 'simple'; // track active tab
+
 (async () => {
   currentUser = await requireAuth();
   if (!currentUser) return;
   await initPage('sales');
-  // Set default date to today
   document.getElementById('sale-date').value = new Date().toISOString().split('T')[0];
-  // Set default filter to current month
   const now = new Date();
-  document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('filter-month').value =
+    `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  await checkExisting();
   loadSales();
 })();
 
+/* ── Tab switching ── */
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-simple').classList.toggle('active', tab === 'simple');
+  document.getElementById('tab-premium').classList.toggle('active', tab === 'premium');
+  document.getElementById('panel-simple').classList.toggle('active', tab === 'simple');
+  document.getElementById('panel-premium').classList.toggle('active', tab === 'premium');
+}
+
+/* ── Premium live calcs ── */
+function calcPremium() {
+  const cash     = parseFloat(document.getElementById('p-cash').value) || 0;
+  const transfer = parseFloat(document.getElementById('p-transfer').value) || 0;
+  const pos1     = parseFloat(document.getElementById('p-pos1').value) || 0;
+  const pos2     = parseFloat(document.getElementById('p-pos2').value) || 0;
+  const pos3     = parseFloat(document.getElementById('p-pos3').value) || 0;
+  const total    = cash + transfer + pos1 + pos2 + pos3;
+  document.getElementById('p-auto-total').textContent = formatCurrency(total);
+
+  const opening  = parseFloat(document.getElementById('p-opening').value) || 0;
+  const paidOut  = parseFloat(document.getElementById('p-cashout').value) || 0;
+  const closing  = opening + cash - paidOut;
+  const el = document.getElementById('p-closing');
+  el.textContent = formatCurrency(closing);
+  el.style.color = closing >= 0 ? 'var(--success)' : 'var(--danger)';
+}
+
+/* ── Check if record exists for selected date ── */
+async function checkExisting() {
+  const date = document.getElementById('sale-date').value;
+  if (!date || !currentUser) return;
+  const { data } = await _supabase
+    .from('sales').select('id').eq('user_id', currentUser.id).eq('date', date).maybeSingle();
+  document.getElementById('existing-badge').style.display = data ? 'block' : 'none';
+}
+
+/* ── Load sales history ── */
 async function loadSales() {
   const month = document.getElementById('filter-month').value;
   if (!month) return;
   const [yr, mo] = month.split('-');
   const start = `${yr}-${mo}-01`;
-  const end = new Date(yr, mo, 0).toISOString().split('T')[0];
-  const { data } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false });
-  const total = (data || []).reduce((s, r) => s + Number(r.total_amount), 0);
-  document.getElementById('month-total').textContent = formatCurrency(total);
-  document.getElementById('month-count').textContent = (data || []).length;
+  const end   = new Date(yr, mo, 0).toISOString().split('T')[0];
+
+  const { data } = await _supabase
+    .from('sales').select('*')
+    .eq('user_id', currentUser.id)
+    .gte('date', start).lte('date', end)
+    .order('date', { ascending: false });
+
+  const totalSales    = (data||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalCash     = (data||[]).reduce((s,r) => s + Number(r.cash_amount||0), 0);
+  const totalTransfer = (data||[]).reduce((s,r) => s + Number(r.transfer_amount||0), 0);
+  const totalPOS      = (data||[]).reduce((s,r) => s + Number(r.pos_amount||0), 0);
+
+  document.getElementById('month-total').textContent    = formatCurrency(totalSales);
+  document.getElementById('month-cash').textContent     = formatCurrency(totalCash);
+  document.getElementById('month-transfer').textContent = formatCurrency(totalTransfer);
+  document.getElementById('month-pos').textContent      = formatCurrency(totalPOS);
+  document.getElementById('month-count').textContent    = (data||[]).length;
+
   const el = document.getElementById('sales-table');
   if (!data || data.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded for this period.</p></div>'; return;
+    el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded for this period.</p></div>';
+    return;
   }
+
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Date</th><th>Amount</th><th>Qty</th><th>Notes</th><th>Action</th></tr></thead>
-    <tbody>${data.map(r => `
+    <thead>
       <tr>
+        <th>Date</th><th>Total</th><th>Cash</th><th>Transfer</th>
+        <th>POS</th><th>Closing Cash</th><th>Qty</th><th>Notes</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>${(data||[]).map(r => {
+      const pos     = Number(r.pos_amount||0);
+      const closing = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
+      return `<tr>
         <td>${formatDate(r.date)}</td>
-        <td style="color:var(--success);font-weight:600;">${formatCurrency(r.total_amount)}</td>
-        <td>${r.total_quantity || '—'}</td>
-        <td>${r.notes || '—'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteSale('${r.id}')">Delete</button></td>
-      </tr>`).join('')}
+        <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
+        <td>${formatCurrency(r.cash_amount)}</td>
+        <td>${formatCurrency(r.transfer_amount)}</td>
+        <td>${formatCurrency(pos)}</td>
+        <td style="color:${closing>=0?'var(--success)':'var(--danger)'};">${formatCurrency(closing)}</td>
+        <td>${r.total_quantity||'—'}</td>
+        <td>${r.notes||'—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:var(--dark3);color:var(--gold);border:1px solid var(--gold-border);"
+            onclick="printReceipt(${JSON.stringify(r).replace(/"/g,'&quot;')})">🖨️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSale('${r.id}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('')}
     </tbody>
   </table></div>`;
 }
 
-async function saveSale() {
+/* ── Save (insert or update) ── */
+async function saveSale(type) {
   const date = document.getElementById('sale-date').value;
-  const amount = parseFloat(document.getElementById('sale-amount').value);
-  const qty = parseInt(document.getElementById('sale-qty').value) || null;
-  const notes = document.getElementById('sale-notes').value.trim();
-  const msg = document.getElementById('form-msg');
-  if (!date || isNaN(amount) || amount <= 0) {
-    msg.innerHTML = '<div class="alert alert-danger">Please enter a valid date and amount.</div>'; return;
+  const msg  = document.getElementById('form-msg');
+
+  if (!date) {
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please select a date.</div>'; return;
   }
+
+  let payload = { user_id: currentUser.id, date };
+
+  if (type === 'simple') {
+    const amount = parseFloat(document.getElementById('s-amount').value) || 0;
+    if (amount <= 0) {
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter a sales amount.</div>'; return;
+    }
+    payload = {
+      ...payload,
+      total_amount:    amount,
+      cash_amount:     0,
+      transfer_amount: 0,
+      pos_amount:      0,
+      total_quantity:  parseInt(document.getElementById('s-qty').value) || null,
+      notes:           document.getElementById('s-notes').value.trim()
+    };
+  } else {
+    const cash     = parseFloat(document.getElementById('p-cash').value) || 0;
+    const transfer = parseFloat(document.getElementById('p-transfer').value) || 0;
+    const pos1     = parseFloat(document.getElementById('p-pos1').value) || 0;
+    const pos2     = parseFloat(document.getElementById('p-pos2').value) || 0;
+    const pos3     = parseFloat(document.getElementById('p-pos3').value) || 0;
+    const total    = cash + transfer + pos1 + pos2 + pos3;
+    if (total <= 0) {
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter at least one sales amount.</div>'; return;
+    }
+    payload = {
+      ...payload,
+      total_amount:    total,
+      cash_amount:     cash,
+      transfer_amount: transfer,
+      pos_amount:      pos1 + pos2 + pos3,
+      opening_balance: parseFloat(document.getElementById('p-opening').value) || 0,
+      cash_paid_out:   parseFloat(document.getElementById('p-cashout').value) || 0,
+      total_quantity:  parseInt(document.getElementById('p-qty').value) || null,
+      notes:           document.getElementById('p-notes').value.trim()
+    };
+  }
+
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
-  const { error } = await _supabase.from('sales').insert({ user_id: currentUser.id, date, total_amount: amount, total_quantity: qty, notes });
+
+  // Check if record exists for this date
+  const { data: existing } = await _supabase
+    .from('sales').select('id').eq('user_id', currentUser.id).eq('date', date).maybeSingle();
+
+  let error;
+  if (existing) {
+    // UPDATE existing record
+    ({ error } = await _supabase.from('sales').update(payload).eq('id', existing.id));
+  } else {
+    // INSERT new record
+    ({ error } = await _supabase.from('sales').insert(payload));
+  }
+
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">Sale recorded successfully!</div>';
-  document.getElementById('sale-amount').value = '';
-  document.getElementById('sale-qty').value = '';
-  document.getElementById('sale-notes').value = '';
+
+  msg.innerHTML = existing
+    ? '<div class="alert alert-success">✅ Sale record updated!</div>'
+    : '<div class="alert alert-success">✅ Sale recorded successfully!</div>';
+
+  // Clear form fields
+  if (type === 'simple') {
+    ['s-amount','s-qty','s-notes'].forEach(id => document.getElementById(id).value = '');
+  } else {
+    ['p-cash','p-transfer','p-pos1','p-pos2','p-pos3','p-qty','p-opening','p-cashout','p-notes']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-auto-total').textContent = '₦0.00';
+    document.getElementById('p-closing').textContent    = '₦0.00';
+  }
+
+  document.getElementById('existing-badge').style.display = 'none';
   loadSales();
-  setTimeout(() => msg.innerHTML = '', 3000);
+  setTimeout(() => msg.innerHTML = '', 4000);
 }
 
+/* ── Delete ── */
 async function deleteSale(id) {
-  if (!confirm('Delete this sale record?')) return;
+  if (!confirm('Delete this sale record? This cannot be undone.')) return;
   await _supabase.from('sales').delete().eq('id', id);
   loadSales();
+}
+
+/* ── Print receipt ── */
+async function printReceipt(record) {
+  // Get business name from profile if available
+  let bizName = 'My Business';
+  try {
+    const { data: profile } = await _supabase
+      .from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
+    if (profile?.business_name) bizName = profile.business_name;
+  } catch(e) {}
+
+  const pos     = Number(record.pos_amount||0);
+  const closing = Number(record.opening_balance||0) + Number(record.cash_amount||0) - Number(record.cash_paid_out||0);
+  const now     = new Date();
+
+  document.getElementById('pr-biz-name').textContent  = bizName;
+  document.getElementById('pr-biz-sub').textContent   = 'GrowthIve Monitor — Sales Receipt';
+  document.getElementById('pr-date-line').textContent = `Sale Date: ${formatDate(record.date)}`;
+  document.getElementById('pr-printed-on').textContent= `Printed: ${now.toLocaleString()}`;
+  document.getElementById('pr-footer-date').textContent = now.toLocaleDateString();
+
+  const rows = [];
+  if (Number(record.cash_amount||0) > 0)
+    rows.push(['Cash Sales', formatCurrency(record.cash_amount)]);
+  if (Number(record.transfer_amount||0) > 0)
+    rows.push(['Transfer Sales', formatCurrency(record.transfer_amount)]);
+  if (pos > 0)
+    rows.push(['POS Sales', formatCurrency(pos)]);
+  if (Number(record.opening_balance||0) > 0)
+    rows.push(['Opening Balance', formatCurrency(record.opening_balance)]);
+  if (Number(record.cash_paid_out||0) > 0)
+    rows.push(['Cash Paid Out', formatCurrency(record.cash_paid_out)]);
+  if (record.total_quantity)
+    rows.push(['Quantity Sold', record.total_quantity]);
+  if (record.notes)
+    rows.push(['Notes', record.notes]);
+
+  document.getElementById('pr-body').innerHTML = `
+    ${rows.map(([k,v]) => `
+      <div class="pr-row"><span>${k}</span><span>${v}</span></div>
+    `).join('')}
+    <div class="pr-total">
+      <span>TOTAL SALES</span>
+      <span>${formatCurrency(record.total_amount)}</span>
+    </div>
+    ${pos > 0 || Number(record.opening_balance||0) > 0 ? `
+    <div class="pr-row" style="margin-top:8px;">
+      <span>Closing Cash Balance</span>
+      <span style="color:${closing>=0?'#1a7a1a':'#cc0000'};">${formatCurrency(closing)}</span>
+    </div>` : ''}
+  `;
+
+  document.getElementById('print-receipt').style.display = 'block';
+  setTimeout(() => window.print(), 300);
+}
+
+function closePrint() {
+  document.getElementById('print-receipt').style.display = 'none';
 }
 </script>
 </body>

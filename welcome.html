@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .welcome-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 80%, rgba(201,168,76,0.07) 0%, transparent 50%),
+      var(--dark);
+  }
+
+  .welcome-card {
+    background: var(--dark2);
+    border: 1px solid var(--gold-border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5);
+    text-align: center;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  .welcome-emoji {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    animation: bounceIn 0.8s ease both;
+  }
+
+  .welcome-greeting {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .welcome-greeting span {
+    color: var(--gold);
+  }
+
+  .welcome-biz {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .welcome-biz strong {
+    color: var(--gold2);
+  }
+
+  .welcome-divider {
+    width: 60px; height: 1px;
+    background: var(--gold-border);
+    margin: 0 auto 28px;
+  }
+
+  .welcome-desc {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.8;
+    margin-bottom: 32px;
+    padding: 0 8px;
+  }
+
+  .welcome-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .welcome-feature {
+    background: var(--dark3);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .welcome-feature .f-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+  .welcome-btns {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .welcome-footer {
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-top: 20px;
+    border-top: 1px solid var(--gold-border);
+  }
+
+  .welcome-footer a { color: var(--gold); text-decoration: none; }
+  .welcome-footer a:hover { color: var(--gold2); }
+
+  .welcome-logo {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--gold);
+    margin-bottom: 24px;
+    letter-spacing: 0.04em;
+  }
+  .welcome-logo span { color: var(--white); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.1); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    .welcome-card { padding: 36px 24px; }
+    .welcome-features { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="welcome-wrap">
+  <div class="welcome-card">
+
+    <!-- Logo -->
+    <div class="welcome-logo">GrowthIve <span>Monitor</span></div>
+
+    <!-- Emoji -->
+    <div class="welcome-emoji">👋</div>
+
+    <!-- Greeting -->
+    <div class="welcome-greeting">Hello, <span id="user-firstname">there</span>!</div>
+    <div class="welcome-biz">Your business <strong id="user-bizname">—</strong> is all set up and ready to go.</div>
+
+    <div class="welcome-divider"></div>
+
+    <!-- Description -->
+    <p class="welcome-desc">
+      GrowthIve Monitor helps you track your daily sales, log expenses, manage inventory,
+      monitor debts and get a full picture of your business health — all in one place.
+      Here's a quick look at what you can do:
+    </p>
+
+    <!-- Feature Pills -->
+    <div class="welcome-features">
+      <div class="welcome-feature"><span class="f-icon">💰</span> Record Daily Sales</div>
+      <div class="welcome-feature"><span class="f-icon">📋</span> Track Expenses</div>
+      <div class="welcome-feature"><span class="f-icon">📦</span> Manage Inventory</div>
+      <div class="welcome-feature"><span class="f-icon">🤝</span> Monitor Debts</div>
+      <div class="welcome-feature"><span class="f-icon">📈</span> View Reports</div>
+      <div class="welcome-feature"><span class="f-icon">🏆</span> Health Score</div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="welcome-btns">
+      <a href="faq.html" class="btn btn-outline btn-full">📖 Read FAQ — Learn How It Works</a>
+      <a href="dashboard.html" class="btn btn-gold btn-full" onclick="skipToDashboard()">
+        Skip to Dashboard →
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="welcome-footer">
+      Need help getting started?
+      <a href="contact.html">Contact Support</a>
+      &nbsp;·&nbsp;
+      <a href="faq.html">FAQ</a>
+      &nbsp;·&nbsp;
+      <a href="dashboard.html" onclick="skipToDashboard()">Skip</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Apply theme
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+  // Clear the new user flag
+  localStorage.removeItem('growthive_new_user');
+
+  function skipTodashboard() {
+    window.location.href = 'dashboard.html';
+  }
+
+  (async () => {
+    // Must be logged in
+    const user = await requireAuth();
+    if (!user) return;
+
+    // Load profile
+    const { data: profile } = await _supabase
+      .from('profiles')
+      .select('full_name, business_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      // Extract first name only
+      const firstName = profile.full_name
+        ? profile.full_name.trim().split(' ')[0]
+        : 'Friend';
+
+      const bizName = profile.business_name || 'your business';
+
+      document.getElementById('user-firstname').textContent = firstName;
+      document.getElementById('user-bizname').textContent = bizName;
+
+      // Update page title
+      document.title = `Welcome, ${firstName} — GrowthIve Monitor`;
+    }
+  })();
+</script>
+</body>
+</html>

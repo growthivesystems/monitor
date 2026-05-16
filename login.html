@@ -78,6 +78,11 @@
       <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
 
+    <!-- SUPPORT -->
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:8px;">
+      Need help? <a href="contact.html" style="color:var(--gold);">Contact Support</a>
+    </p>
+
     <!-- POWERED BY -->
     <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
       <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
@@ -102,17 +107,17 @@
   if (hash.includes('access_token')) {
     document.getElementById('msg').innerHTML =
       '<div class="alert alert-success">✅ Email confirmed! Signing you in…</div>';
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+    setTimeout(() => { window.location.href = 'welcome.html'; }, 1200);
   }
   if (hash.includes('error=access_denied') || hash.includes('otp_expired')) {
     document.getElementById('msg').innerHTML =
       '<div class="alert alert-danger">⚠️ Your confirmation link has expired. Please <a href="register.html" style="color:var(--gold);">register again</a> or contact support.</div>';
   }
 
-  // ── IF ALREADY LOGGED IN → DASHBOARD ──
+  // ── IF ALREADY LOGGED IN → RETURNING ──
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
-    if (user) window.location.href = 'dashboard.html';
+    if (user) window.location.href = 'returning.html';
   })();
 
   // ── LOGIN ──
@@ -151,7 +156,18 @@
     }
 
     msg.innerHTML = '<div class="alert alert-success">✅ Login successful! Redirecting…</div>';
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+
+    // ── FIRST TIME vs RETURNING ──
+    setTimeout(() => {
+      if (localStorage.getItem('growthive_new_user') === 'true') {
+        // First time — go to onboarding welcome
+        localStorage.removeItem('growthive_new_user');
+        window.location.href = 'welcome.html';
+      } else {
+        // Returning user — go to smart welcome back
+        window.location.href = 'returning.html';
+      }
+    }, 800);
   }
 
   // ── FORGOT PASSWORD ──

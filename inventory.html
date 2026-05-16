@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventory — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* Clean list style */
+  .inv-list { display: flex; flex-direction: column; gap: 0; }
+  .inv-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--dark4);
+    transition: background 0.2s;
+  }
+  .inv-item:last-child { border-bottom: none; }
+  .inv-item:hover { background: var(--gold-dim); }
+  .inv-num {
+    font-size: 0.75rem; color: var(--muted);
+    width: 24px; flex-shrink: 0; text-align: right;
+    font-family: var(--font-display);
+  }
+  .inv-name {
+    flex: 1; font-weight: 500; color: var(--white2);
+    font-size: 0.92rem;
+  }
+  .inv-qty {
+    font-weight: 700; font-family: var(--font-display);
+    font-size: 1rem; width: 60px; text-align: center;
+  }
+  .inv-price {
+    color: var(--gold); font-size: 0.85rem;
+    width: 100px; text-align: right;
+  }
+  .inv-value {
+    color: var(--muted); font-size: 0.82rem;
+    width: 110px; text-align: right;
+  }
+  .inv-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* Security modal */
+  .security-note {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .security-note strong { color: var(--gold); }
+
+  @media (max-width: 600px) {
+    .inv-price, .inv-value { display: none; }
+    .inv-item { padding: 12px 10px; }
+  }
+</style>
 </head>
 <body>
 <div id="main-navbar"></div>
@@ -12,19 +64,19 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="page-title">Inventory / Stock Manager</div>
-    <div class="page-subtitle">Track stock levels and get alerts when items run low.</div>
+    <div class="page-subtitle">Track stock levels and get low-stock alerts automatically.</div>
 
-    <!-- Low Stock Alert Banner -->
+    <!-- Low Stock Banner -->
     <div id="low-stock-banner"></div>
 
     <div class="grid-2">
-      <!-- Add Item Form -->
+      <!-- Add Item -->
       <div class="card">
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Add Stock Item</div>
         <div id="form-msg"></div>
         <div class="form-group">
           <label>Item Name</label>
-          <input type="text" id="item-name" placeholder="e.g. Rice (50kg bag), Engine Oil…">
+          <input type="text" id="item-name" placeholder="e.g. Red Wine (bottle), Engine Oil…">
         </div>
         <div class="form-group">
           <label>Current Quantity</label>
@@ -38,45 +90,81 @@
           <label>Low Stock Alert Threshold</label>
           <input type="number" id="item-threshold" placeholder="5" min="1" value="5">
         </div>
-        <button class="btn btn-gold" onclick="saveItem()">Add Item →</button>
+        <button class="btn btn-gold" onclick="saveItem()">Add to Stock List →</button>
       </div>
 
       <!-- Summary -->
       <div class="card">
-        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📦 Stock Summary</div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📋 Stock Summary</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
             <div class="card-title" style="margin:0;">Total Items</div>
             <div class="card-value gold" id="total-items">0</div>
           </div>
-          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Low Stock Items</div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Low Stock</div>
             <div class="card-value danger" id="low-count">0</div>
           </div>
-          <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
             <div class="card-title" style="margin:0;">Total Stock Value</div>
             <div class="card-value gold" id="total-value">₦0.00</div>
           </div>
         </div>
+        <div class="security-note" style="margin-top:16px;">
+          <strong>🔒 Edit Protection Active</strong><br>
+          Editing stock quantities requires email verification. A secure link will be sent to your registered email before any edits can be made. This protects your stock records from unauthorised changes.
+        </div>
       </div>
     </div>
 
-    <!-- Inventory Table -->
+    <!-- Stock List -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-        <div class="modal-title" style="font-size:1.1rem;margin:0;">All Stock Items</div>
-        <input type="text" id="search-inv" placeholder="Search items…" style="width:200px;" oninput="filterTable()">
+        <div class="modal-title" style="font-size:1.1rem;margin:0;">Stock List</div>
+        <input type="text" id="search-inv" placeholder="Search items…" style="width:200px;" oninput="filterList()">
       </div>
-      <div id="inv-table"><div class="spinner"></div></div>
+
+      <!-- List Header -->
+      <div style="display:flex;gap:12px;padding:8px 16px;border-bottom:2px solid var(--gold-border);margin-bottom:0;">
+        <div style="width:24px;"></div>
+        <div style="flex:1;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Item Name</div>
+        <div style="width:60px;text-align:center;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Qty</div>
+        <div style="width:100px;text-align:right;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);" class="inv-price">Unit Price</div>
+        <div style="width:110px;text-align:right;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);" class="inv-value">Value</div>
+        <div style="width:120px;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Actions</div>
+      </div>
+
+      <div id="inv-list"><div class="spinner"></div></div>
     </div>
   </div>
 </div>
 <div id="main-footer"></div>
 
-<!-- Edit Modal -->
+<!-- Edit Security Modal -->
+<div class="modal-overlay" id="security-modal">
+  <div class="modal">
+    <div class="modal-title">🔒 Edit Stock — Verification Required</div>
+    <div class="security-note">
+      To protect your stock records, editing requires email verification.<br><br>
+      Click <strong>"Send Verification Link"</strong> below. A secure link will be sent to your registered email. Click it to unlock editing for this session.
+    </div>
+    <div id="security-msg"></div>
+    <input type="hidden" id="pending-edit-id">
+    <input type="hidden" id="pending-edit-name">
+    <input type="hidden" id="pending-edit-qty">
+    <input type="hidden" id="pending-edit-price">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-gold" onclick="sendVerification()">📧 Send Verification Link</button>
+      <button class="btn btn-outline" onclick="closeSecurityModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Actual Edit Modal (shown after verification) -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
-    <div class="modal-title">Update Stock Quantity</div>
+    <div class="modal-title">✏️ Update Stock Item</div>
+    <div class="alert alert-success" style="margin-bottom:16px;">✅ Identity verified. You may now edit this item.</div>
     <input type="hidden" id="edit-id">
     <div class="form-group">
       <label>Item</label>
@@ -91,8 +179,8 @@
       <input type="number" id="edit-price" min="0" step="0.01">
     </div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-gold" onclick="updateItem()">Update →</button>
-      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="updateItem()">Update Stock →</button>
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -104,11 +192,32 @@
 <script>
 let currentUser;
 let allItems = [];
+let editUnlocked = false;
 
 (async () => {
   currentUser = await requireAuth();
   if (!currentUser) return;
   await initPage('inventory');
+
+  // Check if returning from email verification
+  const hash = window.location.hash;
+  if (hash.includes('access_token') || localStorage.getItem('inv_edit_unlocked') === 'true') {
+    editUnlocked = true;
+    localStorage.removeItem('inv_edit_unlocked');
+    // Check for pending edit
+    const pid = localStorage.getItem('pending_edit_id');
+    if (pid) {
+      const pname  = localStorage.getItem('pending_edit_name');
+      const pqty   = localStorage.getItem('pending_edit_qty');
+      const pprice = localStorage.getItem('pending_edit_price');
+      localStorage.removeItem('pending_edit_id');
+      localStorage.removeItem('pending_edit_name');
+      localStorage.removeItem('pending_edit_qty');
+      localStorage.removeItem('pending_edit_price');
+      openEditModal(pid, pname, pqty, pprice);
+    }
+  }
+
   loadInventory();
 })();
 
@@ -123,58 +232,57 @@ async function loadInventory() {
   document.getElementById('total-value').textContent = formatCurrency(totalVal);
 
   const banner = document.getElementById('low-stock-banner');
-  if (lowItems.length > 0) {
-    banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s)</strong> are running low: ${lowItems.map(i => i.item_name).join(', ')}</div>`;
-  } else {
-    banner.innerHTML = '';
-  }
+  banner.innerHTML = lowItems.length > 0
+    ? `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i => i.item_name).join(', ')}</div>`
+    : '';
 
-  renderTable(allItems);
+  renderList(allItems);
 }
 
-function filterTable() {
+function filterList() {
   const q = document.getElementById('search-inv').value.toLowerCase();
-  renderTable(allItems.filter(i => i.item_name.toLowerCase().includes(q)));
+  renderList(allItems.filter(i => i.item_name.toLowerCase().includes(q)));
 }
 
-function renderTable(items) {
-  const el = document.getElementById('inv-table');
+function renderList(items) {
+  const el = document.getElementById('inv-list');
   if (!items || items.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>No stock items found.</p></div>'; return;
+    el.innerHTML = '<div class="empty-state"><p>No stock items found. Add your first item above.</p></div>';
+    return;
   }
-  el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>${items.map(r => {
-      const isLow = r.quantity <= r.low_stock_threshold;
-      return `<tr>
-        <td style="font-weight:500;">${r.item_name}</td>
-        <td style="font-weight:600;color:${isLow ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</td>
-        <td>${formatCurrency(r.unit_price)}</td>
-        <td style="color:var(--gold);">${formatCurrency(r.quantity * r.unit_price)}</td>
-        <td><span class="badge ${isLow ? 'badge-danger' : 'badge-success'}">${isLow ? 'Low Stock' : 'In Stock'}</span></td>
-        <td style="display:flex;gap:6px;">
-          <button class="btn btn-outline btn-sm" onclick="openEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteItem('${r.id}')">Delete</button>
-        </td>
-      </tr>`;
-    }).join('')}
-    </tbody>
-  </table></div>`;
+  el.innerHTML = `<div class="inv-list">${items.map((r, idx) => {
+    const isLow = r.quantity <= r.low_stock_threshold;
+    return `<div class="inv-item">
+      <div class="inv-num">${idx + 1}</div>
+      <div class="inv-name">
+        ${r.item_name}
+        ${isLow ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>' : ''}
+      </div>
+      <div class="inv-qty" style="color:${isLow ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</div>
+      <div class="inv-price">${formatCurrency(r.unit_price)}</div>
+      <div class="inv-value">${formatCurrency(r.quantity * (r.unit_price || 0))}</div>
+      <div class="inv-actions">
+        <button class="btn btn-outline btn-sm" onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteItem('${r.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 async function saveItem() {
-  const item_name = document.getElementById('item-name').value.trim();
-  const quantity = parseInt(document.getElementById('item-qty').value);
-  const unit_price = parseFloat(document.getElementById('item-price').value) || 0;
+  const item_name         = document.getElementById('item-name').value.trim();
+  const quantity          = parseInt(document.getElementById('item-qty').value);
+  const unit_price        = parseFloat(document.getElementById('item-price').value) || 0;
   const low_stock_threshold = parseInt(document.getElementById('item-threshold').value) || 5;
   const msg = document.getElementById('form-msg');
+
   if (!item_name || isNaN(quantity)) {
-    msg.innerHTML = '<div class="alert alert-danger">Please enter item name and quantity.</div>'; return;
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter item name and quantity.</div>'; return;
   }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
   const { error } = await _supabase.from('inventory').insert({ user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">Item added!</div>';
+  msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
   document.getElementById('item-name').value = '';
   document.getElementById('item-qty').value = '';
   document.getElementById('item-price').value = '';
@@ -182,29 +290,82 @@ async function saveItem() {
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
-function openEdit(id, name, qty, price) {
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-name').value = name;
-  document.getElementById('edit-qty').value = qty;
+// ── EDIT SECURITY FLOW ──
+function requestEdit(id, name, qty, price) {
+  if (editUnlocked) {
+    openEditModal(id, name, qty, price);
+    return;
+  }
+  // Store pending edit details
+  document.getElementById('pending-edit-id').value    = id;
+  document.getElementById('pending-edit-name').value  = name;
+  document.getElementById('pending-edit-qty').value   = qty;
+  document.getElementById('pending-edit-price').value = price;
+  document.getElementById('security-msg').innerHTML   = '';
+  document.getElementById('security-modal').classList.add('show');
+}
+
+async function sendVerification() {
+  const msg = document.getElementById('security-msg');
+  const id    = document.getElementById('pending-edit-id').value;
+  const name  = document.getElementById('pending-edit-name').value;
+  const qty   = document.getElementById('pending-edit-qty').value;
+  const price = document.getElementById('pending-edit-price').value;
+
+  msg.innerHTML = '<div class="alert alert-gold">⏳ Sending verification email…</div>';
+
+  // Save pending edit to localStorage so it survives redirect
+  localStorage.setItem('pending_edit_id',    id);
+  localStorage.setItem('pending_edit_name',  name);
+  localStorage.setItem('pending_edit_qty',   qty);
+  localStorage.setItem('pending_edit_price', price);
+  localStorage.setItem('inv_edit_unlocked',  'true');
+
+  const { error } = await _supabase.auth.resetPasswordForEmail(currentUser.email, {
+    redirectTo: 'https://growthivesystems.github.io/monitor/inventory.html'
+  });
+
+  if (error) {
+    msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+    return;
+  }
+
+  msg.innerHTML = '<div class="alert alert-success">✅ Verification email sent to your registered email! Click the link in the email to unlock editing.</div>';
+}
+
+function closeSecurityModal() {
+  document.getElementById('security-modal').classList.remove('show');
+  localStorage.removeItem('pending_edit_id');
+  localStorage.removeItem('pending_edit_name');
+  localStorage.removeItem('pending_edit_qty');
+  localStorage.removeItem('pending_edit_price');
+  localStorage.removeItem('inv_edit_unlocked');
+}
+
+function openEditModal(id, name, qty, price) {
+  document.getElementById('edit-id').value    = id;
+  document.getElementById('edit-name').value  = name;
+  document.getElementById('edit-qty').value   = qty;
   document.getElementById('edit-price').value = price;
   document.getElementById('edit-modal').classList.add('show');
 }
 
-function closeModal() {
+function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('show');
+  editUnlocked = false;
 }
 
 async function updateItem() {
-  const id = document.getElementById('edit-id').value;
-  const quantity = parseInt(document.getElementById('edit-qty').value);
+  const id        = document.getElementById('edit-id').value;
+  const quantity  = parseInt(document.getElementById('edit-qty').value);
   const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
   await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
-  closeModal();
+  closeEditModal();
   loadInventory();
 }
 
 async function deleteItem(id) {
-  if (!confirm('Delete this stock item?')) return;
+  if (!confirm('Delete this stock item? This cannot be undone.')) return;
   await _supabase.from('inventory').delete().eq('id', id);
   loadInventory();
 }

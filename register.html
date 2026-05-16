@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -121,6 +121,11 @@
       <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
 
+    <!-- CONTACT SUPPORT -->
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:8px;">
+      Problem registering? <a href="contact.html" style="color:var(--gold);">Contact Support</a>
+    </p>
+
     <!-- POWERED BY -->
     <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
       <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
@@ -140,10 +145,10 @@
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
 
-  // ── IF ALREADY LOGGED IN → DASHBOARD ──
+  // ── IF ALREADY LOGGED IN → RETURNING ──
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
-    if (user) window.location.href = 'dashboard.html';
+    if (user) window.location.href = 'returning.html';
   })();
 
   // ── PASSWORD STRENGTH ──
@@ -249,6 +254,9 @@
         business_name: bizname
       });
     }
+
+    // ── SET FIRST TIME FLAG ──
+    localStorage.setItem('growthive_new_user', 'true');
 
     // ── SUCCESS ──
     msg.innerHTML = `

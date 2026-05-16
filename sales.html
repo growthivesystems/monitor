@@ -1,44 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Sales — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
-<style>
-  .source-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .source-total {
-    padding: 10px 14px;
-    background: var(--dark3);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--gold-border);
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 16px;
-  }
-  .section-label {
-    font-size: 0.72rem; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--gold);
-    margin: 16px 0 10px; font-weight: 600;
-    border-bottom: 1px solid var(--gold-border);
-    padding-bottom: 6px;
-  }
-  .float-row {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
-  .closing-box {
-    padding: 12px 14px;
-    background: var(--dark3);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--gold-border);
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 4px;
-  }
-</style>
 </head>
 <body>
 <div id="main-navbar"></div>
@@ -46,100 +12,42 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="page-title">Daily Sales</div>
-    <div class="page-subtitle">Record daily sales by payment source and track your cash float.</div>
+    <div class="page-subtitle">Record your daily sales totals quickly and easily.</div>
 
     <div class="grid-2">
       <!-- Entry Form -->
       <div class="card">
-        <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">➕ Record Today's Sales</div>
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Record Sale</div>
         <div id="form-msg"></div>
-
         <div class="form-group">
           <label>Date</label>
           <input type="date" id="sale-date">
         </div>
-
-        <!-- Payment Sources -->
-        <div class="section-label">💳 Sales by Payment Source</div>
-        <div class="source-grid">
-          <div class="form-group" style="margin-bottom:0;">
-            <label>💵 Cash (₦)</label>
-            <input type="number" id="sale-cash" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>📱 Transfer (₦)</label>
-            <input type="number" id="sale-transfer" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>🖥️ POS 1 (₦)</label>
-            <input type="number" id="sale-pos1" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>🖥️ POS 2 (₦)</label>
-            <input type="number" id="sale-pos2" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>🖥️ POS 3 (₦)</label>
-            <input type="number" id="sale-pos3" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>📦 Qty Sold</label>
-            <input type="number" id="sale-qty" placeholder="0" min="0">
-          </div>
+        <div class="form-group">
+          <label>Total Sales Amount (₦)</label>
+          <input type="number" id="sale-amount" placeholder="0.00" min="0" step="0.01">
         </div>
-        <div class="source-total">
-          <span style="font-size:0.82rem;color:var(--muted);">Total Sales (Auto)</span>
-          <span style="font-weight:700;color:var(--gold);font-family:var(--font-display);font-size:1.1rem;" id="auto-total">₦0.00</span>
+        <div class="form-group">
+          <label>Total Quantity Sold (optional)</label>
+          <input type="number" id="sale-qty" placeholder="0" min="0">
         </div>
-
-        <!-- Cash Float -->
-        <div class="section-label">💰 Cash Float Tracker</div>
-        <div class="float-row">
-          <div class="form-group">
-            <label>Opening Balance (₦)</label>
-            <input type="number" id="opening-bal" placeholder="0.00" min="0" step="0.01" oninput="calcFloat()">
-          </div>
-          <div class="form-group">
-            <label>Cash Paid Out (₦)</label>
-            <input type="number" id="cash-out" placeholder="Change, POS cash-outs…" min="0" step="0.01" oninput="calcFloat()">
-          </div>
-        </div>
-        <div class="closing-box">
-          <span style="font-size:0.82rem;color:var(--muted);">Closing Cash Balance</span>
-          <span style="font-weight:700;color:var(--success);font-family:var(--font-display);font-size:1.1rem;" id="closing-bal">₦0.00</span>
-        </div>
-
-        <!-- Notes -->
-        <div class="form-group" style="margin-top:16px;">
+        <div class="form-group">
           <label>Notes (optional)</label>
-          <textarea id="sale-notes" placeholder="e.g. Busy market day, wine restock needed…"></textarea>
+          <textarea id="sale-notes" placeholder="e.g. Busy market day, sold out of rice…"></textarea>
         </div>
-
-        <button class="btn btn-gold btn-full" onclick="saveSale()" style="margin-top:8px;">Save Sale Record →</button>
+        <button class="btn btn-gold" onclick="saveSale()">Save Sale Record →</button>
       </div>
 
       <!-- Monthly Summary -->
       <div class="card">
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📊 This Month Summary</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Total Sales</div>
+        <div class="grid-2" style="margin-bottom:0;">
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Total Sales</div>
             <div class="card-value gold" id="month-total">₦0.00</div>
           </div>
-          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Cash Sales</div>
-            <div class="card-value success" id="month-cash">₦0.00</div>
-          </div>
-          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Transfer Sales</div>
-            <div class="card-value" style="color:var(--info);" id="month-transfer">₦0.00</div>
-          </div>
-          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">POS Sales</div>
-            <div class="card-value" style="color:var(--gold2);" id="month-pos">₦0.00</div>
-          </div>
-          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Entries</div>
+          <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);">
+            <div class="card-title">Entries</div>
             <div class="card-value" id="month-count">0</div>
           </div>
         </div>
@@ -150,7 +58,9 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">Sales History</div>
-        <input type="month" id="filter-month" style="width:auto;" onchange="loadSales()">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="month" id="filter-month" style="width:auto;" onchange="loadSales()">
+        </div>
       </div>
       <div id="sales-table"><div class="spinner"></div></div>
     </div>
@@ -164,37 +74,17 @@
 <script src="js/app.js"></script>
 <script>
 let currentUser;
-
 (async () => {
   currentUser = await requireAuth();
   if (!currentUser) return;
   await initPage('sales');
+  // Set default date to today
   document.getElementById('sale-date').value = new Date().toISOString().split('T')[0];
+  // Set default filter to current month
   const now = new Date();
   document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   loadSales();
 })();
-
-function calcTotal() {
-  const cash     = parseFloat(document.getElementById('sale-cash').value) || 0;
-  const transfer = parseFloat(document.getElementById('sale-transfer').value) || 0;
-  const pos1     = parseFloat(document.getElementById('sale-pos1').value) || 0;
-  const pos2     = parseFloat(document.getElementById('sale-pos2').value) || 0;
-  const pos3     = parseFloat(document.getElementById('sale-pos3').value) || 0;
-  const total = cash + transfer + pos1 + pos2 + pos3;
-  document.getElementById('auto-total').textContent = formatCurrency(total);
-  calcFloat();
-}
-
-function calcFloat() {
-  const cash      = parseFloat(document.getElementById('sale-cash').value) || 0;
-  const opening   = parseFloat(document.getElementById('opening-bal').value) || 0;
-  const paidOut   = parseFloat(document.getElementById('cash-out').value) || 0;
-  const closing   = opening + cash - paidOut;
-  const el = document.getElementById('closing-bal');
-  el.textContent = formatCurrency(closing);
-  el.style.color = closing >= 0 ? 'var(--success)' : 'var(--danger)';
-}
 
 async function loadSales() {
   const month = document.getElementById('filter-month').value;
@@ -203,97 +93,43 @@ async function loadSales() {
   const start = `${yr}-${mo}-01`;
   const end = new Date(yr, mo, 0).toISOString().split('T')[0];
   const { data } = await _supabase.from('sales').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false });
-
-  const totalSales    = (data||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const totalCash     = (data||[]).reduce((s,r) => s + Number(r.cash_amount||0), 0);
-  const totalTransfer = (data||[]).reduce((s,r) => s + Number(r.transfer_amount||0), 0);
-  const totalPOS      = (data||[]).reduce((s,r) => s + Number(r.pos_amount||0), 0);
-
-  document.getElementById('month-total').textContent    = formatCurrency(totalSales);
-  document.getElementById('month-cash').textContent     = formatCurrency(totalCash);
-  document.getElementById('month-transfer').textContent = formatCurrency(totalTransfer);
-  document.getElementById('month-pos').textContent      = formatCurrency(totalPOS);
-  document.getElementById('month-count').textContent    = (data||[]).length;
-
+  const total = (data || []).reduce((s, r) => s + Number(r.total_amount), 0);
+  document.getElementById('month-total').textContent = formatCurrency(total);
+  document.getElementById('month-count').textContent = (data || []).length;
   const el = document.getElementById('sales-table');
   if (!data || data.length === 0) {
     el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded for this period.</p></div>'; return;
   }
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead>
+    <thead><tr><th>Date</th><th>Amount</th><th>Qty</th><th>Notes</th><th>Action</th></tr></thead>
+    <tbody>${data.map(r => `
       <tr>
-        <th>Date</th><th>Total</th><th>Cash</th><th>Transfer</th>
-        <th>POS</th><th>Closing Cash</th><th>Notes</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody>${data.map(r => {
-      const pos = Number(r.pos_amount||0);
-      const closing = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
-      return `<tr>
         <td>${formatDate(r.date)}</td>
-        <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
-        <td>${formatCurrency(r.cash_amount)}</td>
-        <td>${formatCurrency(r.transfer_amount)}</td>
-        <td>${formatCurrency(pos)}</td>
-        <td style="color:${closing>=0?'var(--success)':'var(--danger)'};">${formatCurrency(closing)}</td>
-        <td>${r.notes||'—'}</td>
+        <td style="color:var(--success);font-weight:600;">${formatCurrency(r.total_amount)}</td>
+        <td>${r.total_quantity || '—'}</td>
+        <td>${r.notes || '—'}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteSale('${r.id}')">Delete</button></td>
-      </tr>`;
-    }).join('')}
+      </tr>`).join('')}
     </tbody>
   </table></div>`;
 }
 
 async function saveSale() {
-  const date          = document.getElementById('sale-date').value;
-  const cash          = parseFloat(document.getElementById('sale-cash').value) || 0;
-  const transfer      = parseFloat(document.getElementById('sale-transfer').value) || 0;
-  const pos1          = parseFloat(document.getElementById('sale-pos1').value) || 0;
-  const pos2          = parseFloat(document.getElementById('sale-pos2').value) || 0;
-  const pos3          = parseFloat(document.getElementById('sale-pos3').value) || 0;
-  const qty           = parseInt(document.getElementById('sale-qty').value) || null;
-  const opening_bal   = parseFloat(document.getElementById('opening-bal').value) || 0;
-  const cash_paid_out = parseFloat(document.getElementById('cash-out').value) || 0;
-  const notes         = document.getElementById('sale-notes').value.trim();
-  const msg           = document.getElementById('form-msg');
-
-  const total_amount = cash + transfer + pos1 + pos2 + pos3;
-  const pos_amount   = pos1 + pos2 + pos3;
-
-  if (!date) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please select a date.</div>'; return;
+  const date = document.getElementById('sale-date').value;
+  const amount = parseFloat(document.getElementById('sale-amount').value);
+  const qty = parseInt(document.getElementById('sale-qty').value) || null;
+  const notes = document.getElementById('sale-notes').value.trim();
+  const msg = document.getElementById('form-msg');
+  if (!date || isNaN(amount) || amount <= 0) {
+    msg.innerHTML = '<div class="alert alert-danger">Please enter a valid date and amount.</div>'; return;
   }
-  if (total_amount <= 0) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter at least one sales amount.</div>'; return;
-  }
-
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
-
-  const { error } = await _supabase.from('sales').insert({
-    user_id: currentUser.id,
-    date,
-    total_amount,
-    cash_amount: cash,
-    transfer_amount: transfer,
-    pos_amount,
-    opening_balance: opening_bal,
-    cash_paid_out,
-    total_quantity: qty,
-    notes
-  });
-
+  const { error } = await _supabase.from('sales').insert({ user_id: currentUser.id, date, total_amount: amount, total_quantity: qty, notes });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-
-  msg.innerHTML = '<div class="alert alert-success">✅ Sale recorded successfully!</div>';
-
-  // Clear form
-  ['sale-cash','sale-transfer','sale-pos1','sale-pos2','sale-pos3',
-   'sale-qty','opening-bal','cash-out','sale-notes'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('auto-total').textContent = '₦0.00';
-  document.getElementById('closing-bal').textContent = '₦0.00';
-
+  msg.innerHTML = '<div class="alert alert-success">Sale recorded successfully!</div>';
+  document.getElementById('sale-amount').value = '';
+  document.getElementById('sale-qty').value = '';
+  document.getElementById('sale-notes').value = '';
   loadSales();
   setTimeout(() => msg.innerHTML = '', 3000);
 }

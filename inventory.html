@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -39,7 +39,6 @@
   }
   .inv-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
-  /* Security modal */
   .security-note {
     background: rgba(201,168,76,0.08);
     border: 1px solid var(--gold-border);
@@ -48,9 +47,28 @@
     font-size: 0.82rem;
     color: var(--muted);
     margin-bottom: 16px;
-    line-height: 1.6;
+    line-height: 1.7;
   }
   .security-note strong { color: var(--gold); }
+
+  .verify-steps {
+    background: var(--dark3);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .verify-steps span {
+    display: block;
+    padding: 3px 0;
+  }
+  .verify-steps .step-num {
+    color: var(--gold);
+    font-weight: 600;
+    margin-right: 6px;
+  }
 
   @media (max-width: 600px) {
     .inv-price, .inv-value { display: none; }
@@ -112,7 +130,7 @@
         </div>
         <div class="security-note" style="margin-top:16px;">
           <strong>🔒 Edit Protection Active</strong><br>
-          Editing stock quantities requires email verification. A secure link will be sent to your registered email before any edits can be made. This protects your stock records from unauthorised changes.
+          Editing stock quantities requires your email approval. A secure verification link will be sent to your registered email before any stock changes can be made — keeping your records safe from unauthorised edits.
         </div>
       </div>
     </div>
@@ -143,11 +161,25 @@
 <!-- Edit Security Modal -->
 <div class="modal-overlay" id="security-modal">
   <div class="modal">
-    <div class="modal-title">🔒 Edit Stock — Verification Required</div>
+    <div class="modal-title">🔒 GrowthIve Monitor — Secure Verification Required</div>
+
     <div class="security-note">
-      To protect your stock records, editing requires email verification.<br><br>
-      Click <strong>"Send Verification Link"</strong> below. A secure link will be sent to your registered email. Click it to unlock editing for this session.
+      To protect your stock records from unauthorised changes, editing requires your personal approval via email.<br><br>
+      Click <strong>"Send Verification Link"</strong> below. You will receive an email in your inbox — look for the subject line:<br>
+      <strong style="color:var(--white2);">"GrowthIve Monitor — Secure Verification Required"</strong>
     </div>
+
+    <div class="verify-steps">
+      <span><span class="step-num">①</span> Click "Send Verification Link" below</span>
+      <span><span class="step-num">②</span> Check your registered email inbox</span>
+      <span><span class="step-num">③</span> Open the email and click the gold button inside it</span>
+      <span><span class="step-num">④</span> You will be brought back here to complete the edit</span>
+    </div>
+
+    <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:var(--muted);">
+      💡 <strong style="color:var(--gold);">Note:</strong> This verification link also works as a password reset. If you need to change your password, you can do so after clicking the link in the email.
+    </div>
+
     <div id="security-msg"></div>
     <input type="hidden" id="pending-edit-id">
     <input type="hidden" id="pending-edit-name">
@@ -204,7 +236,6 @@ let editUnlocked = false;
   if (hash.includes('access_token') || localStorage.getItem('inv_edit_unlocked') === 'true') {
     editUnlocked = true;
     localStorage.removeItem('inv_edit_unlocked');
-    // Check for pending edit
     const pid = localStorage.getItem('pending_edit_id');
     if (pid) {
       const pname  = localStorage.getItem('pending_edit_name');
@@ -270,9 +301,9 @@ function renderList(items) {
 }
 
 async function saveItem() {
-  const item_name         = document.getElementById('item-name').value.trim();
-  const quantity          = parseInt(document.getElementById('item-qty').value);
-  const unit_price        = parseFloat(document.getElementById('item-price').value) || 0;
+  const item_name           = document.getElementById('item-name').value.trim();
+  const quantity            = parseInt(document.getElementById('item-qty').value);
+  const unit_price          = parseFloat(document.getElementById('item-price').value) || 0;
   const low_stock_threshold = parseInt(document.getElementById('item-threshold').value) || 5;
   const msg = document.getElementById('form-msg');
 
@@ -290,13 +321,11 @@ async function saveItem() {
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
-// ── EDIT SECURITY FLOW ──
 function requestEdit(id, name, qty, price) {
   if (editUnlocked) {
     openEditModal(id, name, qty, price);
     return;
   }
-  // Store pending edit details
   document.getElementById('pending-edit-id').value    = id;
   document.getElementById('pending-edit-name').value  = name;
   document.getElementById('pending-edit-qty').value   = qty;
@@ -306,15 +335,14 @@ function requestEdit(id, name, qty, price) {
 }
 
 async function sendVerification() {
-  const msg = document.getElementById('security-msg');
-  const id    = document.getElementById('pending-edit-id').value;
-  const name  = document.getElementById('pending-edit-name').value;
-  const qty   = document.getElementById('pending-edit-qty').value;
-  const price = document.getElementById('pending-edit-price').value;
+  const msg    = document.getElementById('security-msg');
+  const id     = document.getElementById('pending-edit-id').value;
+  const name   = document.getElementById('pending-edit-name').value;
+  const qty    = document.getElementById('pending-edit-qty').value;
+  const price  = document.getElementById('pending-edit-price').value;
 
   msg.innerHTML = '<div class="alert alert-gold">⏳ Sending verification email…</div>';
 
-  // Save pending edit to localStorage so it survives redirect
   localStorage.setItem('pending_edit_id',    id);
   localStorage.setItem('pending_edit_name',  name);
   localStorage.setItem('pending_edit_qty',   qty);
@@ -330,7 +358,13 @@ async function sendVerification() {
     return;
   }
 
-  msg.innerHTML = '<div class="alert alert-success">✅ Verification email sent to your registered email! Click the link in the email to unlock editing.</div>';
+  msg.innerHTML = `
+    <div class="alert alert-success">
+      ✅ Verification email sent!<br><br>
+      Check your inbox for an email titled:<br>
+      <strong>"GrowthIve Monitor — Secure Verification Required"</strong><br><br>
+      Open it and click the gold button inside to return here and complete your stock edit.
+    </div>`;
 }
 
 function closeSecurityModal() {
@@ -356,8 +390,8 @@ function closeEditModal() {
 }
 
 async function updateItem() {
-  const id        = document.getElementById('edit-id').value;
-  const quantity  = parseInt(document.getElementById('edit-qty').value);
+  const id         = document.getElementById('edit-id').value;
+  const quantity   = parseInt(document.getElementById('edit-qty').value);
   const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
   await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
   closeEditModal();

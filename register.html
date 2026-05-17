@@ -9,21 +9,66 @@
   .auth-wrap {
     background: radial-gradient(ellipse at 40% 60%, rgba(201,168,76,0.08) 0%, transparent 60%), var(--dark);
   }
+
+  /* ── FIXED T&C ROW ── */
   .tc-row {
-    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px;
+    display: flex; align-items: flex-start;
+    gap: 12px; margin-bottom: 18px;
+    padding: 12px 14px;
+    background: var(--dark3);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm);
   }
-  .tc-row input[type=checkbox] {
-    width: 18px; height: 18px; flex-shrink: 0;
-    margin-top: 2px; accent-color: var(--gold); cursor: pointer;
+
+  /* Large tappable checkbox — works on iOS & Android */
+  .tc-checkbox-wrap {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
   }
-  .tc-row label { font-size: 0.83rem; color: var(--muted); cursor: pointer; }
-  .tc-row label a { color: var(--gold); }
+  .tc-checkbox-wrap input[type=checkbox] {
+    width: 24px; height: 24px;
+    min-width: 24px;
+    accent-color: var(--gold);
+    cursor: pointer;
+    margin: 0; padding: 0;
+    /* Force visible on dark backgrounds */
+    background: var(--dark4);
+    border: 2px solid var(--gold-border);
+    border-radius: 4px;
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
+  }
+
+  .tc-text {
+    font-size: 0.83rem;
+    color: var(--muted);
+    line-height: 1.6;
+    flex: 1;
+  }
+  .tc-text a {
+    color: var(--gold);
+    text-decoration: underline;
+    font-weight: 500;
+    /* Separate tap target from checkbox area */
+    display: inline-block;
+    padding: 2px 0;
+  }
+
+  /* Visual checked state feedback */
+  .tc-row.checked {
+    border-color: var(--gold);
+    background: var(--gold-dim);
+  }
+
   .pw-wrap { position: relative; }
   .pw-toggle {
     position: absolute; right: 12px; top: 50%;
     transform: translateY(-50%);
     background: none; border: none; cursor: pointer;
-    color: var(--muted); font-size: 1rem; padding: 0;
+    color: var(--muted); font-size: 1rem; padding: 4px;
+    -webkit-tap-highlight-color: transparent;
   }
   .pw-wrap input { padding-right: 40px; }
   .strength-bar {
@@ -93,14 +138,20 @@
       </div>
     </div>
 
-    <!-- TERMS & CONDITIONS -->
-    <div class="tc-row">
-      <input type="checkbox" id="tc">
-      <label for="tc">
-        I have read and agree to the
-        <a href="terms.html" target="_blank">Terms & Conditions</a>
-        of GrowthIve Monitor.
-      </label>
+    <!-- TERMS & CONDITIONS — FIXED -->
+    <div class="tc-row" id="tc-row">
+      <div class="tc-checkbox-wrap">
+        <input type="checkbox" id="tc" onchange="toggleTCStyle()">
+      </div>
+      <div class="tc-text">
+        <label for="tc" style="cursor:pointer;color:var(--muted);">
+          I have read and agree to the
+        </label>
+        <a href="terms.html" target="_blank" onclick="event.stopPropagation()">Terms &amp; Conditions</a>
+        <label for="tc" style="cursor:pointer;color:var(--muted);">
+          of GrowthIve Monitor.
+        </label>
+      </div>
     </div>
 
     <!-- REGISTER BUTTON -->
@@ -151,29 +202,35 @@
     if (user) window.location.href = 'returning.html';
   })();
 
+  // ── T&C VISUAL FEEDBACK ──
+  function toggleTCStyle() {
+    const checked = document.getElementById('tc').checked;
+    document.getElementById('tc-row').classList.toggle('checked', checked);
+  }
+
   // ── PASSWORD STRENGTH ──
   function checkStrength() {
-    const pw = document.getElementById('password').value;
+    const pw   = document.getElementById('password').value;
     const fill = document.getElementById('strength-fill');
     const text = document.getElementById('strength-text');
     let score = 0;
-    if (pw.length >= 6)  score++;
-    if (pw.length >= 10) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
+    if (pw.length >= 6)           score++;
+    if (pw.length >= 10)          score++;
+    if (/[A-Z]/.test(pw))        score++;
+    if (/[0-9]/.test(pw))        score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     const levels = [
-      { label: '', color: '', width: '0%' },
-      { label: 'Weak', color: '#e05555', width: '25%' },
-      { label: 'Fair', color: '#e0a855', width: '50%' },
-      { label: 'Good', color: '#5b9bd5', width: '75%' },
-      { label: 'Strong 💪', color: '#4caf7d', width: '100%' },
+      { label: '',           color: '',          width: '0%'   },
+      { label: 'Weak',       color: '#e05555',   width: '25%'  },
+      { label: 'Fair',       color: '#e0a855',   width: '50%'  },
+      { label: 'Good',       color: '#5b9bd5',   width: '75%'  },
+      { label: 'Strong 💪',  color: '#4caf7d',   width: '100%' },
     ];
     const lvl = Math.min(score, 4);
-    fill.style.width = levels[lvl].width;
+    fill.style.width      = levels[lvl].width;
     fill.style.background = levels[lvl].color;
-    text.textContent = pw.length === 0 ? '' : levels[lvl].label;
-    text.style.color = levels[lvl].color;
+    text.textContent      = pw.length === 0 ? '' : levels[lvl].label;
+    text.style.color      = levels[lvl].color;
   }
 
   // ── SHOW/HIDE PASSWORD ──
@@ -205,21 +262,35 @@
 
     // ── VALIDATION ──
     if (!fullname || !bizname || !email || !password || !password2) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in all fields.</div>'; return;
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in all fields.</div>';
+      return;
     }
     if (password.length < 6) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>';
+      return;
     }
     if (password !== password2) {
-      msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
+      msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>';
+      return;
     }
     if (!tc) {
-      msg.innerHTML = '<div class="alert alert-danger">📄 You must accept the Terms & Conditions to register.</div>'; return;
+      // Highlight the T&C box so user knows exactly what to tap
+      const row = document.getElementById('tc-row');
+      row.style.borderColor = 'var(--danger)';
+      row.style.background  = 'rgba(224,85,85,0.08)';
+      setTimeout(() => {
+        row.style.borderColor = '';
+        row.style.background  = '';
+      }, 3000);
+      msg.innerHTML = '<div class="alert alert-danger">📄 Please tick the box to accept the Terms &amp; Conditions before registering.</div>';
+      // Scroll to checkbox so mobile users can see it
+      document.getElementById('tc-row').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Creating account…';
-    msg.innerHTML = '<div class="alert alert-gold">⏳ Setting up your account, please wait…</div>';
+    btn.disabled        = true;
+    btn.textContent     = 'Creating account…';
+    msg.innerHTML       = '<div class="alert alert-gold">⏳ Setting up your account, please wait…</div>';
 
     // ── SIGN UP ──
     const { data, error } = await _supabase.auth.signUp({
@@ -228,13 +299,13 @@
       options: {
         emailRedirectTo: 'https://growthivesystems.github.io/monitor/login.html',
         data: {
-          full_name: fullname,
+          full_name:     fullname,
           business_name: bizname
         }
       }
     });
 
-    btn.disabled = false;
+    btn.disabled    = false;
     btn.textContent = 'Create Account →';
 
     if (error) {
@@ -249,8 +320,8 @@
     const userId = data.user?.id;
     if (userId) {
       await _supabase.from('profiles').upsert({
-        id: userId,
-        full_name: fullname,
+        id:            userId,
+        full_name:     fullname,
         business_name: bizname
       });
     }
@@ -268,14 +339,13 @@
       </div>`;
 
     // Clear form
-    document.getElementById('fullname').value = '';
-    document.getElementById('bizname').value  = '';
-    document.getElementById('email').value    = '';
-    document.getElementById('password').value = '';
-    document.getElementById('password2').value= '';
-    document.getElementById('tc').checked     = false;
+    ['fullname','bizname','email','password','password2'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('tc').checked                = false;
+    document.getElementById('tc-row').classList.remove('checked');
     document.getElementById('strength-fill').style.width = '0%';
-    document.getElementById('strength-text').textContent = '';
+    document.getElementById('strength-text').textContent  = '';
   }
 
   // ── ENTER KEY ──

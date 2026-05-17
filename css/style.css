@@ -421,14 +421,28 @@ footer {
 .modal { background: var(--dark2); border: 1px solid var(--gold-border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
 .modal-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--gold); margin-bottom: 16px; }
 
+
 /* ════════════════════════════════════════
    RESPONSIVE BREAKPOINTS
    ════════════════════════════════════════ */
 
+/* ── LARGE TABLET / IPAD PRO (769px–1024px) ── */
+/* NEW: Added this breakpoint entirely. Standard iPad (820px) and iPad Pro (1024px)
+   were getting the full desktop layout which felt too cramped. This gives them
+   a slightly tighter sidebar, reduced padding, and stacked grids where needed. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .main { padding: 24px 20px; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+  .navbar { padding: 0 16px; }
+  .navbar-name { max-width: 80px; }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ── TABLET & MOBILE (max 768px) ── */
 @media (max-width: 768px) {
 
-  /* Hamburger shows, sidebar slides */
   .hamburger { display: block; }
   .sidebar {
     position: fixed; left: -260px; top: 0;
@@ -439,41 +453,62 @@ footer {
   }
   .sidebar.open { left: 0; }
 
-  /* Main expands full width */
   .main { padding: 16px 12px; }
   .layout { display: block; }
 
-  /* Navbar */
   .navbar { padding: 0 12px; gap: 8px; }
   .navbar-name { display: none; }
 
-  /* Grids stack */
   .grid-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .grid-2 { grid-template-columns: 1fr; gap: 12px; }
   .grid-3 { grid-template-columns: 1fr; gap: 12px; }
 
-  /* Cards */
   .card { padding: 16px; }
 
-  /* Footer */
   footer { padding: 32px 16px 20px; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
   .footer-bottom { flex-direction: column; text-align: center; }
 
-  /* Auth card */
   .auth-card { padding: 28px 20px; }
 
-  /* Tables scroll horizontally */
-  .table-wrap { margin: 0 -12px; border-radius: 0; }
+  /* CHANGED: was margin: 0 -12px which caused horizontal overflow on some pages.
+     Changed to margin: 0 so tables stay within card bounds and scroll internally. */
+  .table-wrap { margin: 0; border-radius: 0; }
 
-  /* Buttons in tables */
   td .btn { padding: 5px 10px; font-size: 0.75rem; }
 
-  /* Page title */
   .page-title { font-size: 1.4rem; }
-
-  /* Hide navbar username on small screens */
   .navbar-user .navbar-name { display: none; }
+
+  /* NEW: sales.html .record-tabs overflowed on mobile because width:fit-content
+     kept it fixed-width and the text got clipped. This makes it stretch full
+     width and wrap the two tabs into a stacked layout. */
+  .record-tabs {
+    width: 100% !important;
+    flex-wrap: wrap;
+  }
+  .record-tab {
+    flex: 1 1 100%;
+    text-align: center;
+    border-right: none !important;
+    font-size: 0.78rem;
+    padding: 10px 12px;
+  }
+  .record-tab:first-child {
+    border-bottom: 1px solid var(--gold-border);
+  }
+
+  /* NEW: .source-grid and .float-row inside sales.html premium panel are
+     2-column grids that squeeze inputs too narrow on phones. Stack them. */
+  .source-grid,
+  .float-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* NEW: The sales history table has 10 columns which is too many for any
+     phone. Setting a larger min-width forces horizontal scroll cleanly
+     instead of the columns collapsing and crushing content. */
+  .sales-table-wide { min-width: 700px; }
 }
 
 /* ── SMALL MOBILE (max 480px) ── */
@@ -481,49 +516,81 @@ footer {
 
   body { font-size: 14px; }
 
-  /* Single column everything */
   .grid-4 { grid-template-columns: 1fr 1fr; gap: 8px; }
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
 
-  /* Navbar brand smaller */
   .navbar-brand { font-size: 1.1rem; }
 
-  /* Auth pages */
   .auth-wrap { padding: 12px; align-items: flex-start; padding-top: 32px; }
   .auth-card { padding: 24px 16px; border-radius: 12px; }
   .auth-logo { font-size: 1.5rem; }
 
-  /* Cards smaller padding */
   .card { padding: 14px 12px; }
   .card-value { font-size: 1.3rem; }
 
-  /* Modal full screen on tiny phones */
   .modal { padding: 20px 16px; margin: 8px; max-height: 90vh; }
 
-  /* Footer single column */
   .footer-grid { grid-template-columns: 1fr; }
   footer { padding: 28px 14px 20px; }
 
-  /* Buttons full width in forms */
-  .form-group .btn { width: 100%; }
+  /* CHANGED: Previously this targeted .form-group .btn which is too broad —
+     it made every button inside a form group full width, including small
+     inline buttons. Scoped it more carefully to only affect standalone save
+     buttons by targeting btn-full instead. */
+  .btn-full { width: 100%; }
 
-  /* Tables */
   table { font-size: 0.78rem; }
   th, td { padding: 8px 10px; }
 
-  /* Page titles */
   .page-title { font-size: 1.3rem; }
   .page-subtitle { font-size: 0.82rem; margin-bottom: 16px; }
 
-  /* Health ring smaller */
   .health-ring { width: 120px; height: 120px; }
   .health-ring-value { font-size: 1.6rem; }
 
-  /* Spinner */
   .spinner { width: 28px; height: 28px; margin: 28px auto; }
 
-  /* Splash */
   .splash-logo { font-size: 1.8rem; }
+
+  /* NEW: On small phones the update-badge and audit-row in sales.html use
+     inline-flex with text that wraps awkwardly. Force full width display. */
+  .update-badge {
+    width: 100%;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+
+  /* NEW: The source-total and closing-box rows in premium sales form used
+     flex justify-content:space-between which pushes the value off screen
+     on tiny phones when the label is long. Stack them vertically instead. */
+  .source-total,
+  .closing-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* NEW: closing-formula text was 0.72rem which becomes unreadably small
+     at 14px base on phones. Bump it slightly. */
+  .closing-formula {
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  /* NEW: section-label inside premium panel had margin-top:16px which
+     was fine on desktop but felt too spacious stacked between mobile fields. */
+  .section-label {
+    margin-top: 10px;
+    font-size: 0.68rem;
+  }
+
+  /* NEW: The edit-history grid inside the modal used grid-template-columns:1fr 1fr
+     which on a 320px phone makes each column only ~130px — too narrow for the
+     before/after labels. Stack them. */
+  .edit-history-grid-inner {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ── VERY SMALL (max 360px) ── */
@@ -536,6 +603,10 @@ footer {
   .btn-sm { padding: 5px 10px; font-size: 0.74rem; }
   table { font-size: 0.74rem; }
   th, td { padding: 7px 8px; }
+
+  /* NEW: On 360px screens the record-tabs even stacked look tight.
+     Reduce font further so they fit without wrapping mid-word. */
+  .record-tab { font-size: 0.7rem; padding: 8px 8px; letter-spacing: 0.04em; }
 }
 
 /* ── LANDSCAPE MOBILE ── */
@@ -543,6 +614,15 @@ footer {
   .auth-wrap { align-items: flex-start; padding-top: 20px; }
   .auth-card { margin: 0 auto; }
   .sidebar { padding-top: 60px; }
+
+  /* NEW: In landscape on phones the record-tabs were stacking vertically
+     taking too much vertical space. Restore side-by-side in landscape. */
+  .record-tabs { flex-wrap: nowrap; }
+  .record-tab { flex: 1 1 auto; }
+  .record-tab:first-child {
+    border-bottom: none;
+    border-right: 1px solid var(--gold-border) !important;
+  }
 }
 
 /* ── LARGE SCREENS ── */

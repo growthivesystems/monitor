@@ -6,7 +6,7 @@
 <title>Inventory — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  /* Clean list style */
+  /* ── Inventory list ── */
   .inv-list { display: flex; flex-direction: column; gap: 0; }
   .inv-item {
     display: flex; align-items: center; gap: 12px;
@@ -21,53 +21,85 @@
     width: 24px; flex-shrink: 0; text-align: right;
     font-family: var(--font-display);
   }
-  .inv-name {
-    flex: 1; font-weight: 500; color: var(--white2);
-    font-size: 0.92rem;
-  }
-  .inv-qty {
-    font-weight: 700; font-family: var(--font-display);
-    font-size: 1rem; width: 60px; text-align: center;
-  }
-  .inv-price {
-    color: var(--gold); font-size: 0.85rem;
-    width: 100px; text-align: right;
-  }
-  .inv-value {
-    color: var(--muted); font-size: 0.82rem;
-    width: 110px; text-align: right;
-  }
+  .inv-name { flex: 1; font-weight: 500; color: var(--white2); font-size: 0.92rem; }
+  .inv-qty { font-weight: 700; font-family: var(--font-display); font-size: 1rem; width: 60px; text-align: center; }
+  .inv-price { color: var(--gold); font-size: 0.85rem; width: 100px; text-align: right; }
+  .inv-value { color: var(--muted); font-size: 0.82rem; width: 110px; text-align: right; }
   .inv-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
   .security-note {
-    background: rgba(201,168,76,0.08);
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    font-size: 0.82rem;
-    color: var(--muted);
-    margin-bottom: 16px;
-    line-height: 1.7;
+    background: rgba(201,168,76,0.08); border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; line-height: 1.7;
   }
   .security-note strong { color: var(--gold); }
 
   .verify-steps {
-    background: var(--dark3);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    margin: 12px 0;
-    font-size: 0.82rem;
-    color: var(--muted);
-    line-height: 1.8;
+    background: var(--dark3); border-radius: var(--radius-sm);
+    padding: 12px 14px; margin: 12px 0;
+    font-size: 0.82rem; color: var(--muted); line-height: 1.8;
   }
-  .verify-steps span {
-    display: block;
-    padding: 3px 0;
+  .verify-steps span { display: block; padding: 3px 0; }
+  .verify-steps .step-num { color: var(--gold); font-weight: 600; margin-right: 6px; }
+
+  /* ── Export buttons row ── */
+  .export-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
   }
-  .verify-steps .step-num {
-    color: var(--gold);
-    font-weight: 600;
-    margin-right: 6px;
+
+  /* ── Print / PDF styles ── */
+  #pdf-area {
+    display: none;
+    position: fixed; inset: 0;
+    background: #fff; color: #111;
+    z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, sans-serif;
+    overflow-y: auto;
+  }
+  #pdf-area .pdf-header {
+    border-bottom: 2px solid #111;
+    padding-bottom: 16px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  #pdf-area .pdf-biz { font-size: 1.6rem; font-weight: 700; }
+  #pdf-area .pdf-sub { font-size: 0.82rem; color: #555; margin-top: 2px; }
+  #pdf-area .pdf-meta { text-align: right; font-size: 0.8rem; color: #555; }
+  #pdf-area .pdf-summary {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    background: #f9f9f9; padding: 14px 18px;
+    border-radius: 8px; margin-bottom: 24px;
+  }
+  #pdf-area .pdf-sum-item { text-align: center; }
+  #pdf-area .pdf-sum-label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em; }
+  #pdf-area .pdf-sum-val { font-size: 1.2rem; font-weight: 700; color: #111; margin-top: 2px; }
+  #pdf-area table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  #pdf-area thead tr { background: #111; color: #fff; }
+  #pdf-area th { padding: 10px 12px; text-align: left; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  #pdf-area td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+  #pdf-area tbody tr:nth-child(even) { background: #f9f9f9; }
+  #pdf-area .pdf-status-low { color: #cc0000; font-weight: 600; font-size: 0.75rem; }
+  #pdf-area .pdf-status-ok  { color: #1a7a1a; font-size: 0.75rem; }
+  #pdf-area .pdf-footer {
+    margin-top: 40px; text-align: center;
+    font-size: 0.72rem; color: #888;
+    border-top: 1px solid #ddd; padding-top: 16px;
+  }
+  .pdf-close-btn {
+    position: fixed; top: 16px; right: 20px;
+    background: #111; color: #fff; border: none;
+    padding: 8px 18px; border-radius: 6px;
+    cursor: pointer; font-size: 0.85rem; z-index: 10000;
+  }
+
+  @media print {
+    body * { visibility: hidden !important; }
+    #pdf-area, #pdf-area * { visibility: visible !important; }
+    #pdf-area {
+      position: fixed !important; top: 0; left: 0;
+      width: 100%; background: #fff !important;
+      color: #000 !important; padding: 32px !important;
+    }
+    .pdf-close-btn, .no-print { display: none !important; }
   }
 
   @media (max-width: 600px) {
@@ -139,7 +171,18 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">Stock List</div>
-        <input type="text" id="search-inv" placeholder="Search items…" style="width:200px;" oninput="filterList()">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="search-inv" placeholder="Search items…" style="width:180px;" oninput="filterList()">
+          <!-- ── EXPORT BUTTONS ── -->
+          <div class="export-row">
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Download as spreadsheet">
+              📊 CSV
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="exportPDF()" title="Download as PDF">
+              🖨️ PDF
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- List Header -->
@@ -158,28 +201,56 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- Edit Security Modal -->
+<!-- ── PDF Preview Overlay ── -->
+<div id="pdf-area">
+  <button class="pdf-close-btn no-print" onclick="closePDF()">✕ Close</button>
+  <div class="pdf-header">
+    <div>
+      <div class="pdf-biz" id="pdf-biz-name">Business Name</div>
+      <div class="pdf-sub">GrowthIve Monitor — Inventory Report</div>
+    </div>
+    <div class="pdf-meta">
+      <div id="pdf-date-line"></div>
+      <div id="pdf-printed-on"></div>
+    </div>
+  </div>
+  <div class="pdf-summary" id="pdf-summary"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Item Name</th>
+        <th>Qty</th>
+        <th>Unit Price (₦)</th>
+        <th>Stock Value (₦)</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="pdf-tbody"></tbody>
+  </table>
+  <div class="pdf-footer">
+    Generated from GrowthIve Monitor &nbsp;|&nbsp; <span id="pdf-footer-date"></span>
+  </div>
+</div>
+
+<!-- ── Security Modal ── -->
 <div class="modal-overlay" id="security-modal">
   <div class="modal">
     <div class="modal-title">🔒 GrowthIve Monitor — Secure Verification Required</div>
-
     <div class="security-note">
       To protect your stock records from unauthorised changes, editing requires your personal approval via email.<br><br>
       Click <strong>"Send Verification Link"</strong> below. You will receive an email in your inbox — look for the subject line:<br>
       <strong style="color:var(--white2);">"GrowthIve Monitor — Secure Verification Required"</strong>
     </div>
-
     <div class="verify-steps">
       <span><span class="step-num">①</span> Click "Send Verification Link" below</span>
       <span><span class="step-num">②</span> Check your registered email inbox</span>
       <span><span class="step-num">③</span> Open the email and click the gold button inside it</span>
       <span><span class="step-num">④</span> You will be brought back here to complete the edit</span>
     </div>
-
     <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:var(--muted);">
       💡 <strong style="color:var(--gold);">Note:</strong> This verification link also works as a password reset. If you need to change your password, you can do so after clicking the link in the email.
     </div>
-
     <div id="security-msg"></div>
     <input type="hidden" id="pending-edit-id">
     <input type="hidden" id="pending-edit-name">
@@ -192,7 +263,7 @@
   </div>
 </div>
 
-<!-- Actual Edit Modal (shown after verification) -->
+<!-- ── Edit Modal (after verification) ── -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <div class="modal-title">✏️ Update Stock Item</div>
@@ -223,8 +294,8 @@
 <script src="js/app.js"></script>
 <script>
 let currentUser;
-let allItems = [];
-let editUnlocked = false;
+let allItems    = [];
+let editUnlocked= false;
 
 (async () => {
   currentUser = await requireAuth();
@@ -252,14 +323,20 @@ let editUnlocked = false;
   loadInventory();
 })();
 
+/* ── Load inventory ── */
 async function loadInventory() {
-  const { data } = await _supabase.from('inventory').select('*').eq('user_id', currentUser.id).order('item_name');
+  const { data } = await _supabase
+    .from('inventory').select('*')
+    .eq('user_id', currentUser.id)
+    .order('item_name');
+
   allItems = data || [];
 
-  const lowItems = allItems.filter(i => i.quantity <= i.low_stock_threshold);
+  const lowItems = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
   document.getElementById('total-items').textContent = allItems.length;
-  document.getElementById('low-count').textContent = lowItems.length;
-  const totalVal = allItems.reduce((s, i) => s + (Number(i.quantity) * Number(i.unit_price || 0)), 0);
+  document.getElementById('low-count').textContent   = lowItems.length;
+
+  const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
   document.getElementById('total-value').textContent = formatCurrency(totalVal);
 
   const banner = document.getElementById('low-stock-banner');
@@ -270,6 +347,7 @@ async function loadInventory() {
   renderList(allItems);
 }
 
+/* ── Render list ── */
 function filterList() {
   const q = document.getElementById('search-inv').value.toLowerCase();
   renderList(allItems.filter(i => i.item_name.toLowerCase().includes(q)));
@@ -282,7 +360,7 @@ function renderList(items) {
     return;
   }
   el.innerHTML = `<div class="inv-list">${items.map((r, idx) => {
-    const isLow = r.quantity <= r.low_stock_threshold;
+    const isLow = Number(r.quantity) <= Number(r.low_stock_threshold || 5);
     return `<div class="inv-item">
       <div class="inv-num">${idx + 1}</div>
       <div class="inv-name">
@@ -291,15 +369,17 @@ function renderList(items) {
       </div>
       <div class="inv-qty" style="color:${isLow ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</div>
       <div class="inv-price">${formatCurrency(r.unit_price)}</div>
-      <div class="inv-value">${formatCurrency(r.quantity * (r.unit_price || 0))}</div>
+      <div class="inv-value">${formatCurrency(Number(r.quantity) * Number(r.unit_price||0))}</div>
       <div class="inv-actions">
-        <button class="btn btn-outline btn-sm" onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
+        <button class="btn btn-outline btn-sm"
+          onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteItem('${r.id}')">✕</button>
       </div>
     </div>`;
   }).join('')}</div>`;
 }
 
+/* ── Add item ── */
 async function saveItem() {
   const item_name           = document.getElementById('item-name').value.trim();
   const quantity            = parseInt(document.getElementById('item-qty').value);
@@ -311,21 +391,19 @@ async function saveItem() {
     msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter item name and quantity.</div>'; return;
   }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
-  const { error } = await _supabase.from('inventory').insert({ user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold });
+  const { error } = await _supabase.from('inventory').insert({
+    user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold
+  });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
   msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
-  document.getElementById('item-name').value = '';
-  document.getElementById('item-qty').value = '';
-  document.getElementById('item-price').value = '';
+  ['item-name','item-qty','item-price'].forEach(id => document.getElementById(id).value = '');
   loadInventory();
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
+/* ── Security / Edit flow ── */
 function requestEdit(id, name, qty, price) {
-  if (editUnlocked) {
-    openEditModal(id, name, qty, price);
-    return;
-  }
+  if (editUnlocked) { openEditModal(id, name, qty, price); return; }
   document.getElementById('pending-edit-id').value    = id;
   document.getElementById('pending-edit-name').value  = name;
   document.getElementById('pending-edit-qty').value   = qty;
@@ -335,45 +413,38 @@ function requestEdit(id, name, qty, price) {
 }
 
 async function sendVerification() {
-  const msg    = document.getElementById('security-msg');
-  const id     = document.getElementById('pending-edit-id').value;
-  const name   = document.getElementById('pending-edit-name').value;
-  const qty    = document.getElementById('pending-edit-qty').value;
-  const price  = document.getElementById('pending-edit-price').value;
+  const msg   = document.getElementById('security-msg');
+  const id    = document.getElementById('pending-edit-id').value;
+  const name  = document.getElementById('pending-edit-name').value;
+  const qty   = document.getElementById('pending-edit-qty').value;
+  const price = document.getElementById('pending-edit-price').value;
 
   msg.innerHTML = '<div class="alert alert-gold">⏳ Sending verification email…</div>';
 
-  localStorage.setItem('pending_edit_id',    id);
-  localStorage.setItem('pending_edit_name',  name);
-  localStorage.setItem('pending_edit_qty',   qty);
-  localStorage.setItem('pending_edit_price', price);
-  localStorage.setItem('inv_edit_unlocked',  'true');
+  localStorage.setItem('pending_edit_id',   id);
+  localStorage.setItem('pending_edit_name', name);
+  localStorage.setItem('pending_edit_qty',  qty);
+  localStorage.setItem('pending_edit_price',price);
+  localStorage.setItem('inv_edit_unlocked', 'true');
 
   const { error } = await _supabase.auth.resetPasswordForEmail(currentUser.email, {
     redirectTo: 'https://growthivesystems.github.io/monitor/inventory.html'
   });
 
-  if (error) {
-    msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
-    return;
-  }
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
 
-  msg.innerHTML = `
-    <div class="alert alert-success">
-      ✅ Verification email sent!<br><br>
-      Check your inbox for an email titled:<br>
-      <strong>"GrowthIve Monitor — Secure Verification Required"</strong><br><br>
-      Open it and click the gold button inside to return here and complete your stock edit.
-    </div>`;
+  msg.innerHTML = `<div class="alert alert-success">
+    ✅ Verification email sent!<br><br>
+    Check your inbox for an email titled:<br>
+    <strong>"GrowthIve Monitor — Secure Verification Required"</strong><br><br>
+    Open it and click the gold button inside to return here and complete your stock edit.
+  </div>`;
 }
 
 function closeSecurityModal() {
   document.getElementById('security-modal').classList.remove('show');
-  localStorage.removeItem('pending_edit_id');
-  localStorage.removeItem('pending_edit_name');
-  localStorage.removeItem('pending_edit_qty');
-  localStorage.removeItem('pending_edit_price');
-  localStorage.removeItem('inv_edit_unlocked');
+  ['pending_edit_id','pending_edit_name','pending_edit_qty','pending_edit_price','inv_edit_unlocked']
+    .forEach(k => localStorage.removeItem(k));
 }
 
 function openEditModal(id, name, qty, price) {
@@ -402,6 +473,142 @@ async function deleteItem(id) {
   if (!confirm('Delete this stock item? This cannot be undone.')) return;
   await _supabase.from('inventory').delete().eq('id', id);
   loadInventory();
+}
+
+/* ══════════════════════════════════════════
+   EXPORT: CSV
+   Loops allItems already in memory — no
+   extra database call needed
+══════════════════════════════════════════ */
+function exportCSV() {
+  if (allItems.length === 0) {
+    alert('No inventory items to export.'); return;
+  }
+
+  const now     = new Date().toLocaleDateString('en-GB');
+  const headers = ['#','Item Name','Quantity','Unit Price (N)','Stock Value (N)','Low Stock Threshold','Status'];
+
+  const rows = allItems.map((item, idx) => {
+    const isLow   = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
+    const value   = Number(item.quantity) * Number(item.unit_price || 0);
+    const status  = Number(item.quantity) <= 0 ? 'Out of Stock' : isLow ? 'Low Stock' : 'OK';
+    return [
+      idx + 1,
+      `"${item.item_name.replace(/"/g, '""')}"`,  // escape quotes in names
+      item.quantity,
+      Number(item.unit_price || 0).toFixed(2),
+      value.toFixed(2),
+      item.low_stock_threshold || 5,
+      status
+    ].join(',');
+  });
+
+  // Add summary rows at the bottom
+  const totalQty = allItems.reduce((s,i) => s + Number(i.quantity), 0);
+  const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
+  const lowCount = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
+
+  const csv = [
+    `"GrowthIve Monitor — Inventory Report"`,
+    `"Generated: ${now}"`,
+    '',
+    headers.join(','),
+    ...rows,
+    '',
+    `"TOTALS","${allItems.length} items","${totalQty} units","","${totalVal.toFixed(2)}","","${lowCount} low stock"`
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `growthive-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ══════════════════════════════════════════
+   EXPORT: PDF
+   Renders a clean print-ready overlay then
+   triggers window.print()
+══════════════════════════════════════════ */
+async function exportPDF() {
+  if (allItems.length === 0) {
+    alert('No inventory items to export.'); return;
+  }
+
+  // Get business name from profiles
+  let bizName = 'My Business';
+  try {
+    const { data: profile } = await _supabase
+      .from('profiles').select('business_name')
+      .eq('id', currentUser.id).maybeSingle();
+    if (profile?.business_name) bizName = profile.business_name;
+  } catch(e) {}
+
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  const timeStr  = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+
+  const totalQty = allItems.reduce((s,i) => s + Number(i.quantity), 0);
+  const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
+  const lowCount = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
+  const oosCount = allItems.filter(i => Number(i.quantity) <= 0).length;
+
+  // Fill in overlay
+  document.getElementById('pdf-biz-name').textContent  = bizName;
+  document.getElementById('pdf-date-line').textContent  = `Report Date: ${dateStr}`;
+  document.getElementById('pdf-printed-on').textContent = `Generated: ${timeStr}`;
+  document.getElementById('pdf-footer-date').textContent= dateStr;
+
+  document.getElementById('pdf-summary').innerHTML = `
+    <div class="pdf-sum-item">
+      <div class="pdf-sum-label">Total Items</div>
+      <div class="pdf-sum-val">${allItems.length}</div>
+    </div>
+    <div class="pdf-sum-item">
+      <div class="pdf-sum-label">Total Units</div>
+      <div class="pdf-sum-val">${totalQty.toLocaleString()}</div>
+    </div>
+    <div class="pdf-sum-item">
+      <div class="pdf-sum-label">Stock Value</div>
+      <div class="pdf-sum-val">₦${totalVal.toLocaleString('en-NG', {minimumFractionDigits:2})}</div>
+    </div>
+    <div class="pdf-sum-item">
+      <div class="pdf-sum-label">Low Stock</div>
+      <div class="pdf-sum-val" style="color:${lowCount > 0 ? '#cc0000' : '#1a7a1a'};">${lowCount}</div>
+    </div>
+    <div class="pdf-sum-item">
+      <div class="pdf-sum-label">Out of Stock</div>
+      <div class="pdf-sum-val" style="color:${oosCount > 0 ? '#cc0000' : '#1a7a1a'};">${oosCount}</div>
+    </div>
+  `;
+
+  document.getElementById('pdf-tbody').innerHTML = allItems.map((item, idx) => {
+    const isLow   = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
+    const isOOS   = Number(item.quantity) <= 0;
+    const value   = Number(item.quantity) * Number(item.unit_price || 0);
+    const status  = isOOS
+      ? '<span class="pdf-status-low">Out of Stock</span>'
+      : isLow
+        ? '<span class="pdf-status-low">⚠ Low Stock</span>'
+        : '<span class="pdf-status-ok">✓ OK</span>';
+    return `<tr>
+      <td>${idx + 1}</td>
+      <td><strong>${item.item_name}</strong></td>
+      <td style="text-align:center;font-weight:700;color:${isLow ? '#cc0000' : '#111'};">${item.quantity}</td>
+      <td>₦${Number(item.unit_price||0).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
+      <td>₦${value.toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+
+  // Show overlay then print
+  document.getElementById('pdf-area').style.display = 'block';
+  setTimeout(() => window.print(), 400);
+}
+
+function closePDF() {
+  document.getElementById('pdf-area').style.display = 'none';
 }
 </script>
 </body>

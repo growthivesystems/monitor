@@ -16,6 +16,11 @@
   }
   .inv-item:last-child { border-bottom: none; }
   .inv-item:hover { background: var(--gold-dim); }
+  .inv-item.deleted-item {
+    opacity: 0.55;
+    background: rgba(224,85,85,0.04);
+    border-left: 3px solid var(--danger);
+  }
   .inv-num {
     font-size: 0.75rem; color: var(--muted);
     width: 24px; flex-shrink: 0; text-align: right;
@@ -25,7 +30,7 @@
   .inv-qty { font-weight: 700; font-family: var(--font-display); font-size: 1rem; width: 60px; text-align: center; }
   .inv-price { color: var(--gold); font-size: 0.85rem; width: 100px; text-align: right; }
   .inv-value { color: var(--muted); font-size: 0.82rem; width: 110px; text-align: right; }
-  .inv-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .inv-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
 
   .security-note {
     background: rgba(201,168,76,0.08); border: 1px solid var(--gold-border);
@@ -42,23 +47,55 @@
   .verify-steps span { display: block; padding: 3px 0; }
   .verify-steps .step-num { color: var(--gold); font-weight: 600; margin-right: 6px; }
 
-  /* ── Export buttons row ── */
-  .export-row {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  /* ── Export buttons ── */
+  .export-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* ── Delete confirmation modal ── */
+  .delete-confirm-input {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-align: center;
+    border: 2px solid var(--danger) !important;
+    color: var(--danger) !important;
+  }
+  .delete-confirm-input:focus {
+    box-shadow: 0 0 0 3px rgba(224,85,85,0.2) !important;
+    border-color: var(--danger) !important;
+  }
+  .delete-warning-box {
+    background: rgba(224,85,85,0.08);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--white2);
+    line-height: 1.7;
+  }
+  .deleted-banner {
+    background: rgba(224,85,85,0.08);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
   /* ── Print / PDF styles ── */
   #pdf-area {
-    display: none;
-    position: fixed; inset: 0;
-    background: #fff; color: #111;
-    z-index: 9999; padding: 48px;
-    font-family: 'Segoe UI', Georgia, sans-serif;
-    overflow-y: auto;
+    display: none; position: fixed; inset: 0;
+    background: #fff; color: #111; z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, sans-serif; overflow-y: auto;
   }
   #pdf-area .pdf-header {
-    border-bottom: 2px solid #111;
-    padding-bottom: 16px; margin-bottom: 24px;
+    border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px;
     display: flex; justify-content: space-between; align-items: flex-start;
   }
   #pdf-area .pdf-biz { font-size: 1.6rem; font-weight: 700; }
@@ -159,10 +196,15 @@
             <div class="card-title" style="margin:0;">Total Stock Value</div>
             <div class="card-value gold" id="total-value">₦0.00</div>
           </div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Recently Deleted</div>
+            <div class="card-value danger" id="deleted-count">0</div>
+          </div>
         </div>
         <div class="security-note" style="margin-top:16px;">
-          <strong>🔒 Edit Protection Active</strong><br>
-          Editing stock quantities requires your email approval. A secure verification link will be sent to your registered email before any stock changes can be made — keeping your records safe from unauthorised edits.
+          <strong>🔒 Edit & Delete Protection Active</strong><br>
+          Editing requires email verification. Deleting requires typing <strong>DELETE</strong> to confirm.
+          Deleted items are kept for <strong>30 days</strong> and can be restored anytime.
         </div>
       </div>
     </div>
@@ -172,15 +214,13 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">Stock List</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input type="text" id="search-inv" placeholder="Search items…" style="width:180px;" oninput="filterList()">
-          <!-- ── EXPORT BUTTONS ── -->
+          <input type="text" id="search-inv" placeholder="Search items…" style="width:160px;" oninput="filterList()">
+          <button class="btn btn-outline btn-sm" onclick="toggleDeleted()" id="deleted-toggle">
+            🗑️ Show Deleted
+          </button>
           <div class="export-row">
-            <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Download as spreadsheet">
-              📊 CSV
-            </button>
-            <button class="btn btn-outline btn-sm" onclick="exportPDF()" title="Download as PDF">
-              🖨️ PDF
-            </button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Download as spreadsheet">📊 CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportPDF()" title="Download as PDF">🖨️ PDF</button>
           </div>
         </div>
       </div>
@@ -192,7 +232,7 @@
         <div style="width:60px;text-align:center;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Qty</div>
         <div style="width:100px;text-align:right;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);" class="inv-price">Unit Price</div>
         <div style="width:110px;text-align:right;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);" class="inv-value">Value</div>
-        <div style="width:120px;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Actions</div>
+        <div style="width:150px;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);">Actions</div>
       </div>
 
       <div id="inv-list"><div class="spinner"></div></div>
@@ -217,19 +257,48 @@
   <div class="pdf-summary" id="pdf-summary"></div>
   <table>
     <thead>
-      <tr>
-        <th>#</th>
-        <th>Item Name</th>
-        <th>Qty</th>
-        <th>Unit Price (₦)</th>
-        <th>Stock Value (₦)</th>
-        <th>Status</th>
-      </tr>
+      <tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price (₦)</th><th>Stock Value (₦)</th><th>Status</th></tr>
     </thead>
     <tbody id="pdf-tbody"></tbody>
   </table>
   <div class="pdf-footer">
     Generated from GrowthIve Monitor &nbsp;|&nbsp; <span id="pdf-footer-date"></span>
+  </div>
+</div>
+
+<!-- ── DELETE Confirmation Modal ── -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--danger);">🗑️ Confirm Stock Deletion</div>
+
+    <div class="delete-warning-box">
+      <strong style="color:var(--danger);">⚠️ You are about to delete:</strong><br>
+      <span id="delete-item-name" style="color:var(--white);font-weight:600;font-size:1rem;"></span><br><br>
+      This item will be <strong>soft deleted</strong> — it will be hidden from your active stock list
+      but can be <strong>restored within 30 days</strong>. After 30 days it is permanently removed.
+    </div>
+
+    <div class="form-group">
+      <label style="color:var(--danger);font-weight:600;">
+        Type <strong>DELETE</strong> below to confirm:
+      </label>
+      <input type="text" id="delete-confirm-input" class="delete-confirm-input"
+        placeholder="Type DELETE here…"
+        oninput="checkDeleteConfirm()"
+        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+
+    <div id="delete-msg"></div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()" disabled
+        style="opacity:0.4;cursor:not-allowed;">
+        🗑️ Yes, Delete Item
+      </button>
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+    </div>
+
+    <input type="hidden" id="delete-pending-id">
   </div>
 </div>
 
@@ -249,7 +318,7 @@
       <span><span class="step-num">④</span> You will be brought back here to complete the edit</span>
     </div>
     <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:var(--muted);">
-      💡 <strong style="color:var(--gold);">Note:</strong> This verification link also works as a password reset. If you need to change your password, you can do so after clicking the link in the email.
+      💡 <strong style="color:var(--gold);">Note:</strong> This verification link also works as a password reset.
     </div>
     <div id="security-msg"></div>
     <input type="hidden" id="pending-edit-id">
@@ -294,8 +363,10 @@
 <script src="js/app.js"></script>
 <script>
 let currentUser;
-let allItems    = [];
-let editUnlocked= false;
+let allItems      = []; // active items only
+let deletedItems  = []; // soft-deleted items
+let editUnlocked  = false;
+let showingDeleted= false;
 
 (async () => {
   currentUser = await requireAuth();
@@ -323,58 +394,117 @@ let editUnlocked= false;
   loadInventory();
 })();
 
-/* ── Load inventory ── */
+/* ══════════════════════════════════════════
+   LOAD INVENTORY
+   Active items: deleted_at IS NULL
+   Deleted items: deleted_at IS NOT NULL
+   and within 30 days
+══════════════════════════════════════════ */
 async function loadInventory() {
-  const { data } = await _supabase
-    .from('inventory').select('*')
-    .eq('user_id', currentUser.id)
-    .order('item_name');
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  allItems = data || [];
+  const [{ data: active }, { data: deleted }] = await Promise.all([
+    _supabase.from('inventory').select('*')
+      .eq('user_id', currentUser.id)
+      .is('deleted_at', null)
+      .order('item_name'),
+    _supabase.from('inventory').select('*')
+      .eq('user_id', currentUser.id)
+      .not('deleted_at', 'is', null)
+      .gte('deleted_at', thirtyDaysAgo.toISOString())
+      .order('deleted_at', { ascending: false })
+  ]);
 
+  allItems     = active  || [];
+  deletedItems = deleted || [];
+
+  // Summary stats (active only)
   const lowItems = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
-  document.getElementById('total-items').textContent = allItems.length;
-  document.getElementById('low-count').textContent   = lowItems.length;
+  document.getElementById('total-items').textContent  = allItems.length;
+  document.getElementById('low-count').textContent    = lowItems.length;
+  document.getElementById('deleted-count').textContent= deletedItems.length;
 
   const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
-  document.getElementById('total-value').textContent = formatCurrency(totalVal);
+  document.getElementById('total-value').textContent  = formatCurrency(totalVal);
 
+  // Low stock banner
   const banner = document.getElementById('low-stock-banner');
   banner.innerHTML = lowItems.length > 0
     ? `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i => i.item_name).join(', ')}</div>`
     : '';
 
-  renderList(allItems);
+  renderList(showingDeleted ? deletedItems : allItems);
+}
+
+/* ── Toggle deleted view ── */
+function toggleDeleted() {
+  showingDeleted = !showingDeleted;
+  const btn = document.getElementById('deleted-toggle');
+  btn.textContent = showingDeleted ? '📦 Show Active' : '🗑️ Show Deleted';
+  btn.style.borderColor = showingDeleted ? 'var(--danger)' : '';
+  btn.style.color       = showingDeleted ? 'var(--danger)' : '';
+  renderList(showingDeleted ? deletedItems : allItems);
+}
+
+/* ── Filter ── */
+function filterList() {
+  const q    = document.getElementById('search-inv').value.toLowerCase();
+  const list = showingDeleted ? deletedItems : allItems;
+  renderList(list.filter(i => i.item_name.toLowerCase().includes(q)));
 }
 
 /* ── Render list ── */
-function filterList() {
-  const q = document.getElementById('search-inv').value.toLowerCase();
-  renderList(allItems.filter(i => i.item_name.toLowerCase().includes(q)));
-}
-
 function renderList(items) {
   const el = document.getElementById('inv-list');
+
   if (!items || items.length === 0) {
-    el.innerHTML = '<div class="empty-state"><p>No stock items found. Add your first item above.</p></div>';
+    el.innerHTML = showingDeleted
+      ? '<div class="empty-state"><div class="icon">🗑️</div><p>No recently deleted items. Deleted items appear here for 30 days.</p></div>'
+      : '<div class="empty-state"><p>No stock items found. Add your first item above.</p></div>';
     return;
   }
-  el.innerHTML = `<div class="inv-list">${items.map((r, idx) => {
-    const isLow = Number(r.quantity) <= Number(r.low_stock_threshold || 5);
-    return `<div class="inv-item">
+
+  // Deleted items banner
+  const deletedBanner = showingDeleted
+    ? `<div class="deleted-banner">
+        <span>🗑️ Showing <strong>${items.length}</strong> deleted item(s) — restorable within 30 days of deletion.</span>
+      </div>` : '';
+
+  el.innerHTML = deletedBanner + `<div class="inv-list">${items.map((r, idx) => {
+    const isLow     = Number(r.quantity) <= Number(r.low_stock_threshold || 5);
+    const isDeleted = r.deleted_at !== null;
+
+    // Days left to restore
+    let restoreInfo = '';
+    if (isDeleted) {
+      const deletedDate = new Date(r.deleted_at);
+      const daysLeft    = 30 - Math.floor((Date.now() - deletedDate) / (1000*60*60*24));
+      restoreInfo = `<span style="font-size:0.72rem;color:var(--danger);margin-left:6px;">${daysLeft}d left to restore</span>`;
+    }
+
+    const actions = isDeleted
+      ? `<button class="btn btn-outline btn-sm" style="color:var(--success);border-color:var(--success);"
+            onclick="restoreItem('${r.id}','${r.item_name.replace(/'/g,"\\'")}')">↩️ Restore</button>
+         <button class="btn btn-danger btn-sm"
+            onclick="permanentDelete('${r.id}','${r.item_name.replace(/'/g,"\\'")}')">🗑️ Purge</button>`
+      : `<button class="btn btn-outline btn-sm"
+            onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
+         <button class="btn btn-danger btn-sm"
+            onclick="openDeleteModal('${r.id}','${r.item_name.replace(/'/g,"\\'")}')">✕ Delete</button>`;
+
+    return `<div class="inv-item${isDeleted ? ' deleted-item' : ''}">
       <div class="inv-num">${idx + 1}</div>
       <div class="inv-name">
         ${r.item_name}
-        ${isLow ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>' : ''}
+        ${isLow && !isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>' : ''}
+        ${isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Deleted</span>' : ''}
+        ${restoreInfo}
       </div>
-      <div class="inv-qty" style="color:${isLow ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</div>
+      <div class="inv-qty" style="color:${isLow && !isDeleted ? 'var(--danger)' : 'var(--white)'};">${r.quantity}</div>
       <div class="inv-price">${formatCurrency(r.unit_price)}</div>
       <div class="inv-value">${formatCurrency(Number(r.quantity) * Number(r.unit_price||0))}</div>
-      <div class="inv-actions">
-        <button class="btn btn-outline btn-sm"
-          onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteItem('${r.id}')">✕</button>
-      </div>
+      <div class="inv-actions">${actions}</div>
     </div>`;
   }).join('')}</div>`;
 }
@@ -392,13 +522,91 @@ async function saveItem() {
   }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
   const { error } = await _supabase.from('inventory').insert({
-    user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold
+    user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold, deleted_at: null
   });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
   msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
   ['item-name','item-qty','item-price'].forEach(id => document.getElementById(id).value = '');
   loadInventory();
   setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+/* ══════════════════════════════════════════
+   DELETE FLOW — Type DELETE to confirm
+   Soft delete: sets deleted_at timestamp
+══════════════════════════════════════════ */
+function openDeleteModal(id, name) {
+  document.getElementById('delete-pending-id').value  = id;
+  document.getElementById('delete-item-name').textContent = name;
+  document.getElementById('delete-confirm-input').value   = '';
+  document.getElementById('delete-msg').innerHTML         = '';
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled   = true;
+  btn.style.opacity = '0.4';
+  btn.style.cursor  = 'not-allowed';
+  document.getElementById('delete-modal').classList.add('show');
+  setTimeout(() => document.getElementById('delete-confirm-input').focus(), 300);
+}
+
+function checkDeleteConfirm() {
+  const val = document.getElementById('delete-confirm-input').value.trim().toUpperCase();
+  const btn = document.getElementById('confirm-delete-btn');
+  const isValid = val === 'DELETE';
+  btn.disabled      = !isValid;
+  btn.style.opacity = isValid ? '1' : '0.4';
+  btn.style.cursor  = isValid ? 'pointer' : 'not-allowed';
+  if (isValid) {
+    document.getElementById('delete-confirm-input').style.borderColor = 'var(--success)';
+  } else {
+    document.getElementById('delete-confirm-input').style.borderColor = 'var(--danger)';
+  }
+}
+
+async function confirmDelete() {
+  const id  = document.getElementById('delete-pending-id').value;
+  const msg = document.getElementById('delete-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Processing…</div>';
+
+  // Soft delete — set deleted_at to now
+  const { error } = await _supabase
+    .from('inventory')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return;
+  }
+
+  closeDeleteModal();
+  loadInventory();
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('show');
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('delete-msg').innerHTML       = '';
+}
+
+/* ── Restore soft-deleted item ── */
+async function restoreItem(id, name) {
+  if (!confirm(`Restore "${name}" back to active stock?`)) return;
+  await _supabase
+    .from('inventory')
+    .update({ deleted_at: null })
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+  loadInventory();
+}
+
+/* ── Permanent delete (purge) — still requires typing DELETE ── */
+async function permanentDelete(id, name) {
+  const typed = prompt(`This will PERMANENTLY delete "${name}" with no recovery.\n\nType DELETE to confirm:`);
+  if (typed?.trim().toUpperCase() !== 'DELETE') {
+    alert('Permanent deletion cancelled.'); return;
+  }
+  await _supabase.from('inventory').delete().eq('id', id).eq('user_id', currentUser.id);
+  loadInventory();
 }
 
 /* ── Security / Edit flow ── */
@@ -420,7 +628,6 @@ async function sendVerification() {
   const price = document.getElementById('pending-edit-price').value;
 
   msg.innerHTML = '<div class="alert alert-gold">⏳ Sending verification email…</div>';
-
   localStorage.setItem('pending_edit_id',   id);
   localStorage.setItem('pending_edit_name', name);
   localStorage.setItem('pending_edit_qty',  qty);
@@ -430,14 +637,11 @@ async function sendVerification() {
   const { error } = await _supabase.auth.resetPasswordForEmail(currentUser.email, {
     redirectTo: 'https://growthivesystems.github.io/monitor/inventory.html'
   });
-
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-
   msg.innerHTML = `<div class="alert alert-success">
     ✅ Verification email sent!<br><br>
-    Check your inbox for an email titled:<br>
-    <strong>"GrowthIve Monitor — Secure Verification Required"</strong><br><br>
-    Open it and click the gold button inside to return here and complete your stock edit.
+    Check your inbox for <strong>"GrowthIve Monitor — Secure Verification Required"</strong><br>
+    and click the gold button inside to complete your stock edit.
   </div>`;
 }
 
@@ -469,56 +673,29 @@ async function updateItem() {
   loadInventory();
 }
 
-async function deleteItem(id) {
-  if (!confirm('Delete this stock item? This cannot be undone.')) return;
-  await _supabase.from('inventory').delete().eq('id', id);
-  loadInventory();
-}
-
 /* ══════════════════════════════════════════
    EXPORT: CSV
-   Loops allItems already in memory — no
-   extra database call needed
 ══════════════════════════════════════════ */
 function exportCSV() {
-  if (allItems.length === 0) {
-    alert('No inventory items to export.'); return;
-  }
-
+  if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   const now     = new Date().toLocaleDateString('en-GB');
   const headers = ['#','Item Name','Quantity','Unit Price (N)','Stock Value (N)','Low Stock Threshold','Status'];
-
-  const rows = allItems.map((item, idx) => {
-    const isLow   = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
-    const value   = Number(item.quantity) * Number(item.unit_price || 0);
-    const status  = Number(item.quantity) <= 0 ? 'Out of Stock' : isLow ? 'Low Stock' : 'OK';
-    return [
-      idx + 1,
-      `"${item.item_name.replace(/"/g, '""')}"`,  // escape quotes in names
-      item.quantity,
-      Number(item.unit_price || 0).toFixed(2),
-      value.toFixed(2),
-      item.low_stock_threshold || 5,
-      status
-    ].join(',');
+  const rows    = allItems.map((item, idx) => {
+    const isLow  = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
+    const value  = Number(item.quantity) * Number(item.unit_price || 0);
+    const status = Number(item.quantity) <= 0 ? 'Out of Stock' : isLow ? 'Low Stock' : 'OK';
+    return [idx+1, `"${item.item_name.replace(/"/g,'""')}"`, item.quantity,
+      Number(item.unit_price||0).toFixed(2), value.toFixed(2), item.low_stock_threshold||5, status].join(',');
   });
-
-  // Add summary rows at the bottom
   const totalQty = allItems.reduce((s,i) => s + Number(i.quantity), 0);
   const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
   const lowCount = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
-
   const csv = [
-    `"GrowthIve Monitor — Inventory Report"`,
-    `"Generated: ${now}"`,
-    '',
-    headers.join(','),
-    ...rows,
-    '',
+    `"GrowthIve Monitor — Inventory Report"`, `"Generated: ${now}"`, '',
+    headers.join(','), ...rows, '',
     `"TOTALS","${allItems.length} items","${totalQty} units","","${totalVal.toFixed(2)}","","${lowCount} low stock"`
   ].join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const a    = document.createElement('a');
   a.href     = URL.createObjectURL(blob);
   a.download = `growthive-inventory-${new Date().toISOString().split('T')[0]}.csv`;
@@ -528,81 +705,55 @@ function exportCSV() {
 
 /* ══════════════════════════════════════════
    EXPORT: PDF
-   Renders a clean print-ready overlay then
-   triggers window.print()
 ══════════════════════════════════════════ */
 async function exportPDF() {
-  if (allItems.length === 0) {
-    alert('No inventory items to export.'); return;
-  }
-
-  // Get business name from profiles
+  if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   let bizName = 'My Business';
   try {
     const { data: profile } = await _supabase
-      .from('profiles').select('business_name')
-      .eq('id', currentUser.id).maybeSingle();
+      .from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
     if (profile?.business_name) bizName = profile.business_name;
   } catch(e) {}
 
   const now      = new Date();
   const dateStr  = now.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
   const timeStr  = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
-
   const totalQty = allItems.reduce((s,i) => s + Number(i.quantity), 0);
   const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
   const lowCount = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
   const oosCount = allItems.filter(i => Number(i.quantity) <= 0).length;
 
-  // Fill in overlay
-  document.getElementById('pdf-biz-name').textContent  = bizName;
-  document.getElementById('pdf-date-line').textContent  = `Report Date: ${dateStr}`;
-  document.getElementById('pdf-printed-on').textContent = `Generated: ${timeStr}`;
-  document.getElementById('pdf-footer-date').textContent= dateStr;
+  document.getElementById('pdf-biz-name').textContent   = bizName;
+  document.getElementById('pdf-date-line').textContent   = `Report Date: ${dateStr}`;
+  document.getElementById('pdf-printed-on').textContent  = `Generated: ${timeStr}`;
+  document.getElementById('pdf-footer-date').textContent = dateStr;
 
   document.getElementById('pdf-summary').innerHTML = `
-    <div class="pdf-sum-item">
-      <div class="pdf-sum-label">Total Items</div>
-      <div class="pdf-sum-val">${allItems.length}</div>
-    </div>
-    <div class="pdf-sum-item">
-      <div class="pdf-sum-label">Total Units</div>
-      <div class="pdf-sum-val">${totalQty.toLocaleString()}</div>
-    </div>
-    <div class="pdf-sum-item">
-      <div class="pdf-sum-label">Stock Value</div>
-      <div class="pdf-sum-val">₦${totalVal.toLocaleString('en-NG', {minimumFractionDigits:2})}</div>
-    </div>
-    <div class="pdf-sum-item">
-      <div class="pdf-sum-label">Low Stock</div>
-      <div class="pdf-sum-val" style="color:${lowCount > 0 ? '#cc0000' : '#1a7a1a'};">${lowCount}</div>
-    </div>
-    <div class="pdf-sum-item">
-      <div class="pdf-sum-label">Out of Stock</div>
-      <div class="pdf-sum-val" style="color:${oosCount > 0 ? '#cc0000' : '#1a7a1a'};">${oosCount}</div>
-    </div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Total Items</div><div class="pdf-sum-val">${allItems.length}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Total Units</div><div class="pdf-sum-val">${totalQty.toLocaleString()}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">₦${totalVal.toLocaleString('en-NG',{minimumFractionDigits:2})}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Low Stock</div><div class="pdf-sum-val" style="color:${lowCount>0?'#cc0000':'#1a7a1a'};">${lowCount}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Out of Stock</div><div class="pdf-sum-val" style="color:${oosCount>0?'#cc0000':'#1a7a1a'};">${oosCount}</div></div>
   `;
 
   document.getElementById('pdf-tbody').innerHTML = allItems.map((item, idx) => {
-    const isLow   = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
-    const isOOS   = Number(item.quantity) <= 0;
-    const value   = Number(item.quantity) * Number(item.unit_price || 0);
-    const status  = isOOS
+    const isLow  = Number(item.quantity) <= Number(item.low_stock_threshold || 5);
+    const isOOS  = Number(item.quantity) <= 0;
+    const value  = Number(item.quantity) * Number(item.unit_price || 0);
+    const status = isOOS
       ? '<span class="pdf-status-low">Out of Stock</span>'
-      : isLow
-        ? '<span class="pdf-status-low">⚠ Low Stock</span>'
-        : '<span class="pdf-status-ok">✓ OK</span>';
+      : isLow ? '<span class="pdf-status-low">⚠ Low Stock</span>'
+              : '<span class="pdf-status-ok">✓ OK</span>';
     return `<tr>
-      <td>${idx + 1}</td>
+      <td>${idx+1}</td>
       <td><strong>${item.item_name}</strong></td>
-      <td style="text-align:center;font-weight:700;color:${isLow ? '#cc0000' : '#111'};">${item.quantity}</td>
+      <td style="text-align:center;font-weight:700;color:${isLow?'#cc0000':'#111'};">${item.quantity}</td>
       <td>₦${Number(item.unit_price||0).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
       <td>₦${value.toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
       <td>${status}</td>
     </tr>`;
   }).join('');
 
-  // Show overlay then print
   document.getElementById('pdf-area').style.display = 'block';
   setTimeout(() => window.print(), 400);
 }

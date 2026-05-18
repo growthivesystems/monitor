@@ -1,4 +1,4 @@
-// Shared components for GrowthIve Monitor
+ // Shared components for GrowthIve Monitor
 
 function renderSidebar(activePage) {
   const links = [
@@ -131,7 +131,18 @@ function applyTheme() {
 }
 
 function formatCurrency(amount) {
-  return '₦' + Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+  const currency = localStorage.getItem('currency') || '₦';
+  const localeMap = {
+    '₦':   'en-NG',
+    '$':   'en-US',
+    '€':   'de-DE',
+    '£':   'en-GB',
+    'GH₵': 'en-GH',
+    'KES': 'en-KE',
+  };
+  const locale = localeMap[currency] || 'en-NG';
+  const formatted = Number(amount || 0).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return currency + formatted;
 }
 
 function formatDate(dateStr) {

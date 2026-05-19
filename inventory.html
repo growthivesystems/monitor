@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -148,6 +148,70 @@
     cursor: pointer; font-size: 0.85rem; z-index: 10000;
   }
 
+  /* ══ IMPORT STYLES (NEW) ══ */
+  .import-drop-zone {
+    border: 2px dashed var(--gold-border);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(201,168,76,0.03);
+    margin-bottom: 16px;
+  }
+  .import-drop-zone:hover,
+  .import-drop-zone.drag-over {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+  .import-drop-icon { font-size: 2.4rem; margin-bottom: 10px; }
+  .import-drop-text { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  .import-drop-text strong { color: var(--white2); }
+
+  .import-preview-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.82rem; margin-top: 4px;
+    max-height: 280px; overflow-y: auto; display: block;
+  }
+  .import-preview-table thead tr {
+    background: var(--dark3);
+    position: sticky; top: 0;
+  }
+  .import-preview-table th {
+    padding: 8px 12px; text-align: left;
+    font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--gold);
+  }
+  .import-preview-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--dark4);
+    color: var(--white2);
+  }
+  .import-preview-table tr:hover td { background: var(--gold-dim); }
+  .import-row-valid   { border-left: 3px solid var(--success); }
+  .import-row-warning { border-left: 3px solid var(--gold); }
+  .import-row-error   { border-left: 3px solid var(--danger); opacity: 0.6; }
+
+  .import-stats {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .import-stat {
+    flex: 1; min-width: 80px; padding: 10px 14px;
+    background: var(--dark3); border-radius: var(--radius-sm);
+    text-align: center; border: 1px solid var(--gold-border);
+  }
+  .import-stat-val { font-size: 1.2rem; font-weight: 700; }
+  .import-stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  .col-map-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--dark4);
+    font-size: 0.85rem; flex-wrap: wrap;
+  }
+  .col-map-row:last-child { border-bottom: none; }
+  .col-map-label { width: 140px; color: var(--gold); font-weight: 600; flex-shrink: 0; }
+  .col-map-arrow { color: var(--muted); }
+
   @media print {
     body * { visibility: hidden !important; }
     #pdf-area, #pdf-area * { visibility: visible !important; }
@@ -239,6 +303,7 @@
           <input type="text" id="search-inv" placeholder="Search items…" style="width:150px;" oninput="filterList()">
           <button class="btn btn-outline btn-sm" onclick="toggleDeleted()" id="deleted-toggle">🗑️ Deleted</button>
           <div class="export-row">
+            <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 Import</button>
             <button class="btn btn-outline btn-sm" onclick="exportCSV()">📊 CSV</button>
             <button class="btn btn-outline btn-sm" onclick="exportPDF()">🖨️ PDF</button>
           </div>
@@ -257,7 +322,7 @@
       <div id="inv-list"><div class="spinner"></div></div>
     </div>
 
-    <!-- ── AUDIT LOG ── -->
+    <!-- Audit Log -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">📋 Inventory Activity Log</div>
@@ -269,6 +334,7 @@
             <option value="deleted">🗑️ Deleted</option>
             <option value="restored">↩️ Restored</option>
             <option value="purged">❌ Purged</option>
+            <option value="imported">📥 Imported</option>
           </select>
           <button class="btn btn-outline btn-sm" onclick="loadAuditLog()">🔄 Refresh</button>
         </div>
@@ -283,7 +349,97 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- ── PDF Preview Overlay ── -->
+<!-- ══════════════════════════════════════════
+     IMPORT MODAL (NEW)
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="max-width:680px;width:95%;">
+    <div class="modal-title">📥 Import Stock from File</div>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+      Upload a CSV or Excel file from your existing system (EPOS, spreadsheet, etc).
+      Items are <strong style="color:var(--white2);">added</strong> to your existing inventory — nothing is deleted or overwritten.
+    </p>
+
+    <!-- Step 1: Upload -->
+    <div id="import-step-1">
+      <div class="import-drop-zone" id="drop-zone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)">
+        <div class="import-drop-icon">📂</div>
+        <div class="import-drop-text">
+          <strong>Click to browse</strong> or drag and drop your file here<br>
+          Supports: <strong>.csv</strong> · <strong>.xlsx</strong> · <strong>.xls</strong> · <strong>.txt</strong>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.txt"
+        style="display:none;" onchange="handleFileSelect(event)">
+
+      <!-- Template download -->
+      <div style="text-align:center;margin-bottom:16px;">
+        <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">
+          📄 Download CSV Template
+        </button>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">
+          Not sure of the format? Download our template and fill it in.
+        </div>
+      </div>
+
+      <!-- Column format guide -->
+      <div class="security-note">
+        <strong>📋 Expected Columns (any order):</strong><br>
+        <code style="color:var(--gold);">Item Name</code> · 
+        <code style="color:var(--gold);">Quantity</code> · 
+        <code style="color:var(--gold);">Unit Price</code> · 
+        <code style="color:var(--gold);">Low Stock Threshold</code><br><br>
+        Column names are flexible — "Name", "Product", "Stock", "Price", "Cost" are all recognised automatically.
+        Missing columns are filled with safe defaults (Qty: 0, Price: 0, Threshold: 5).
+      </div>
+
+      <div id="import-parse-msg"></div>
+    </div>
+
+    <!-- Step 2: Preview -->
+    <div id="import-step-2" style="display:none;">
+      <div id="import-stats-row" class="import-stats"></div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">
+          🟢 Ready to import &nbsp;|&nbsp; 🟡 Missing optional fields (will use defaults) &nbsp;|&nbsp; 🔴 Skipped (no name)
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="import-preview-table" id="import-preview-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Threshold</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="import-preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="import-confirm-msg"></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn btn-gold" id="confirm-import-btn" onclick="confirmImport()">
+          ✅ Import Items →
+        </button>
+        <button class="btn btn-outline" onclick="resetImport()">← Choose Different File</button>
+        <button class="btn btn-outline" onclick="closeImportModal()">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PDF Preview Overlay -->
 <div id="pdf-area">
   <button class="pdf-close-btn no-print" onclick="closePDF()">✕ Close</button>
   <div class="pdf-header">
@@ -299,7 +455,7 @@
   <div class="pdf-summary" id="pdf-summary"></div>
   <table>
     <thead>
-      <tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price (₦)</th><th>Stock Value (₦)</th><th>Status</th></tr>
+      <tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th></tr>
     </thead>
     <tbody id="pdf-tbody"></tbody>
   </table>
@@ -308,7 +464,7 @@
   </div>
 </div>
 
-<!-- ── DELETE Confirmation Modal ── -->
+<!-- DELETE Confirmation Modal -->
 <div class="modal-overlay" id="delete-modal">
   <div class="modal">
     <div class="modal-title" style="color:var(--danger);">🗑️ Confirm Stock Deletion</div>
@@ -337,7 +493,7 @@
   </div>
 </div>
 
-<!-- ── Security Modal ── -->
+<!-- Security Modal -->
 <div class="modal-overlay" id="security-modal">
   <div class="modal">
     <div class="modal-title">🔒 Secure Verification Required</div>
@@ -364,7 +520,7 @@
   </div>
 </div>
 
-<!-- ── Edit Modal ── -->
+<!-- Edit Modal -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <div class="modal-title">✏️ Update Stock Item</div>
@@ -381,7 +537,7 @@
       <input type="number" id="edit-qty" min="0">
     </div>
     <div class="form-group">
-      <label>New Unit Price (₦)</label>
+      <label>New Unit Price</label>
       <input type="number" id="edit-price" min="0" step="0.01">
     </div>
     <div style="display:flex;gap:10px;">
@@ -401,6 +557,7 @@ let allItems      = [];
 let deletedItems  = [];
 let editUnlocked  = false;
 let showingDeleted= false;
+let importRows    = []; // holds parsed rows ready to import
 
 (async () => {
   currentUser = await requireAuth();
@@ -461,11 +618,10 @@ async function loadInventory() {
   renderList(showingDeleted ? deletedItems : allItems);
 }
 
-/* ── Toggle deleted view ── */
 function toggleDeleted() {
   showingDeleted = !showingDeleted;
   const btn = document.getElementById('deleted-toggle');
-  btn.textContent   = showingDeleted ? '📦 Active' : '🗑️ Deleted';
+  btn.textContent       = showingDeleted ? '📦 Active' : '🗑️ Deleted';
   btn.style.borderColor = showingDeleted ? 'var(--danger)' : '';
   btn.style.color       = showingDeleted ? 'var(--danger)' : '';
   renderList(showingDeleted ? deletedItems : allItems);
@@ -482,7 +638,7 @@ function renderList(items) {
   if (!items || items.length === 0) {
     el.innerHTML = showingDeleted
       ? '<div class="empty-state"><div class="icon">🗑️</div><p>No recently deleted items.</p></div>'
-      : '<div class="empty-state"><p>No stock items yet. Add your first item above.</p></div>';
+      : '<div class="empty-state"><p>No stock items yet. Add your first item above or import from a file.</p></div>';
     return;
   }
 
@@ -524,27 +680,19 @@ function renderList(items) {
 }
 
 /* ══════════════════════════════════════════
-   AUDIT LOG — write entry
+   AUDIT LOG
 ══════════════════════════════════════════ */
 async function writeLog(action, itemId, itemName, oldQty, newQty, oldPrice, newPrice, note='') {
   try {
     await _supabase.from('inventory_logs').insert({
-      user_id:      currentUser.id,
-      action,
-      item_id:      itemId   || null,
-      item_name:    itemName || '',
-      old_quantity: oldQty   ?? null,
-      new_quantity: newQty   ?? null,
-      old_price:    oldPrice ?? null,
-      new_price:    newPrice ?? null,
-      note
+      user_id: currentUser.id, action,
+      item_id: itemId || null, item_name: itemName || '',
+      old_quantity: oldQty ?? null, new_quantity: newQty ?? null,
+      old_price: oldPrice ?? null, new_price: newPrice ?? null, note
     });
   } catch(e) { console.warn('Audit log write failed:', e); }
 }
 
-/* ══════════════════════════════════════════
-   AUDIT LOG — load and render
-══════════════════════════════════════════ */
 async function loadAuditLog() {
   const el     = document.getElementById('audit-log');
   const filter = document.getElementById('log-filter').value;
@@ -552,24 +700,18 @@ async function loadAuditLog() {
 
   let query = _supabase.from('inventory_logs').select('*')
     .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false })
-    .limit(100);
-
+    .order('created_at', { ascending: false }).limit(100);
   if (filter !== 'all') query = query.eq('action', filter);
 
   const { data, error } = await query;
-
   if (error || !data || data.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No activity logged yet. Every change to your inventory will appear here.</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No activity logged yet.</p></div>';
     return;
   }
 
-  // ── Suspicion detection ──
-  // Find items deleted then re-added with fewer units within 24 hours
   const suspiciousItems = new Set();
   const deletions = data.filter(l => l.action === 'deleted');
   const additions = data.filter(l => l.action === 'added');
-
   deletions.forEach(del => {
     additions.forEach(add => {
       if (
@@ -590,34 +732,27 @@ async function loadAuditLog() {
     deleted:  { icon: '🗑️', cls: 'deleted',  label: 'Deleted'  },
     restored: { icon: '↩️', cls: 'restored', label: 'Restored' },
     purged:   { icon: '❌', cls: 'purged',   label: 'Purged'   },
+    imported: { icon: '📥', cls: 'added',    label: 'Imported' },
   };
 
   el.innerHTML = `<div>${data.map(log => {
-    const cfg       = actionConfig[log.action] || { icon:'📝', cls:'edited', label: log.action };
-    const timeStr   = new Date(log.created_at).toLocaleString('en-GB', {
-      day:'2-digit', month:'short', year:'numeric',
-      hour:'2-digit', minute:'2-digit'
+    const cfg    = actionConfig[log.action] || { icon:'📝', cls:'edited', label: log.action };
+    const timeStr = new Date(log.created_at).toLocaleString('en-GB',{
+      day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'
     });
     const isSuspicious = suspiciousItems.has(log.item_name?.toLowerCase());
 
-    // Build change detail line
     let detail = '';
-    if (log.action === 'added') {
+    if (log.action === 'added' || log.action === 'imported') {
       detail = `Qty: <span style="color:var(--success);font-weight:600;">${log.new_quantity}</span>` +
         (log.new_price ? ` &nbsp;·&nbsp; Price: <span style="color:var(--gold);">${formatCurrency(log.new_price)}</span>` : '');
     } else if (log.action === 'edited') {
-      const qtyChanged   = log.old_quantity !== log.new_quantity;
-      const priceChanged = log.old_price    !== log.new_price;
       const parts = [];
-      if (qtyChanged) parts.push(
-        `Qty: <span class="log-before">${log.old_quantity}</span>
-         <span class="log-arrow">→</span>
-         <span class="log-after">${log.new_quantity}</span>`
+      if (log.old_quantity !== log.new_quantity) parts.push(
+        `Qty: <span class="log-before">${log.old_quantity}</span><span class="log-arrow">→</span><span class="log-after">${log.new_quantity}</span>`
       );
-      if (priceChanged) parts.push(
-        `Price: <span class="log-before">${formatCurrency(log.old_price)}</span>
-         <span class="log-arrow">→</span>
-         <span class="log-after">${formatCurrency(log.new_price)}</span>`
+      if (log.old_price !== log.new_price) parts.push(
+        `Price: <span class="log-before">${formatCurrency(log.old_price)}</span><span class="log-arrow">→</span><span class="log-after">${formatCurrency(log.new_price)}</span>`
       );
       detail = `<div class="log-change">${parts.join(' &nbsp;|&nbsp; ')}</div>`;
     } else if (log.action === 'deleted') {
@@ -665,14 +800,10 @@ async function saveItem() {
   }).select().single();
 
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-
-  // ── Log the addition ──
   await writeLog('added', inserted?.id, item_name, null, quantity, null, unit_price);
-
   msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
   ['item-name','item-qty','item-price'].forEach(id => document.getElementById(id).value = '');
-  loadInventory();
-  loadAuditLog();
+  loadInventory(); loadAuditLog();
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
@@ -711,19 +842,12 @@ async function confirmDelete() {
   const price = parseFloat(document.getElementById('delete-pending-price').value);
   const msg   = document.getElementById('delete-msg');
   msg.innerHTML = '<div class="alert alert-gold">Processing…</div>';
-
   const { error } = await _supabase.from('inventory')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id).eq('user_id', currentUser.id);
-
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-
-  // ── Log the deletion ──
   await writeLog('deleted', id, name, qty, null, price, null);
-
-  closeDeleteModal();
-  loadInventory();
-  loadAuditLog();
+  closeDeleteModal(); loadInventory(); loadAuditLog();
 }
 
 function closeDeleteModal() {
@@ -732,31 +856,19 @@ function closeDeleteModal() {
   document.getElementById('delete-msg').innerHTML       = '';
 }
 
-/* ── Restore ── */
 async function restoreItem(id, name, qty, price) {
   if (!confirm(`Restore "${name}" back to active stock?`)) return;
-  await _supabase.from('inventory')
-    .update({ deleted_at: null })
-    .eq('id', id).eq('user_id', currentUser.id);
-
-  // ── Log the restoration ──
+  await _supabase.from('inventory').update({ deleted_at: null }).eq('id', id).eq('user_id', currentUser.id);
   await writeLog('restored', id, name, null, qty, null, price);
-
-  loadInventory();
-  loadAuditLog();
+  loadInventory(); loadAuditLog();
 }
 
-/* ── Permanent purge ── */
 async function permanentDelete(id, name, qty, price) {
-  const typed = prompt(`⚠️ PERMANENT DELETE\n\nThis will remove "${name}" forever with no recovery.\n\nType DELETE to confirm:`);
-  if (typed?.trim().toUpperCase() !== 'DELETE') { alert('Permanent deletion cancelled.'); return; }
-
-  // ── Log purge BEFORE deleting (so we still have the data) ──
+  const typed = prompt(`⚠️ PERMANENT DELETE\n\nThis will remove "${name}" forever.\n\nType DELETE to confirm:`);
+  if (typed?.trim().toUpperCase() !== 'DELETE') { alert('Cancelled.'); return; }
   await writeLog('purged', id, name, qty, null, price, null);
-
   await _supabase.from('inventory').delete().eq('id', id).eq('user_id', currentUser.id);
-  loadInventory();
-  loadAuditLog();
+  loadInventory(); loadAuditLog();
 }
 
 /* ══════════════════════════════════════════
@@ -788,7 +900,7 @@ async function sendVerification() {
     redirectTo: 'https://growthivesystems.github.io/monitor/inventory.html'
   });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = `<div class="alert alert-success">✅ Verification email sent! Check your inbox and click the gold button to return here.</div>`;
+  msg.innerHTML = `<div class="alert alert-success">✅ Verification email sent! Check your inbox.</div>`;
 }
 
 function closeSecurityModal() {
@@ -813,21 +925,272 @@ function closeEditModal() {
 }
 
 async function updateItem() {
-  const id        = document.getElementById('edit-id').value;
-  const name      = document.getElementById('edit-name').value;
-  const oldQty    = parseFloat(document.getElementById('edit-old-qty').value);
-  const oldPrice  = parseFloat(document.getElementById('edit-old-price').value);
-  const quantity  = parseInt(document.getElementById('edit-qty').value);
-  const unit_price= parseFloat(document.getElementById('edit-price').value) || 0;
-
+  const id         = document.getElementById('edit-id').value;
+  const name       = document.getElementById('edit-name').value;
+  const oldQty     = parseFloat(document.getElementById('edit-old-qty').value);
+  const oldPrice   = parseFloat(document.getElementById('edit-old-price').value);
+  const quantity   = parseInt(document.getElementById('edit-qty').value);
+  const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
   await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
-
-  // ── Log the edit ──
   await writeLog('edited', id, name, oldQty, quantity, oldPrice, unit_price);
+  closeEditModal(); loadInventory(); loadAuditLog();
+}
 
-  closeEditModal();
-  loadInventory();
-  loadAuditLog();
+/* ══════════════════════════════════════════
+   IMPORT — MODAL CONTROLS
+══════════════════════════════════════════ */
+function openImportModal() {
+  resetImport();
+  document.getElementById('import-modal').classList.add('show');
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('show');
+  resetImport();
+}
+
+function resetImport() {
+  importRows = [];
+  document.getElementById('import-step-1').style.display = 'block';
+  document.getElementById('import-step-2').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('import-parse-msg').innerHTML = '';
+  document.getElementById('import-preview-body').innerHTML = '';
+  document.getElementById('import-stats-row').innerHTML = '';
+  document.getElementById('import-confirm-msg').innerHTML = '';
+}
+
+/* ── Drag & Drop ── */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+/* ── Process uploaded file ── */
+function processFile(file) {
+  const msg = document.getElementById('import-parse-msg');
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (!['csv','txt','xlsx','xls'].includes(ext)) {
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Unsupported file type. Please upload a CSV or Excel file.</div>';
+    return;
+  }
+
+  msg.innerHTML = '<div class="alert alert-gold">⏳ Reading file…</div>';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (ext === 'csv' || ext === 'txt') {
+        rows = parseCSV(e.target.result);
+      } else {
+        // For xlsx/xls — basic parsing without external library
+        msg.innerHTML = '<div class="alert alert-danger">⚠️ For Excel files, please save as CSV first (File → Save As → CSV) and re-upload. CSV is fully supported.</div>';
+        return;
+      }
+      if (rows.length === 0) {
+        msg.innerHTML = '<div class="alert alert-danger">⚠️ No data found in file. Please check the file has content.</div>';
+        return;
+      }
+      msg.innerHTML = '';
+      buildPreview(rows);
+    } catch(err) {
+      msg.innerHTML = `<div class="alert alert-danger">⚠️ Could not read file: ${err.message}</div>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ── Parse CSV text into row objects ── */
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  // Parse header row — detect column positions flexibly
+  const headerLine = lines[0];
+  const headers    = splitCSVLine(headerLine).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g,''));
+
+  // Map flexible column names to standard fields
+  const colMap = {
+    item_name:           findCol(headers, ['item name','name','product','description','item','stock name','product name','article']),
+    quantity:            findCol(headers, ['quantity','qty','stock','units','amount','count','on hand','stock qty']),
+    unit_price:          findCol(headers, ['unit price','price','cost','unit cost','selling price','value','rate','each']),
+    low_stock_threshold: findCol(headers, ['low stock threshold','threshold','min stock','minimum','reorder level','alert level']),
+  };
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols    = splitCSVLine(lines[i]);
+    const name    = colMap.item_name !== -1    ? (cols[colMap.item_name]    || '').trim() : '';
+    const qty     = colMap.quantity  !== -1    ? parseFloat(cols[colMap.quantity]  || '0') : 0;
+    const price   = colMap.unit_price !== -1   ? parseFloat(cols[colMap.unit_price]  || '0') : 0;
+    const thresh  = colMap.low_stock_threshold !== -1 ? parseInt(cols[colMap.low_stock_threshold] || '5') : 5;
+
+    rows.push({
+      item_name:           name.replace(/^"|"$/g,''),
+      quantity:            isNaN(qty)    ? 0 : Math.max(0, qty),
+      unit_price:          isNaN(price)  ? 0 : Math.max(0, price),
+      low_stock_threshold: isNaN(thresh) ? 5 : Math.max(1, thresh),
+      _status: name ? (price > 0 ? 'valid' : 'warning') : 'error'
+    });
+  }
+  return rows;
+}
+
+function findCol(headers, aliases) {
+  for (const alias of aliases) {
+    const idx = headers.findIndex(h => h.includes(alias) || alias.includes(h));
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+/* ── Build preview table ── */
+function buildPreview(rows) {
+  importRows = rows.filter(r => r._status !== 'error'); // only import valid rows
+  const valid   = rows.filter(r => r._status === 'valid').length;
+  const warning = rows.filter(r => r._status === 'warning').length;
+  const skipped = rows.filter(r => r._status === 'error').length;
+
+  document.getElementById('import-stats-row').innerHTML = `
+    <div class="import-stat">
+      <div class="import-stat-val" style="color:var(--success);">${valid + warning}</div>
+      <div class="import-stat-label">Ready to Import</div>
+    </div>
+    <div class="import-stat">
+      <div class="import-stat-val" style="color:var(--gold);">${warning}</div>
+      <div class="import-stat-label">Missing Price</div>
+    </div>
+    <div class="import-stat">
+      <div class="import-stat-val" style="color:var(--danger);">${skipped}</div>
+      <div class="import-stat-label">Skipped (no name)</div>
+    </div>
+    <div class="import-stat">
+      <div class="import-stat-val">${rows.length}</div>
+      <div class="import-stat-label">Total Rows</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('import-preview-body');
+  tbody.innerHTML = rows.map((r, i) => {
+    const statusText = r._status === 'valid'   ? '🟢 Ready'
+                     : r._status === 'warning' ? '🟡 No price'
+                     : '🔴 Skipped';
+    const rowClass   = `import-row-${r._status}`;
+    return `<tr class="${rowClass}">
+      <td>${i+1}</td>
+      <td>${r.item_name || '<em style="color:var(--danger)">No name</em>'}</td>
+      <td>${r.quantity}</td>
+      <td>${r.unit_price > 0 ? formatCurrency(r.unit_price) : '—'}</td>
+      <td>${r.low_stock_threshold}</td>
+      <td>${statusText}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('import-step-1').style.display = 'none';
+  document.getElementById('import-step-2').style.display = 'block';
+
+  if (importRows.length === 0) {
+    document.getElementById('confirm-import-btn').disabled = true;
+    document.getElementById('import-confirm-msg').innerHTML =
+      '<div class="alert alert-danger">⚠️ No valid rows found to import. Please check your file.</div>';
+  }
+}
+
+/* ── Confirm & save to Supabase ── */
+async function confirmImport() {
+  if (!importRows || importRows.length === 0) return;
+
+  const btn = document.getElementById('confirm-import-btn');
+  const msg = document.getElementById('import-confirm-msg');
+  btn.disabled    = true;
+  btn.textContent = `⏳ Importing ${importRows.length} items…`;
+  msg.innerHTML   = '<div class="alert alert-gold">⏳ Saving to inventory…</div>';
+
+  let successCount = 0;
+  let failCount    = 0;
+
+  // Insert in batches of 20
+  const batchSize = 20;
+  for (let i = 0; i < importRows.length; i += batchSize) {
+    const batch = importRows.slice(i, i + batchSize).map(r => ({
+      user_id:             currentUser.id,
+      item_name:           r.item_name,
+      quantity:            r.quantity,
+      unit_price:          r.unit_price,
+      low_stock_threshold: r.low_stock_threshold,
+      deleted_at:          null
+    }));
+
+    const { data: inserted, error } = await _supabase.from('inventory').insert(batch).select();
+    if (error) {
+      failCount += batch.length;
+    } else {
+      successCount += (inserted || batch).length;
+      // Log each imported item
+      for (const row of importRows.slice(i, i + batchSize)) {
+        await writeLog('imported', null, row.item_name, null, row.quantity, null, row.unit_price,
+          `Bulk import from file`);
+      }
+    }
+  }
+
+  if (successCount > 0) {
+    msg.innerHTML = `<div class="alert alert-success">
+      ✅ Successfully imported <strong>${successCount}</strong> item(s) into your inventory!
+      ${failCount > 0 ? `<br>⚠️ ${failCount} item(s) failed to save.` : ''}
+    </div>`;
+    loadInventory();
+    loadAuditLog();
+    setTimeout(() => closeImportModal(), 2500);
+  } else {
+    msg.innerHTML = '<div class="alert alert-danger">❌ Import failed. Please try again.</div>';
+    btn.disabled    = false;
+    btn.textContent = '✅ Import Items →';
+  }
+}
+
+/* ── Download blank CSV template ── */
+function downloadTemplate() {
+  const template = [
+    'Item Name,Quantity,Unit Price,Low Stock Threshold',
+    'Rice (50kg bag),20,45000,5',
+    'Engine Oil (1L),10,8500,3',
+    'Bottled Water (crate),30,3500,10',
+    'Sugar (1kg),50,1200,15',
+  ].join('\n');
+  const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'growthive-inventory-template.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 /* ══════════════════════════════════════════
@@ -836,7 +1199,7 @@ async function updateItem() {
 function exportCSV() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   const now     = new Date().toLocaleDateString('en-GB');
-  const headers = ['#','Item Name','Quantity','Unit Price (N)','Stock Value (N)','Low Stock Threshold','Status'];
+  const headers = ['#','Item Name','Quantity','Unit Price','Stock Value','Low Stock Threshold','Status'];
   const rows    = allItems.map((item,idx) => {
     const isLow  = Number(item.quantity) <= Number(item.low_stock_threshold||5);
     const value  = Number(item.quantity) * Number(item.unit_price||0);
@@ -847,7 +1210,8 @@ function exportCSV() {
   const totalQty = allItems.reduce((s,i)=>s+Number(i.quantity),0);
   const totalVal = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
   const lowCount = allItems.filter(i=>Number(i.quantity)<=Number(i.low_stock_threshold||5)).length;
-  const csv = [`"GrowthIve Monitor — Inventory Report"`,`"Generated: ${now}"`,``,
+  const csv = [
+    `"GrowthIve Monitor — Inventory Report"`,`"Generated: ${now}"`,``,
     headers.join(','),...rows,``,
     `"TOTALS","${allItems.length} items","${totalQty} units","","${totalVal.toFixed(2)}","","${lowCount} low stock"`
   ].join('\n');
@@ -870,23 +1234,23 @@ async function exportPDF() {
     if (profile?.business_name) bizName = profile.business_name;
   } catch(e) {}
 
-  const now      = new Date();
-  const dateStr  = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const timeStr  = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const timeStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   const totalQty = allItems.reduce((s,i)=>s+Number(i.quantity),0);
   const totalVal = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
   const lowCount = allItems.filter(i=>Number(i.quantity)<=Number(i.low_stock_threshold||5)).length;
   const oosCount = allItems.filter(i=>Number(i.quantity)<=0).length;
 
-  document.getElementById('pdf-biz-name').textContent   = bizName;
-  document.getElementById('pdf-date-line').textContent   = `Report Date: ${dateStr}`;
-  document.getElementById('pdf-printed-on').textContent  = `Generated: ${timeStr}`;
-  document.getElementById('pdf-footer-date').textContent = dateStr;
+  document.getElementById('pdf-biz-name').textContent  = bizName;
+  document.getElementById('pdf-date-line').textContent  = `Report Date: ${dateStr}`;
+  document.getElementById('pdf-printed-on').textContent = `Generated: ${timeStr}`;
+  document.getElementById('pdf-footer-date').textContent= dateStr;
 
   document.getElementById('pdf-summary').innerHTML = `
     <div class="pdf-sum-item"><div class="pdf-sum-label">Total Items</div><div class="pdf-sum-val">${allItems.length}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Total Units</div><div class="pdf-sum-val">${totalQty.toLocaleString()}</div></div>
-    <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">₦${totalVal.toLocaleString('en-NG',{minimumFractionDigits:2})}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">${formatCurrency(totalVal)}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Low Stock</div><div class="pdf-sum-val" style="color:${lowCount>0?'#cc0000':'#1a7a1a'};">${lowCount}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Out of Stock</div><div class="pdf-sum-val" style="color:${oosCount>0?'#cc0000':'#1a7a1a'};">${oosCount}</div></div>
   `;
@@ -899,8 +1263,8 @@ async function exportPDF() {
       :'<span class="pdf-status-ok">✓ OK</span>';
     return `<tr><td>${idx+1}</td><td><strong>${item.item_name}</strong></td>
       <td style="text-align:center;font-weight:700;color:${isLow?'#cc0000':'#111'};">${item.quantity}</td>
-      <td>₦${Number(item.unit_price||0).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
-      <td>₦${value.toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
+      <td>${formatCurrency(item.unit_price||0)}</td>
+      <td>${formatCurrency(value)}</td>
       <td>${status}</td></tr>`;
   }).join('');
 

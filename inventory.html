@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -138,6 +138,7 @@
   #pdf-area tbody tr:nth-child(even) { background: #f9f9f9; }
   #pdf-area .pdf-status-low { color: #cc0000; font-weight: 600; font-size: 0.75rem; }
   #pdf-area .pdf-status-ok  { color: #1a7a1a; font-size: 0.75rem; }
+  #pdf-area .pdf-status-unstocked { color: #888; font-size: 0.75rem; }
   #pdf-area .pdf-footer {
     margin-top: 40px; text-align: center; font-size: 0.72rem; color: #888;
     border-top: 1px solid #ddd; padding-top: 16px;
@@ -148,7 +149,7 @@
     cursor: pointer; font-size: 0.85rem; z-index: 10000;
   }
 
-  /* ══ IMPORT STYLES (NEW) ══ */
+  /* ══ IMPORT STYLES ══ */
   .import-drop-zone {
     border: 2px dashed var(--gold-border);
     border-radius: var(--radius);
@@ -251,7 +252,7 @@
           <input type="text" id="item-name" placeholder="e.g. Red Wine (bottle), Engine Oil…">
         </div>
         <div class="form-group">
-          <label>Current Quantity</label>
+          <label>Current Quantity <span style="color:var(--muted);font-weight:400;">(optional — leave 0 if not yet stocked)</span></label>
           <input type="number" id="item-qty" placeholder="0" min="0">
         </div>
         <div class="form-group">
@@ -278,6 +279,10 @@
             <div class="card-value danger" id="low-count">0</div>
           </div>
           <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+            <div class="card-title" style="margin:0;">Unstocked (Qty 0)</div>
+            <div class="card-value" style="color:var(--muted);" id="unstocked-count">0</div>
+          </div>
+          <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
             <div class="card-title" style="margin:0;">Total Stock Value</div>
             <div class="card-value gold" id="total-value">₦0.00</div>
           </div>
@@ -291,6 +296,7 @@
           Every addition, edit, deletion and restoration is permanently logged with a timestamp.
           Deleted items are recoverable for <strong>30 days</strong>.
           If an item is deleted and re-added with fewer units, it is automatically flagged ⚠️ as suspicious.
+          Items with <strong>Qty 0</strong> are treated as "not yet stocked" — no low-stock alert fires until stock is actually added and then falls below threshold.
         </div>
       </div>
     </div>
@@ -350,7 +356,7 @@
 <div id="main-footer"></div>
 
 <!-- ══════════════════════════════════════════
-     IMPORT MODAL (NEW)
+     IMPORT MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="max-width:680px;width:95%;">
@@ -395,6 +401,7 @@
         <code style="color:var(--gold);">Low Stock Threshold</code><br><br>
         Column names are flexible — "Name", "Product", "Stock", "Price", "Cost" are all recognised automatically.
         Missing columns are filled with safe defaults (Qty: 0, Price: 0, Threshold: 5).
+        Items imported with Qty 0 are marked as <strong>Unstocked</strong> — no low-stock alert until stock is received.
       </div>
 
       <div id="import-parse-msg"></div>
@@ -557,7 +564,7 @@ let allItems      = [];
 let deletedItems  = [];
 let editUnlocked  = false;
 let showingDeleted= false;
-let importRows    = []; // holds parsed rows ready to import
+let importRows    = [];
 
 (async () => {
   currentUser = await requireAuth();
@@ -584,6 +591,23 @@ let importRows    = []; // holds parsed rows ready to import
 })();
 
 /* ══════════════════════════════════════════
+   LOW STOCK HELPER
+   An item is only "low stock" if:
+   - quantity is GREATER than 0 (it has been stocked at some point), AND
+   - quantity is AT OR BELOW the threshold
+   Items with qty = 0 are "unstocked" — no alert fires.
+══════════════════════════════════════════ */
+function isLowStock(item) {
+  const qty       = Number(item.quantity);
+  const threshold = Number(item.low_stock_threshold || 5);
+  return qty > 0 && qty <= threshold;
+}
+
+function isUnstocked(item) {
+  return Number(item.quantity) === 0;
+}
+
+/* ══════════════════════════════════════════
    LOAD INVENTORY
 ══════════════════════════════════════════ */
 async function loadInventory() {
@@ -602,18 +626,25 @@ async function loadInventory() {
   allItems     = active  || [];
   deletedItems = deleted || [];
 
-  const lowItems = allItems.filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
-  document.getElementById('total-items').textContent   = allItems.length;
-  document.getElementById('low-count').textContent     = lowItems.length;
-  document.getElementById('deleted-count').textContent = deletedItems.length;
+  // FIX: only count items with qty > 0 AND below threshold as "low stock"
+  const lowItems       = allItems.filter(i => isLowStock(i));
+  const unstockedItems = allItems.filter(i => isUnstocked(i));
+
+  document.getElementById('total-items').textContent     = allItems.length;
+  document.getElementById('low-count').textContent       = lowItems.length;
+  document.getElementById('unstocked-count').textContent = unstockedItems.length;
+  document.getElementById('deleted-count').textContent   = deletedItems.length;
 
   const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
   document.getElementById('total-value').textContent = formatCurrency(totalVal);
 
+  // FIX: banner only fires for genuinely low items (qty > 0 but below threshold)
   const banner = document.getElementById('low-stock-banner');
-  banner.innerHTML = lowItems.length > 0
-    ? `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i=>i.item_name).join(', ')}</div>`
-    : '';
+  if (lowItems.length > 0) {
+    banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i=>i.item_name).join(', ')}</div>`;
+  } else {
+    banner.innerHTML = '';
+  }
 
   renderList(showingDeleted ? deletedItems : allItems);
 }
@@ -646,13 +677,17 @@ function renderList(items) {
     ? `<div class="deleted-banner"><span>🗑️ Showing <strong>${items.length}</strong> deleted item(s) — restorable within 30 days.</span></div>` : '';
 
   el.innerHTML = banner + `<div class="inv-list">${items.map((r, idx) => {
-    const isLow     = Number(r.quantity) <= Number(r.low_stock_threshold || 5);
+    // FIX: use helper — qty=0 items are "unstocked", not "low"
+    const low       = isLowStock(r);
+    const unstocked = isUnstocked(r);
     const isDeleted = r.deleted_at !== null;
+
     let restoreInfo = '';
     if (isDeleted) {
       const daysLeft = 30 - Math.floor((Date.now() - new Date(r.deleted_at)) / (1000*60*60*24));
       restoreInfo = `<span style="font-size:0.72rem;color:var(--danger);margin-left:6px;">${daysLeft}d left</span>`;
     }
+
     const actions = isDeleted
       ? `<button class="btn btn-outline btn-sm" style="color:var(--success);border-color:var(--success);"
             onclick="restoreItem('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">↩️ Restore</button>
@@ -663,15 +698,19 @@ function renderList(items) {
          <button class="btn btn-danger btn-sm"
             onclick="openDeleteModal('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">✕ Delete</button>`;
 
+    // qty colour: red only for genuine low-stock, muted for unstocked, white for normal
+    const qtyColor = low && !isDeleted ? 'var(--danger)' : unstocked && !isDeleted ? 'var(--muted)' : 'var(--white)';
+
     return `<div class="inv-item${isDeleted?' deleted-item':''}">
       <div class="inv-num">${idx+1}</div>
       <div class="inv-name">
         ${r.item_name}
-        ${isLow&&!isDeleted?'<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>':''}
-        ${isDeleted?'<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Deleted</span>':''}
+        ${low && !isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>' : ''}
+        ${unstocked && !isDeleted ? '<span class="badge" style="margin-left:8px;font-size:0.68rem;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--dark4);">Unstocked</span>' : ''}
+        ${isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Deleted</span>' : ''}
         ${restoreInfo}
       </div>
-      <div class="inv-qty" style="color:${isLow&&!isDeleted?'var(--danger)':'var(--white)'};">${r.quantity}</div>
+      <div class="inv-qty" style="color:${qtyColor};">${r.quantity}</div>
       <div class="inv-price">${formatCurrency(r.unit_price)}</div>
       <div class="inv-value">${formatCurrency(Number(r.quantity)*Number(r.unit_price||0))}</div>
       <div class="inv-actions">${actions}</div>
@@ -782,16 +821,18 @@ async function loadAuditLog() {
 
 /* ══════════════════════════════════════════
    ADD ITEM
+   quantity is optional — defaults to 0 (unstocked)
 ══════════════════════════════════════════ */
 async function saveItem() {
   const item_name           = document.getElementById('item-name').value.trim();
-  const quantity            = parseInt(document.getElementById('item-qty').value);
+  const qtyRaw              = document.getElementById('item-qty').value;
+  const quantity            = qtyRaw === '' ? 0 : parseInt(qtyRaw);
   const unit_price          = parseFloat(document.getElementById('item-price').value) || 0;
   const low_stock_threshold = parseInt(document.getElementById('item-threshold').value) || 5;
   const msg = document.getElementById('form-msg');
 
-  if (!item_name || isNaN(quantity)) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter item name and quantity.</div>'; return;
+  if (!item_name) {
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter an item name.</div>'; return;
   }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
 
@@ -998,7 +1039,6 @@ function processFile(file) {
       if (ext === 'csv' || ext === 'txt') {
         rows = parseCSV(e.target.result);
       } else {
-        // For xlsx/xls — basic parsing without external library
         msg.innerHTML = '<div class="alert alert-danger">⚠️ For Excel files, please save as CSV first (File → Save As → CSV) and re-upload. CSV is fully supported.</div>';
         return;
       }
@@ -1020,11 +1060,9 @@ function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
 
-  // Parse header row — detect column positions flexibly
   const headerLine = lines[0];
   const headers    = splitCSVLine(headerLine).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g,''));
 
-  // Map flexible column names to standard fields
   const colMap = {
     item_name:           findCol(headers, ['item name','name','product','description','item','stock name','product name','article']),
     quantity:            findCol(headers, ['quantity','qty','stock','units','amount','count','on hand','stock qty']),
@@ -1073,7 +1111,7 @@ function splitCSVLine(line) {
 
 /* ── Build preview table ── */
 function buildPreview(rows) {
-  importRows = rows.filter(r => r._status !== 'error'); // only import valid rows
+  importRows = rows.filter(r => r._status !== 'error');
   const valid   = rows.filter(r => r._status === 'valid').length;
   const warning = rows.filter(r => r._status === 'warning').length;
   const skipped = rows.filter(r => r._status === 'error').length;
@@ -1136,7 +1174,6 @@ async function confirmImport() {
   let successCount = 0;
   let failCount    = 0;
 
-  // Insert in batches of 20
   const batchSize = 20;
   for (let i = 0; i < importRows.length; i += batchSize) {
     const batch = importRows.slice(i, i + batchSize).map(r => ({
@@ -1153,7 +1190,6 @@ async function confirmImport() {
       failCount += batch.length;
     } else {
       successCount += (inserted || batch).length;
-      // Log each imported item
       for (const row of importRows.slice(i, i + batchSize)) {
         await writeLog('imported', null, row.item_name, null, row.quantity, null, row.unit_price,
           `Bulk import from file`);
@@ -1195,21 +1231,23 @@ function downloadTemplate() {
 
 /* ══════════════════════════════════════════
    EXPORT CSV
+   FIX: qty=0 items show as "Unstocked", not "Low Stock"
 ══════════════════════════════════════════ */
 function exportCSV() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   const now     = new Date().toLocaleDateString('en-GB');
   const headers = ['#','Item Name','Quantity','Unit Price','Stock Value','Low Stock Threshold','Status'];
   const rows    = allItems.map((item,idx) => {
-    const isLow  = Number(item.quantity) <= Number(item.low_stock_threshold||5);
-    const value  = Number(item.quantity) * Number(item.unit_price||0);
-    const status = Number(item.quantity) <= 0 ? 'Out of Stock' : isLow ? 'Low Stock' : 'OK';
-    return [idx+1,`"${item.item_name.replace(/"/g,'""')}"`,item.quantity,
+    const qty    = Number(item.quantity);
+    const low    = qty > 0 && qty <= Number(item.low_stock_threshold || 5); // FIX
+    const value  = qty * Number(item.unit_price||0);
+    const status = qty === 0 ? 'Unstocked' : low ? 'Low Stock' : 'OK';    // FIX
+    return [idx+1,`"${item.item_name.replace(/"/g,'""')}"`,qty,
       Number(item.unit_price||0).toFixed(2),value.toFixed(2),item.low_stock_threshold||5,status].join(',');
   });
-  const totalQty = allItems.reduce((s,i)=>s+Number(i.quantity),0);
-  const totalVal = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
-  const lowCount = allItems.filter(i=>Number(i.quantity)<=Number(i.low_stock_threshold||5)).length;
+  const totalQty    = allItems.reduce((s,i)=>s+Number(i.quantity),0);
+  const totalVal    = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
+  const lowCount    = allItems.filter(i=>isLowStock(i)).length;  // FIX
   const csv = [
     `"GrowthIve Monitor — Inventory Report"`,`"Generated: ${now}"`,``,
     headers.join(','),...rows,``,
@@ -1224,6 +1262,7 @@ function exportCSV() {
 
 /* ══════════════════════════════════════════
    EXPORT PDF
+   FIX: qty=0 → "Unstocked" (grey), not "Low Stock" (red)
 ══════════════════════════════════════════ */
 async function exportPDF() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
@@ -1237,10 +1276,10 @@ async function exportPDF() {
   const now     = new Date();
   const dateStr = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   const timeStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const totalQty = allItems.reduce((s,i)=>s+Number(i.quantity),0);
-  const totalVal = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
-  const lowCount = allItems.filter(i=>Number(i.quantity)<=Number(i.low_stock_threshold||5)).length;
-  const oosCount = allItems.filter(i=>Number(i.quantity)<=0).length;
+  const totalQty      = allItems.reduce((s,i)=>s+Number(i.quantity),0);
+  const totalVal      = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
+  const lowCount      = allItems.filter(i=>isLowStock(i)).length;        // FIX
+  const unstockedCount= allItems.filter(i=>isUnstocked(i)).length;       // FIX
 
   document.getElementById('pdf-biz-name').textContent  = bizName;
   document.getElementById('pdf-date-line').textContent  = `Report Date: ${dateStr}`;
@@ -1252,17 +1291,22 @@ async function exportPDF() {
     <div class="pdf-sum-item"><div class="pdf-sum-label">Total Units</div><div class="pdf-sum-val">${totalQty.toLocaleString()}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">${formatCurrency(totalVal)}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Low Stock</div><div class="pdf-sum-val" style="color:${lowCount>0?'#cc0000':'#1a7a1a'};">${lowCount}</div></div>
-    <div class="pdf-sum-item"><div class="pdf-sum-label">Out of Stock</div><div class="pdf-sum-val" style="color:${oosCount>0?'#cc0000':'#1a7a1a'};">${oosCount}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Unstocked</div><div class="pdf-sum-val" style="color:${unstockedCount>0?'#888':'#1a7a1a'};">${unstockedCount}</div></div>
   `;
+
   document.getElementById('pdf-tbody').innerHTML = allItems.map((item,idx) => {
-    const isLow = Number(item.quantity)<=Number(item.low_stock_threshold||5);
-    const isOOS = Number(item.quantity)<=0;
-    const value = Number(item.quantity)*Number(item.unit_price||0);
-    const status= isOOS?'<span class="pdf-status-low">Out of Stock</span>'
-      :isLow?'<span class="pdf-status-low">⚠ Low Stock</span>'
-      :'<span class="pdf-status-ok">✓ OK</span>';
+    const qty   = Number(item.quantity);
+    const low   = isLowStock(item);   // FIX
+    const unst  = isUnstocked(item);  // FIX
+    const value = qty * Number(item.unit_price||0);
+    // FIX: qty=0 is grey "Unstocked", not red "Low Stock"
+    const status = unst
+      ? '<span class="pdf-status-unstocked">— Unstocked</span>'
+      : low
+        ? '<span class="pdf-status-low">⚠ Low Stock</span>'
+        : '<span class="pdf-status-ok">✓ OK</span>';
     return `<tr><td>${idx+1}</td><td><strong>${item.item_name}</strong></td>
-      <td style="text-align:center;font-weight:700;color:${isLow?'#cc0000':'#111'};">${item.quantity}</td>
+      <td style="text-align:center;font-weight:700;color:${low?'#cc0000':unst?'#888':'#111'};">${qty}</td>
       <td>${formatCurrency(item.unit_price||0)}</td>
       <td>${formatCurrency(value)}</td>
       <td>${status}</td></tr>`;

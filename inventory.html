@@ -136,9 +136,10 @@
   #pdf-area th { padding: 10px 12px; text-align: left; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
   #pdf-area td { padding: 9px 12px; border-bottom: 1px solid #eee; }
   #pdf-area tbody tr:nth-child(even) { background: #f9f9f9; }
-  #pdf-area .pdf-status-low { color: #cc0000; font-weight: 600; font-size: 0.75rem; }
-  #pdf-area .pdf-status-ok  { color: #1a7a1a; font-size: 0.75rem; }
-  #pdf-area .pdf-status-unstocked { color: #888; font-size: 0.75rem; }
+  #pdf-area .pdf-status-low       { color: #cc0000; font-weight: 600; font-size: 0.75rem; }
+  #pdf-area .pdf-status-ok        { color: #1a7a1a; font-size: 0.75rem; }
+  #pdf-area .pdf-status-unstocked { color: #888;    font-size: 0.75rem; font-style: italic; }
+  #pdf-area .pdf-status-negative  { color: #e05555; font-size: 0.75rem; font-style: italic; }
   #pdf-area .pdf-footer {
     margin-top: 40px; text-align: center; font-size: 0.72rem; color: #888;
     border-top: 1px solid #ddd; padding-top: 16px;
@@ -149,69 +150,59 @@
     cursor: pointer; font-size: 0.85rem; z-index: 10000;
   }
 
-  /* ══ IMPORT STYLES ══ */
+  /* ── IMPORT STYLES ── */
   .import-drop-zone {
     border: 2px dashed var(--gold-border);
     border-radius: var(--radius);
-    padding: 32px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: rgba(201,168,76,0.03);
-    margin-bottom: 16px;
+    padding: 32px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: rgba(201,168,76,0.03); margin-bottom: 16px;
   }
-  .import-drop-zone:hover,
-  .import-drop-zone.drag-over {
-    border-color: var(--gold);
-    background: rgba(201,168,76,0.08);
+  .import-drop-zone:hover, .import-drop-zone.drag-over {
+    border-color: var(--gold); background: rgba(201,168,76,0.08);
   }
   .import-drop-icon { font-size: 2.4rem; margin-bottom: 10px; }
   .import-drop-text { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
   .import-drop-text strong { color: var(--white2); }
 
   .import-preview-table {
-    width: 100%; border-collapse: collapse;
-    font-size: 0.82rem; margin-top: 4px;
+    width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 4px;
     max-height: 280px; overflow-y: auto; display: block;
   }
-  .import-preview-table thead tr {
-    background: var(--dark3);
-    position: sticky; top: 0;
-  }
+  .import-preview-table thead tr { background: var(--dark3); position: sticky; top: 0; }
   .import-preview-table th {
-    padding: 8px 12px; text-align: left;
-    font-size: 0.72rem; text-transform: uppercase;
-    letter-spacing: 0.1em; color: var(--gold);
+    padding: 8px 12px; text-align: left; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold);
   }
-  .import-preview-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--dark4);
-    color: var(--white2);
-  }
+  .import-preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--dark4); color: var(--white2); }
   .import-preview-table tr:hover td { background: var(--gold-dim); }
   .import-row-valid   { border-left: 3px solid var(--success); }
   .import-row-warning { border-left: 3px solid var(--gold); }
   .import-row-error   { border-left: 3px solid var(--danger); opacity: 0.6; }
 
-  .import-stats {
-    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
-  }
+  .import-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .import-stat {
     flex: 1; min-width: 80px; padding: 10px 14px;
     background: var(--dark3); border-radius: var(--radius-sm);
     text-align: center; border: 1px solid var(--gold-border);
   }
-  .import-stat-val { font-size: 1.2rem; font-weight: 700; }
+  .import-stat-val   { font-size: 1.2rem; font-weight: 700; }
   .import-stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
-  .col-map-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid var(--dark4);
-    font-size: 0.85rem; flex-wrap: wrap;
+  /* ── AUDIT LOG TOGGLE ── */
+  .audit-toggle-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; padding: 4px 0; user-select: none;
   }
-  .col-map-row:last-child { border-bottom: none; }
-  .col-map-label { width: 140px; color: var(--gold); font-weight: 600; flex-shrink: 0; }
-  .col-map-arrow { color: var(--muted); }
+  .audit-toggle-bar:hover .modal-title { color: var(--gold); }
+  .audit-chevron {
+    font-size: 0.9rem; color: var(--muted); transition: transform 0.25s;
+    display: inline-block;
+  }
+  .audit-chevron.open { transform: rotate(180deg); }
+  #audit-log-wrapper {
+    display: none; /* collapsed by default */
+    overflow: hidden;
+  }
 
   @media print {
     body * { visibility: hidden !important; }
@@ -223,7 +214,6 @@
     }
     .pdf-close-btn, .no-print { display: none !important; }
   }
-
   @media (max-width: 600px) {
     .inv-price, .inv-value { display: none; }
     .inv-item { padding: 12px 10px; }
@@ -248,11 +238,16 @@
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Add Stock Item</div>
         <div id="form-msg"></div>
         <div class="form-group">
-          <label>Item Name</label>
-          <input type="text" id="item-name" placeholder="e.g. Red Wine (bottle), Engine Oil…">
+          <label>Item Name <span style="color:var(--muted);font-weight:400;">(goods or services)</span></label>
+          <input type="text" id="item-name" placeholder="e.g. Rice (50kg), BIAB Extension, Haircut…">
         </div>
         <div class="form-group">
-          <label>Current Quantity <span style="color:var(--muted);font-weight:400;">(optional — leave 0 if not yet stocked)</span></label>
+          <label>
+            Current Quantity
+            <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">
+              — leave blank or 0 for services / untracked goods
+            </span>
+          </label>
           <input type="number" id="item-qty" placeholder="0" min="0">
         </div>
         <div class="form-group">
@@ -260,7 +255,12 @@
           <input type="number" id="item-price" placeholder="0.00" min="0" step="0.01">
         </div>
         <div class="form-group">
-          <label>Low Stock Alert Threshold</label>
+          <label>
+            Low Stock Alert Threshold
+            <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">
+              — only applies when qty &gt; 0
+            </span>
+          </label>
           <input type="number" id="item-threshold" placeholder="5" min="1" value="5">
         </div>
         <button class="btn btn-gold" onclick="saveItem()">Add to Stock List →</button>
@@ -279,7 +279,7 @@
             <div class="card-value danger" id="low-count">0</div>
           </div>
           <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
-            <div class="card-title" style="margin:0;">Unstocked (Qty 0)</div>
+            <div class="card-title" style="margin:0;">Untracked / Services</div>
             <div class="card-value" style="color:var(--muted);" id="unstocked-count">0</div>
           </div>
           <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
@@ -293,10 +293,11 @@
         </div>
         <div class="security-note" style="margin-top:16px;">
           <strong>🔒 Full Audit Trail Active</strong><br>
-          Every addition, edit, deletion and restoration is permanently logged with a timestamp.
+          Every addition, edit, deletion and restoration is permanently logged.
           Deleted items are recoverable for <strong>30 days</strong>.
-          If an item is deleted and re-added with fewer units, it is automatically flagged ⚠️ as suspicious.
-          Items with <strong>Qty 0</strong> are treated as "not yet stocked" — no low-stock alert fires until stock is actually added and then falls below threshold.
+          Items with <strong>Qty 0 or blank</strong> are treated as services / untracked goods —
+          no low-stock alert fires. They remain fully sellable and qty goes negative as sales are recorded.
+          Low-stock alerts only fire when a tracked qty drops below threshold.
         </div>
       </div>
     </div>
@@ -315,7 +316,6 @@
           </div>
         </div>
       </div>
-
       <!-- List Header -->
       <div style="display:flex;gap:12px;padding:8px 16px;border-bottom:2px solid var(--gold-border);">
         <div style="width:24px;"></div>
@@ -328,45 +328,52 @@
       <div id="inv-list"><div class="spinner"></div></div>
     </div>
 
-    <!-- Audit Log -->
+    <!-- Audit Log — COLLAPSED BY DEFAULT -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:10px;">
-        <div class="modal-title" style="font-size:1.1rem;margin:0;">📋 Inventory Activity Log</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="log-filter" onchange="loadAuditLog()" style="width:auto;font-size:0.82rem;padding:6px 10px;">
-            <option value="all">All Actions</option>
-            <option value="added">➕ Added</option>
-            <option value="edited">✏️ Edited</option>
-            <option value="deleted">🗑️ Deleted</option>
-            <option value="restored">↩️ Restored</option>
-            <option value="purged">❌ Purged</option>
-            <option value="imported">📥 Imported</option>
-          </select>
-          <button class="btn btn-outline btn-sm" onclick="loadAuditLog()">🔄 Refresh</button>
+      <div class="audit-toggle-bar" onclick="toggleAuditLog()" id="audit-toggle-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="modal-title" style="font-size:1.1rem;margin:0;">📋 Inventory Activity Log</div>
+          <span style="font-size:0.75rem;color:var(--muted);background:var(--dark3);padding:2px 8px;border-radius:10px;border:1px solid var(--gold-border);">Click to expand</span>
         </div>
+        <span class="audit-chevron" id="audit-chevron">▼</span>
       </div>
-      <p style="color:var(--muted);font-size:0.78rem;margin-bottom:16px;">
-        Every change to your inventory is recorded here permanently. Use this to detect suspicious activity.
-      </p>
-      <div id="audit-log"><div class="spinner"></div></div>
+
+      <div id="audit-log-wrapper">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 4px;flex-wrap:wrap;gap:10px;">
+          <p style="color:var(--muted);font-size:0.78rem;margin:0;">
+            Every change to your inventory is recorded here permanently. Use this to detect suspicious activity.
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="log-filter" onchange="loadAuditLog()" style="width:auto;font-size:0.82rem;padding:6px 10px;">
+              <option value="all">All Actions</option>
+              <option value="added">➕ Added</option>
+              <option value="edited">✏️ Edited</option>
+              <option value="deleted">🗑️ Deleted</option>
+              <option value="restored">↩️ Restored</option>
+              <option value="purged">❌ Purged</option>
+              <option value="imported">📥 Imported</option>
+              <option value="sold">💰 Sold</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="loadAuditLog()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div id="audit-log"><div style="padding:20px;text-align:center;color:var(--muted);font-size:0.85rem;">Loading…</div></div>
+      </div>
     </div>
 
   </div>
 </div>
 <div id="main-footer"></div>
 
-<!-- ══════════════════════════════════════════
-     IMPORT MODAL
-══════════════════════════════════════════ -->
+<!-- IMPORT MODAL -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="max-width:680px;width:95%;">
     <div class="modal-title">📥 Import Stock from File</div>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-      Upload a CSV or Excel file from your existing system (EPOS, spreadsheet, etc).
-      Items are <strong style="color:var(--white2);">added</strong> to your existing inventory — nothing is deleted or overwritten.
+      Upload a CSV or Excel file. Items are <strong style="color:var(--white2);">added</strong> to your existing inventory — nothing is deleted or overwritten.
+      Items imported with Qty 0 or blank are treated as <strong style="color:var(--gold);">services / untracked goods</strong> — fully sellable, no alerts.
     </p>
 
-    <!-- Step 1: Upload -->
     <div id="import-step-1">
       <div class="import-drop-zone" id="drop-zone"
         onclick="document.getElementById('file-input').click()"
@@ -379,70 +386,45 @@
           Supports: <strong>.csv</strong> · <strong>.xlsx</strong> · <strong>.xls</strong> · <strong>.txt</strong>
         </div>
       </div>
-      <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.txt"
-        style="display:none;" onchange="handleFileSelect(event)">
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.txt" style="display:none;" onchange="handleFileSelect(event)">
 
-      <!-- Template download -->
       <div style="text-align:center;margin-bottom:16px;">
-        <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">
-          📄 Download CSV Template
-        </button>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">
-          Not sure of the format? Download our template and fill it in.
-        </div>
+        <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📄 Download CSV Template</button>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">Not sure of the format? Download our template.</div>
       </div>
 
-      <!-- Column format guide -->
       <div class="security-note">
         <strong>📋 Expected Columns (any order):</strong><br>
-        <code style="color:var(--gold);">Item Name</code> · 
-        <code style="color:var(--gold);">Quantity</code> · 
-        <code style="color:var(--gold);">Unit Price</code> · 
+        <code style="color:var(--gold);">Item Name</code> ·
+        <code style="color:var(--gold);">Quantity</code> ·
+        <code style="color:var(--gold);">Unit Price</code> ·
         <code style="color:var(--gold);">Low Stock Threshold</code><br><br>
-        Column names are flexible — "Name", "Product", "Stock", "Price", "Cost" are all recognised automatically.
-        Missing columns are filled with safe defaults (Qty: 0, Price: 0, Threshold: 5).
-        Items imported with Qty 0 are marked as <strong>Unstocked</strong> — no low-stock alert until stock is received.
+        Column names are flexible. Missing Quantity = 0 (untracked/service — no alerts, fully sellable).
+        Missing Price = 0. Missing Threshold = 5.
       </div>
-
       <div id="import-parse-msg"></div>
     </div>
 
-    <!-- Step 2: Preview -->
     <div id="import-step-2" style="display:none;">
       <div id="import-stats-row" class="import-stats"></div>
-
       <div style="margin-bottom:12px;">
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">
-          🟢 Ready to import &nbsp;|&nbsp; 🟡 Missing optional fields (will use defaults) &nbsp;|&nbsp; 🔴 Skipped (no name)
+          🟢 Ready &nbsp;|&nbsp; 🟡 No price (will import, qty 0 = untracked) &nbsp;|&nbsp; 🔴 Skipped (no name)
         </div>
         <div style="overflow-x:auto;">
           <table class="import-preview-table" id="import-preview-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Item Name</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Threshold</th>
-                <th>Status</th>
-              </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Item Name</th><th>Quantity</th><th>Unit Price</th><th>Threshold</th><th>Status</th></tr></thead>
             <tbody id="import-preview-body"></tbody>
           </table>
         </div>
       </div>
-
       <div id="import-confirm-msg"></div>
-
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
-        <button class="btn btn-gold" id="confirm-import-btn" onclick="confirmImport()">
-          ✅ Import Items →
-        </button>
-        <button class="btn btn-outline" onclick="resetImport()">← Choose Different File</button>
+        <button class="btn btn-gold" id="confirm-import-btn" onclick="confirmImport()">✅ Import Items →</button>
+        <button class="btn btn-outline" onclick="resetImport()">← Different File</button>
         <button class="btn btn-outline" onclick="closeImportModal()">Cancel</button>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -461,14 +443,10 @@
   </div>
   <div class="pdf-summary" id="pdf-summary"></div>
   <table>
-    <thead>
-      <tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th></tr>
-    </thead>
+    <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th></tr></thead>
     <tbody id="pdf-tbody"></tbody>
   </table>
-  <div class="pdf-footer">
-    Generated from GrowthIve Monitor &nbsp;|&nbsp; <span id="pdf-footer-date"></span>
-  </div>
+  <div class="pdf-footer">Generated from GrowthIve Monitor &nbsp;|&nbsp; <span id="pdf-footer-date"></span></div>
 </div>
 
 <!-- DELETE Confirmation Modal -->
@@ -478,8 +456,7 @@
     <div class="delete-warning-box">
       <strong style="color:var(--danger);">⚠️ You are about to delete:</strong><br>
       <span id="delete-item-name" style="color:var(--white);font-weight:600;font-size:1rem;"></span><br><br>
-      This action will be <strong>permanently logged</strong> with a timestamp.
-      The item will be hidden but recoverable for <strong>30 days</strong>.
+      This action will be <strong>permanently logged</strong>. The item is recoverable for <strong>30 days</strong>.
     </div>
     <div class="form-group">
       <label style="color:var(--danger);font-weight:600;">Type <strong>DELETE</strong> to confirm:</label>
@@ -489,8 +466,7 @@
     </div>
     <div id="delete-msg"></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()" disabled
-        style="opacity:0.4;cursor:not-allowed;">🗑️ Yes, Delete Item</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()" disabled style="opacity:0.4;cursor:not-allowed;">🗑️ Yes, Delete Item</button>
       <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
     </div>
     <input type="hidden" id="delete-pending-id">
@@ -540,8 +516,8 @@
       <input type="text" id="edit-name" disabled style="opacity:0.6;">
     </div>
     <div class="form-group">
-      <label>New Quantity</label>
-      <input type="number" id="edit-qty" min="0">
+      <label>New Quantity <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">(set to 0 to make untracked)</span></label>
+      <input type="number" id="edit-qty" min="-9999">
     </div>
     <div class="form-group">
       <label>New Unit Price</label>
@@ -565,6 +541,8 @@ let deletedItems  = [];
 let editUnlocked  = false;
 let showingDeleted= false;
 let importRows    = [];
+let auditLogLoaded= false;
+let auditLogOpen  = false;
 
 (async () => {
   currentUser = await requireAuth();
@@ -587,24 +565,42 @@ let importRows    = [];
   }
 
   loadInventory();
-  loadAuditLog();
 })();
 
 /* ══════════════════════════════════════════
-   LOW STOCK HELPER
-   An item is only "low stock" if:
-   - quantity is GREATER than 0 (it has been stocked at some point), AND
-   - quantity is AT OR BELOW the threshold
-   Items with qty = 0 are "unstocked" — no alert fires.
+   STOCK STATUS HELPERS
+   
+   Rules:
+   - qty === 0  → "untracked" (service / uncount stock). No alert. Fully sellable.
+   - qty < 0    → "negative" (sold more than stocked). Show muted negative number.
+   - qty > 0 && qty <= threshold → "low stock". Alert fires.
+   - qty > threshold → OK.
 ══════════════════════════════════════════ */
-function isLowStock(item) {
-  const qty       = Number(item.quantity);
-  const threshold = Number(item.low_stock_threshold || 5);
-  return qty > 0 && qty <= threshold;
+function stockStatus(item) {
+  const qty = Number(item.quantity);
+  if (qty === 0) return 'untracked';
+  if (qty < 0)  return 'negative';
+  if (qty <= Number(item.low_stock_threshold || 5)) return 'low';
+  return 'ok';
 }
 
-function isUnstocked(item) {
-  return Number(item.quantity) === 0;
+/* ══════════════════════════════════════════
+   AUDIT LOG TOGGLE
+══════════════════════════════════════════ */
+function toggleAuditLog() {
+  auditLogOpen = !auditLogOpen;
+  const wrapper = document.getElementById('audit-log-wrapper');
+  const chevron = document.getElementById('audit-chevron');
+  const hint    = document.querySelector('#audit-toggle-bar span');
+
+  wrapper.style.display = auditLogOpen ? 'block' : 'none';
+  chevron.classList.toggle('open', auditLogOpen);
+  if (hint) hint.textContent = auditLogOpen ? 'Click to collapse' : 'Click to expand';
+
+  if (auditLogOpen && !auditLogLoaded) {
+    auditLogLoaded = true;
+    loadAuditLog();
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -626,19 +622,23 @@ async function loadInventory() {
   allItems     = active  || [];
   deletedItems = deleted || [];
 
-  // FIX: only count items with qty > 0 AND below threshold as "low stock"
-  const lowItems       = allItems.filter(i => isLowStock(i));
-  const unstockedItems = allItems.filter(i => isUnstocked(i));
+  // Only qty > 0 AND below threshold = low stock
+  const lowItems       = allItems.filter(i => stockStatus(i) === 'low');
+  const untrackedItems = allItems.filter(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
 
   document.getElementById('total-items').textContent     = allItems.length;
   document.getElementById('low-count').textContent       = lowItems.length;
-  document.getElementById('unstocked-count').textContent = unstockedItems.length;
+  document.getElementById('unstocked-count').textContent = untrackedItems.length;
   document.getElementById('deleted-count').textContent   = deletedItems.length;
 
-  const totalVal = allItems.reduce((s,i) => s + (Number(i.quantity) * Number(i.unit_price||0)), 0);
+  // Only count value for items with positive qty
+  const totalVal = allItems.reduce((s,i) => {
+    const qty = Number(i.quantity);
+    return s + (qty > 0 ? qty * Number(i.unit_price || 0) : 0);
+  }, 0);
   document.getElementById('total-value').textContent = formatCurrency(totalVal);
 
-  // FIX: banner only fires for genuinely low items (qty > 0 but below threshold)
+  // Banner only for genuinely low items
   const banner = document.getElementById('low-stock-banner');
   if (lowItems.length > 0) {
     banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i=>i.item_name).join(', ')}</div>`;
@@ -677,10 +677,9 @@ function renderList(items) {
     ? `<div class="deleted-banner"><span>🗑️ Showing <strong>${items.length}</strong> deleted item(s) — restorable within 30 days.</span></div>` : '';
 
   el.innerHTML = banner + `<div class="inv-list">${items.map((r, idx) => {
-    // FIX: use helper — qty=0 items are "unstocked", not "low"
-    const low       = isLowStock(r);
-    const unstocked = isUnstocked(r);
+    const status    = stockStatus(r);
     const isDeleted = r.deleted_at !== null;
+    const qty       = Number(r.quantity);
 
     let restoreInfo = '';
     if (isDeleted) {
@@ -688,31 +687,37 @@ function renderList(items) {
       restoreInfo = `<span style="font-size:0.72rem;color:var(--danger);margin-left:6px;">${daysLeft}d left</span>`;
     }
 
+    // Badge logic
+    let badge = '';
+    if (!isDeleted) {
+      if (status === 'low')       badge = '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>';
+      if (status === 'untracked') badge = '<span class="badge" style="margin-left:8px;font-size:0.68rem;background:rgba(255,255,255,0.07);color:var(--muted);border:1px solid var(--dark4);">Untracked</span>';
+      if (status === 'negative')  badge = '<span class="badge" style="margin-left:8px;font-size:0.68rem;background:rgba(91,155,213,0.12);color:var(--info);border:1px solid rgba(91,155,213,0.3);">−Sold</span>';
+    }
+    if (isDeleted) badge = '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Deleted</span>';
+
+    // Qty colour
+    const qtyColor = status === 'low'       ? 'var(--danger)'
+                   : status === 'negative'   ? 'var(--muted)'
+                   : status === 'untracked'  ? 'var(--muted)'
+                   : 'var(--white)';
+
     const actions = isDeleted
       ? `<button class="btn btn-outline btn-sm" style="color:var(--success);border-color:var(--success);"
-            onclick="restoreItem('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">↩️ Restore</button>
+            onclick="restoreItem('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${qty},${r.unit_price||0})">↩️ Restore</button>
          <button class="btn btn-danger btn-sm"
-            onclick="permanentDelete('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Purge</button>`
+            onclick="permanentDelete('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${qty},${r.unit_price||0})">Purge</button>`
       : `<button class="btn btn-outline btn-sm"
-            onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">Edit</button>
+            onclick="requestEdit('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${qty},${r.unit_price||0})">Edit</button>
          <button class="btn btn-danger btn-sm"
-            onclick="openDeleteModal('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${r.quantity},${r.unit_price||0})">✕ Delete</button>`;
-
-    // qty colour: red only for genuine low-stock, muted for unstocked, white for normal
-    const qtyColor = low && !isDeleted ? 'var(--danger)' : unstocked && !isDeleted ? 'var(--muted)' : 'var(--white)';
+            onclick="openDeleteModal('${r.id}','${r.item_name.replace(/'/g,"\\'")}',${qty},${r.unit_price||0})">✕ Delete</button>`;
 
     return `<div class="inv-item${isDeleted?' deleted-item':''}">
       <div class="inv-num">${idx+1}</div>
-      <div class="inv-name">
-        ${r.item_name}
-        ${low && !isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Low</span>' : ''}
-        ${unstocked && !isDeleted ? '<span class="badge" style="margin-left:8px;font-size:0.68rem;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--dark4);">Unstocked</span>' : ''}
-        ${isDeleted ? '<span class="badge badge-danger" style="margin-left:8px;font-size:0.68rem;">Deleted</span>' : ''}
-        ${restoreInfo}
-      </div>
-      <div class="inv-qty" style="color:${qtyColor};">${r.quantity}</div>
+      <div class="inv-name">${r.item_name}${badge}${restoreInfo}</div>
+      <div class="inv-qty" style="color:${qtyColor};">${qty}</div>
       <div class="inv-price">${formatCurrency(r.unit_price)}</div>
-      <div class="inv-value">${formatCurrency(Number(r.quantity)*Number(r.unit_price||0))}</div>
+      <div class="inv-value">${qty > 0 ? formatCurrency(qty * Number(r.unit_price||0)) : '—'}</div>
       <div class="inv-actions">${actions}</div>
     </div>`;
   }).join('')}</div>`;
@@ -772,10 +777,11 @@ async function loadAuditLog() {
     restored: { icon: '↩️', cls: 'restored', label: 'Restored' },
     purged:   { icon: '❌', cls: 'purged',   label: 'Purged'   },
     imported: { icon: '📥', cls: 'added',    label: 'Imported' },
+    sold:     { icon: '💰', cls: 'edited',   label: 'Sold'     },
   };
 
   el.innerHTML = `<div>${data.map(log => {
-    const cfg    = actionConfig[log.action] || { icon:'📝', cls:'edited', label: log.action };
+    const cfg     = actionConfig[log.action] || { icon:'📝', cls:'edited', label: log.action };
     const timeStr = new Date(log.created_at).toLocaleString('en-GB',{
       day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'
     });
@@ -783,8 +789,12 @@ async function loadAuditLog() {
 
     let detail = '';
     if (log.action === 'added' || log.action === 'imported') {
-      detail = `Qty: <span style="color:var(--success);font-weight:600;">${log.new_quantity}</span>` +
+      detail = `Qty: <span style="color:var(--success);font-weight:600;">${log.new_quantity ?? 0}</span>` +
         (log.new_price ? ` &nbsp;·&nbsp; Price: <span style="color:var(--gold);">${formatCurrency(log.new_price)}</span>` : '');
+    } else if (log.action === 'sold') {
+      detail = `Sold: <span style="color:var(--gold);font-weight:600;">${Math.abs(Number(log.old_quantity) - Number(log.new_quantity))} unit(s)</span>`
+        + ` &nbsp;·&nbsp; Qty: <span class="log-before">${log.old_quantity}</span><span class="log-arrow">→</span><span style="color:var(--muted);">${log.new_quantity}</span>`
+        + (log.note ? ` &nbsp;·&nbsp; Income: <span style="color:var(--success);">${log.note}</span>` : '');
     } else if (log.action === 'edited') {
       const parts = [];
       if (log.old_quantity !== log.new_quantity) parts.push(
@@ -812,7 +822,7 @@ async function loadAuditLog() {
           ${isSuspicious ? '<span class="suspicion-flag">⚠️ Suspicious</span>' : ''}
         </div>
         <div class="log-detail">${detail}</div>
-        ${log.note ? `<div class="log-detail" style="margin-top:2px;font-style:italic;">Note: ${log.note}</div>` : ''}
+        ${log.note && log.action !== 'sold' ? `<div class="log-detail" style="margin-top:2px;font-style:italic;">Note: ${log.note}</div>` : ''}
       </div>
       <div class="log-time">${timeStr}</div>
     </div>`;
@@ -821,7 +831,6 @@ async function loadAuditLog() {
 
 /* ══════════════════════════════════════════
    ADD ITEM
-   quantity is optional — defaults to 0 (unstocked)
 ══════════════════════════════════════════ */
 async function saveItem() {
   const item_name           = document.getElementById('item-name').value.trim();
@@ -844,7 +853,8 @@ async function saveItem() {
   await writeLog('added', inserted?.id, item_name, null, quantity, null, unit_price);
   msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
   ['item-name','item-qty','item-price'].forEach(id => document.getElementById(id).value = '');
-  loadInventory(); loadAuditLog();
+  loadInventory();
+  if (auditLogOpen) loadAuditLog();
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
@@ -888,7 +898,8 @@ async function confirmDelete() {
     .eq('id', id).eq('user_id', currentUser.id);
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
   await writeLog('deleted', id, name, qty, null, price, null);
-  closeDeleteModal(); loadInventory(); loadAuditLog();
+  closeDeleteModal(); loadInventory();
+  if (auditLogOpen) loadAuditLog();
 }
 
 function closeDeleteModal() {
@@ -901,7 +912,8 @@ async function restoreItem(id, name, qty, price) {
   if (!confirm(`Restore "${name}" back to active stock?`)) return;
   await _supabase.from('inventory').update({ deleted_at: null }).eq('id', id).eq('user_id', currentUser.id);
   await writeLog('restored', id, name, null, qty, null, price);
-  loadInventory(); loadAuditLog();
+  loadInventory();
+  if (auditLogOpen) loadAuditLog();
 }
 
 async function permanentDelete(id, name, qty, price) {
@@ -909,7 +921,8 @@ async function permanentDelete(id, name, qty, price) {
   if (typed?.trim().toUpperCase() !== 'DELETE') { alert('Cancelled.'); return; }
   await writeLog('purged', id, name, qty, null, price, null);
   await _supabase.from('inventory').delete().eq('id', id).eq('user_id', currentUser.id);
-  loadInventory(); loadAuditLog();
+  loadInventory();
+  if (auditLogOpen) loadAuditLog();
 }
 
 /* ══════════════════════════════════════════
@@ -970,26 +983,25 @@ async function updateItem() {
   const name       = document.getElementById('edit-name').value;
   const oldQty     = parseFloat(document.getElementById('edit-old-qty').value);
   const oldPrice   = parseFloat(document.getElementById('edit-old-price').value);
-  const quantity   = parseInt(document.getElementById('edit-qty').value);
+  const quantity   = parseInt(document.getElementById('edit-qty').value) || 0;
   const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
   await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
   await writeLog('edited', id, name, oldQty, quantity, oldPrice, unit_price);
-  closeEditModal(); loadInventory(); loadAuditLog();
+  closeEditModal(); loadInventory();
+  if (auditLogOpen) loadAuditLog();
 }
 
 /* ══════════════════════════════════════════
-   IMPORT — MODAL CONTROLS
+   IMPORT MODAL
 ══════════════════════════════════════════ */
 function openImportModal() {
   resetImport();
   document.getElementById('import-modal').classList.add('show');
 }
-
 function closeImportModal() {
   document.getElementById('import-modal').classList.remove('show');
   resetImport();
 }
-
 function resetImport() {
   importRows = [];
   document.getElementById('import-step-1').style.display = 'block';
@@ -1001,83 +1013,53 @@ function resetImport() {
   document.getElementById('import-confirm-msg').innerHTML = '';
 }
 
-/* ── Drag & Drop ── */
-function handleDragOver(e) {
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.add('drag-over');
-}
-function handleDragLeave(e) {
-  document.getElementById('drop-zone').classList.remove('drag-over');
-}
+function handleDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag-over'); }
 function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) processFile(file);
+  e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0]; if (file) processFile(file);
 }
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) processFile(file);
-}
+function handleFileSelect(e) { const file = e.target.files[0]; if (file) processFile(file); }
 
-/* ── Process uploaded file ── */
 function processFile(file) {
   const msg = document.getElementById('import-parse-msg');
   const ext = file.name.split('.').pop().toLowerCase();
-
   if (!['csv','txt','xlsx','xls'].includes(ext)) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Unsupported file type. Please upload a CSV or Excel file.</div>';
-    return;
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Unsupported file type. Please upload a CSV or Excel file.</div>'; return;
   }
-
   msg.innerHTML = '<div class="alert alert-gold">⏳ Reading file…</div>';
-
-  const reader = new FileReader();
+  const reader  = new FileReader();
   reader.onload = function(e) {
     try {
-      let rows = [];
       if (ext === 'csv' || ext === 'txt') {
-        rows = parseCSV(e.target.result);
+        const rows = parseCSV(e.target.result);
+        if (rows.length === 0) { msg.innerHTML = '<div class="alert alert-danger">⚠️ No data found in file.</div>'; return; }
+        msg.innerHTML = ''; buildPreview(rows);
       } else {
-        msg.innerHTML = '<div class="alert alert-danger">⚠️ For Excel files, please save as CSV first (File → Save As → CSV) and re-upload. CSV is fully supported.</div>';
-        return;
+        msg.innerHTML = '<div class="alert alert-danger">⚠️ For Excel files, please save as CSV first (File → Save As → CSV) and re-upload.</div>';
       }
-      if (rows.length === 0) {
-        msg.innerHTML = '<div class="alert alert-danger">⚠️ No data found in file. Please check the file has content.</div>';
-        return;
-      }
-      msg.innerHTML = '';
-      buildPreview(rows);
-    } catch(err) {
-      msg.innerHTML = `<div class="alert alert-danger">⚠️ Could not read file: ${err.message}</div>`;
-    }
+    } catch(err) { msg.innerHTML = `<div class="alert alert-danger">⚠️ Could not read file: ${err.message}</div>`; }
   };
   reader.readAsText(file);
 }
 
-/* ── Parse CSV text into row objects ── */
 function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const lines   = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
-
-  const headerLine = lines[0];
-  const headers    = splitCSVLine(headerLine).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g,''));
-
-  const colMap = {
+  const headers = splitCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g,''));
+  const colMap  = {
     item_name:           findCol(headers, ['item name','name','product','description','item','stock name','product name','article']),
     quantity:            findCol(headers, ['quantity','qty','stock','units','amount','count','on hand','stock qty']),
     unit_price:          findCol(headers, ['unit price','price','cost','unit cost','selling price','value','rate','each']),
     low_stock_threshold: findCol(headers, ['low stock threshold','threshold','min stock','minimum','reorder level','alert level']),
   };
-
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols    = splitCSVLine(lines[i]);
-    const name    = colMap.item_name !== -1    ? (cols[colMap.item_name]    || '').trim() : '';
-    const qty     = colMap.quantity  !== -1    ? parseFloat(cols[colMap.quantity]  || '0') : 0;
-    const price   = colMap.unit_price !== -1   ? parseFloat(cols[colMap.unit_price]  || '0') : 0;
-    const thresh  = colMap.low_stock_threshold !== -1 ? parseInt(cols[colMap.low_stock_threshold] || '5') : 5;
-
+    const cols   = splitCSVLine(lines[i]);
+    const name   = colMap.item_name !== -1 ? (cols[colMap.item_name] || '').trim() : '';
+    const qty    = colMap.quantity   !== -1 ? parseFloat(cols[colMap.quantity]  || '0') : 0;
+    const price  = colMap.unit_price !== -1 ? parseFloat(cols[colMap.unit_price] || '0') : 0;
+    const thresh = colMap.low_stock_threshold !== -1 ? parseInt(cols[colMap.low_stock_threshold] || '5') : 5;
     rows.push({
       item_name:           name.replace(/^"|"$/g,''),
       quantity:            isNaN(qty)    ? 0 : Math.max(0, qty),
@@ -1105,133 +1087,86 @@ function splitCSVLine(line) {
     else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
     else { cur += c; }
   }
-  result.push(cur);
-  return result;
+  result.push(cur); return result;
 }
 
-/* ── Build preview table ── */
 function buildPreview(rows) {
-  importRows = rows.filter(r => r._status !== 'error');
+  importRows    = rows.filter(r => r._status !== 'error');
   const valid   = rows.filter(r => r._status === 'valid').length;
   const warning = rows.filter(r => r._status === 'warning').length;
   const skipped = rows.filter(r => r._status === 'error').length;
 
   document.getElementById('import-stats-row').innerHTML = `
-    <div class="import-stat">
-      <div class="import-stat-val" style="color:var(--success);">${valid + warning}</div>
-      <div class="import-stat-label">Ready to Import</div>
-    </div>
-    <div class="import-stat">
-      <div class="import-stat-val" style="color:var(--gold);">${warning}</div>
-      <div class="import-stat-label">Missing Price</div>
-    </div>
-    <div class="import-stat">
-      <div class="import-stat-val" style="color:var(--danger);">${skipped}</div>
-      <div class="import-stat-label">Skipped (no name)</div>
-    </div>
-    <div class="import-stat">
-      <div class="import-stat-val">${rows.length}</div>
-      <div class="import-stat-label">Total Rows</div>
-    </div>
-  `;
+    <div class="import-stat"><div class="import-stat-val" style="color:var(--success);">${valid+warning}</div><div class="import-stat-label">Ready to Import</div></div>
+    <div class="import-stat"><div class="import-stat-val" style="color:var(--gold);">${warning}</div><div class="import-stat-label">Missing Price</div></div>
+    <div class="import-stat"><div class="import-stat-val" style="color:var(--danger);">${skipped}</div><div class="import-stat-label">Skipped (no name)</div></div>
+    <div class="import-stat"><div class="import-stat-val">${rows.length}</div><div class="import-stat-label">Total Rows</div></div>`;
 
-  const tbody = document.getElementById('import-preview-body');
-  tbody.innerHTML = rows.map((r, i) => {
-    const statusText = r._status === 'valid'   ? '🟢 Ready'
-                     : r._status === 'warning' ? '🟡 No price'
-                     : '🔴 Skipped';
-    const rowClass   = `import-row-${r._status}`;
-    return `<tr class="${rowClass}">
+  document.getElementById('import-preview-body').innerHTML = rows.map((r, i) => {
+    const s = r._status === 'valid' ? '🟢 Ready' : r._status === 'warning' ? '🟡 No price' : '🔴 Skipped';
+    return `<tr class="import-row-${r._status}">
       <td>${i+1}</td>
       <td>${r.item_name || '<em style="color:var(--danger)">No name</em>'}</td>
-      <td>${r.quantity}</td>
+      <td>${r.quantity > 0 ? r.quantity : '<span style="color:var(--muted);">0 (untracked)</span>'}</td>
       <td>${r.unit_price > 0 ? formatCurrency(r.unit_price) : '—'}</td>
       <td>${r.low_stock_threshold}</td>
-      <td>${statusText}</td>
-    </tr>`;
+      <td>${s}</td></tr>`;
   }).join('');
 
   document.getElementById('import-step-1').style.display = 'none';
   document.getElementById('import-step-2').style.display = 'block';
-
   if (importRows.length === 0) {
     document.getElementById('confirm-import-btn').disabled = true;
-    document.getElementById('import-confirm-msg').innerHTML =
-      '<div class="alert alert-danger">⚠️ No valid rows found to import. Please check your file.</div>';
+    document.getElementById('import-confirm-msg').innerHTML = '<div class="alert alert-danger">⚠️ No valid rows to import.</div>';
   }
 }
 
-/* ── Confirm & save to Supabase ── */
 async function confirmImport() {
   if (!importRows || importRows.length === 0) return;
-
   const btn = document.getElementById('confirm-import-btn');
   const msg = document.getElementById('import-confirm-msg');
-  btn.disabled    = true;
-  btn.textContent = `⏳ Importing ${importRows.length} items…`;
-  msg.innerHTML   = '<div class="alert alert-gold">⏳ Saving to inventory…</div>';
+  btn.disabled = true; btn.textContent = `⏳ Importing ${importRows.length} items…`;
+  msg.innerHTML = '<div class="alert alert-gold">⏳ Saving to inventory…</div>';
 
-  let successCount = 0;
-  let failCount    = 0;
-
-  const batchSize = 20;
+  let successCount = 0, failCount = 0;
+  const batchSize  = 20;
   for (let i = 0; i < importRows.length; i += batchSize) {
-    const batch = importRows.slice(i, i + batchSize).map(r => ({
-      user_id:             currentUser.id,
-      item_name:           r.item_name,
-      quantity:            r.quantity,
-      unit_price:          r.unit_price,
-      low_stock_threshold: r.low_stock_threshold,
-      deleted_at:          null
+    const batch = importRows.slice(i, i+batchSize).map(r => ({
+      user_id: currentUser.id, item_name: r.item_name,
+      quantity: r.quantity, unit_price: r.unit_price,
+      low_stock_threshold: r.low_stock_threshold, deleted_at: null
     }));
-
     const { data: inserted, error } = await _supabase.from('inventory').insert(batch).select();
-    if (error) {
-      failCount += batch.length;
-    } else {
+    if (error) { failCount += batch.length; }
+    else {
       successCount += (inserted || batch).length;
-      for (const row of importRows.slice(i, i + batchSize)) {
-        await writeLog('imported', null, row.item_name, null, row.quantity, null, row.unit_price,
-          `Bulk import from file`);
+      for (const row of importRows.slice(i, i+batchSize)) {
+        await writeLog('imported', null, row.item_name, null, row.quantity, null, row.unit_price, 'Bulk import from file');
       }
     }
   }
 
   if (successCount > 0) {
-    msg.innerHTML = `<div class="alert alert-success">
-      ✅ Successfully imported <strong>${successCount}</strong> item(s) into your inventory!
-      ${failCount > 0 ? `<br>⚠️ ${failCount} item(s) failed to save.` : ''}
-    </div>`;
+    msg.innerHTML = `<div class="alert alert-success">✅ Imported <strong>${successCount}</strong> item(s)!${failCount>0?`<br>⚠️ ${failCount} failed.`:''}</div>`;
     loadInventory();
-    loadAuditLog();
+    if (auditLogOpen) loadAuditLog();
     setTimeout(() => closeImportModal(), 2500);
   } else {
     msg.innerHTML = '<div class="alert alert-danger">❌ Import failed. Please try again.</div>';
-    btn.disabled    = false;
-    btn.textContent = '✅ Import Items →';
+    btn.disabled = false; btn.textContent = '✅ Import Items →';
   }
 }
 
-/* ── Download blank CSV template ── */
 function downloadTemplate() {
-  const template = [
-    'Item Name,Quantity,Unit Price,Low Stock Threshold',
-    'Rice (50kg bag),20,45000,5',
-    'Engine Oil (1L),10,8500,3',
-    'Bottled Water (crate),30,3500,10',
-    'Sugar (1kg),50,1200,15',
-  ].join('\n');
+  const template = ['Item Name,Quantity,Unit Price,Low Stock Threshold','Rice (50kg bag),20,45000,5','Engine Oil (1L),10,8500,3','Haircut Service,,5000,','BIAB Extension,,15000,'].join('\n');
   const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = 'growthive-inventory-template.csv';
-  a.click();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'growthive-inventory-template.csv'; a.click();
   URL.revokeObjectURL(a.href);
 }
 
 /* ══════════════════════════════════════════
    EXPORT CSV
-   FIX: qty=0 items show as "Unstocked", not "Low Stock"
 ══════════════════════════════════════════ */
 function exportCSV() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
@@ -1239,19 +1174,20 @@ function exportCSV() {
   const headers = ['#','Item Name','Quantity','Unit Price','Stock Value','Low Stock Threshold','Status'];
   const rows    = allItems.map((item,idx) => {
     const qty    = Number(item.quantity);
-    const low    = qty > 0 && qty <= Number(item.low_stock_threshold || 5); // FIX
-    const value  = qty * Number(item.unit_price||0);
-    const status = qty === 0 ? 'Unstocked' : low ? 'Low Stock' : 'OK';    // FIX
+    const status = stockStatus(item);
+    const label  = status === 'untracked' ? 'Untracked/Service'
+                 : status === 'negative'  ? 'Negative (sold untracked)'
+                 : status === 'low'       ? 'Low Stock' : 'OK';
+    const value  = qty > 0 ? qty * Number(item.unit_price||0) : 0;
     return [idx+1,`"${item.item_name.replace(/"/g,'""')}"`,qty,
-      Number(item.unit_price||0).toFixed(2),value.toFixed(2),item.low_stock_threshold||5,status].join(',');
+      Number(item.unit_price||0).toFixed(2),value.toFixed(2),item.low_stock_threshold||5,label].join(',');
   });
-  const totalQty    = allItems.reduce((s,i)=>s+Number(i.quantity),0);
-  const totalVal    = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
-  const lowCount    = allItems.filter(i=>isLowStock(i)).length;  // FIX
+  const totalVal = allItems.reduce((s,i)=>{const q=Number(i.quantity);return s+(q>0?q*Number(i.unit_price||0):0);},0);
+  const lowCount = allItems.filter(i=>stockStatus(i)==='low').length;
   const csv = [
     `"GrowthIve Monitor — Inventory Report"`,`"Generated: ${now}"`,``,
     headers.join(','),...rows,``,
-    `"TOTALS","${allItems.length} items","${totalQty} units","","${totalVal.toFixed(2)}","","${lowCount} low stock"`
+    `"TOTALS","${allItems.length} items","—","","${totalVal.toFixed(2)}","","${lowCount} low stock"`
   ].join('\n');
   const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
@@ -1262,24 +1198,21 @@ function exportCSV() {
 
 /* ══════════════════════════════════════════
    EXPORT PDF
-   FIX: qty=0 → "Unstocked" (grey), not "Low Stock" (red)
 ══════════════════════════════════════════ */
 async function exportPDF() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   let bizName = 'My Business';
   try {
-    const { data: profile } = await _supabase.from('profiles').select('business_name')
-      .eq('id', currentUser.id).maybeSingle();
+    const { data: profile } = await _supabase.from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
     if (profile?.business_name) bizName = profile.business_name;
   } catch(e) {}
 
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const timeStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const totalQty      = allItems.reduce((s,i)=>s+Number(i.quantity),0);
-  const totalVal      = allItems.reduce((s,i)=>s+(Number(i.quantity)*Number(i.unit_price||0)),0);
-  const lowCount      = allItems.filter(i=>isLowStock(i)).length;        // FIX
-  const unstockedCount= allItems.filter(i=>isUnstocked(i)).length;       // FIX
+  const now          = new Date();
+  const dateStr      = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const timeStr      = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const totalVal     = allItems.reduce((s,i)=>{const q=Number(i.quantity);return s+(q>0?q*Number(i.unit_price||0):0);},0);
+  const lowCount     = allItems.filter(i=>stockStatus(i)==='low').length;
+  const untrkCount   = allItems.filter(i=>stockStatus(i)==='untracked'||stockStatus(i)==='negative').length;
 
   document.getElementById('pdf-biz-name').textContent  = bizName;
   document.getElementById('pdf-date-line').textContent  = `Report Date: ${dateStr}`;
@@ -1288,37 +1221,32 @@ async function exportPDF() {
 
   document.getElementById('pdf-summary').innerHTML = `
     <div class="pdf-sum-item"><div class="pdf-sum-label">Total Items</div><div class="pdf-sum-val">${allItems.length}</div></div>
-    <div class="pdf-sum-item"><div class="pdf-sum-label">Total Units</div><div class="pdf-sum-val">${totalQty.toLocaleString()}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">${formatCurrency(totalVal)}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Low Stock</div><div class="pdf-sum-val" style="color:${lowCount>0?'#cc0000':'#1a7a1a'};">${lowCount}</div></div>
-    <div class="pdf-sum-item"><div class="pdf-sum-label">Unstocked</div><div class="pdf-sum-val" style="color:${unstockedCount>0?'#888':'#1a7a1a'};">${unstockedCount}</div></div>
-  `;
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Untracked/Services</div><div class="pdf-sum-val" style="color:#888;">${untrkCount}</div></div>`;
 
   document.getElementById('pdf-tbody').innerHTML = allItems.map((item,idx) => {
-    const qty   = Number(item.quantity);
-    const low   = isLowStock(item);   // FIX
-    const unst  = isUnstocked(item);  // FIX
-    const value = qty * Number(item.unit_price||0);
-    // FIX: qty=0 is grey "Unstocked", not red "Low Stock"
-    const status = unst
-      ? '<span class="pdf-status-unstocked">— Unstocked</span>'
-      : low
-        ? '<span class="pdf-status-low">⚠ Low Stock</span>'
-        : '<span class="pdf-status-ok">✓ OK</span>';
+    const qty    = Number(item.quantity);
+    const status = stockStatus(item);
+    const value  = qty > 0 ? qty * Number(item.unit_price||0) : 0;
+    const statusHtml =
+      status === 'untracked' ? '<span class="pdf-status-unstocked">— Service/Untracked</span>'
+      : status === 'negative' ? `<span class="pdf-status-negative">⬇ ${qty} (sold untracked)</span>`
+      : status === 'low'      ? '<span class="pdf-status-low">⚠ Low Stock</span>'
+      : '<span class="pdf-status-ok">✓ OK</span>';
+    const qtyColor = status==='low' ? '#cc0000' : (status==='negative'||status==='untracked') ? '#888' : '#111';
     return `<tr><td>${idx+1}</td><td><strong>${item.item_name}</strong></td>
-      <td style="text-align:center;font-weight:700;color:${low?'#cc0000':unst?'#888':'#111'};">${qty}</td>
+      <td style="text-align:center;font-weight:700;color:${qtyColor};">${qty}</td>
       <td>${formatCurrency(item.unit_price||0)}</td>
-      <td>${formatCurrency(value)}</td>
-      <td>${status}</td></tr>`;
+      <td>${qty > 0 ? formatCurrency(value) : '—'}</td>
+      <td>${statusHtml}</td></tr>`;
   }).join('');
 
   document.getElementById('pdf-area').style.display = 'block';
   setTimeout(() => window.print(), 400);
 }
 
-function closePDF() {
-  document.getElementById('pdf-area').style.display = 'none';
-}
+function closePDF() { document.getElementById('pdf-area').style.display = 'none'; }
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// GrowthIve Monitor — Language System
+ // GrowthIve Monitor — Language System
 // Supports: English (en), Hausa (ha), Yoruba (yo), Igbo (ig)
 
 const TRANSLATIONS = {
@@ -717,3 +717,52 @@ function renderLangSwitcher() {
     </div>
   `;
 }
+
+
+/* ── DEBT EXTRA KEYS (append to each language block via patch) ──
+   Add these inside each language in TRANSLATIONS object          */
+const DEBT_PATCHES = {
+  en: {
+    debt_summary: 'Debt Summary', debt_type: 'Type',
+    owed_to_me_label: 'Owed To Me', owed_to_me_sub: 'Others owe you',
+    i_owe_label: 'I Owe', i_owe_sub: 'You owe others',
+    net_position: 'Net Position', net_position_sub: 'After all debts',
+    owed_to_me: 'They owe me (Credit)', i_owe: 'I owe them (Debit)',
+    owes_me: 'Owes Me', paid_settled: 'Paid / Settled',
+    unpaid: 'Unpaid',
+  },
+  ha: {
+    debt_summary: 'Taƙaitaccen Bashi', debt_type: 'Nau\'i',
+    owed_to_me_label: 'Ana Mini Bashi', owed_to_me_sub: 'Wasu suna bin ka',
+    i_owe_label: 'Ina Bin Wasu', i_owe_sub: 'Kana bin wasu',
+    net_position: 'Matsayin Riba', net_position_sub: 'Bayan duk bashi',
+    owed_to_me: 'Suna bin ni (Kuɗin Rance)', i_owe: 'Ina bin su (Bashi)',
+    owes_me: 'Yana Min Bashi', paid_settled: 'An Biya / An Kawo Karshe',
+    unpaid: 'Ba a Biya ba',
+  },
+  yo: {
+    debt_summary: 'Akopọ Gbèsè', debt_type: 'Iru',
+    owed_to_me_label: 'Wọn Jẹ Mi', owed_to_me_sub: 'Awọn miran jẹ ọ',
+    i_owe_label: 'Mo Jẹ Wọn', i_owe_sub: 'O jẹ awọn miran',
+    net_position: 'Ipo Apapọ', net_position_sub: 'Lẹhin gbogbo gbèsè',
+    owed_to_me: 'Wọn jẹ mi (Kirẹditi)', i_owe: 'Mo jẹ wọn (Débiti)',
+    owes_me: 'Jẹ Mi', paid_settled: 'Ti Sanwo / Ti Parí',
+    unpaid: 'Ti A Ko Sanwo',
+  },
+  ig: {
+    debt_summary: 'Nchoputa Ụgwọ', debt_type: 'Ụdị',
+    owed_to_me_label: 'Ha Na-agbachi M', owed_to_me_sub: 'Ndị ọzọ na-agbachi gị',
+    i_owe_label: 'Agbachiri M', i_owe_sub: 'I na-agbachi ndị ọzọ',
+    net_position: 'Ọnọdụ Ngụkọta', net_position_sub: 'Mgbe ụgwọ niile gasịrị',
+    owed_to_me: 'Ha na-agbachi m (Kredit)', i_owe: 'Agbachiri m ha (Debit)',
+    owes_me: 'Na-agbachi M', paid_settled: 'Akwụọla / Emechala',
+    unpaid: 'Akwụghị',
+  }
+};
+
+// Merge debt patches into main TRANSLATIONS
+Object.keys(DEBT_PATCHES).forEach(lang => {
+  if (TRANSLATIONS[lang]) {
+    Object.assign(TRANSLATIONS[lang], DEBT_PATCHES[lang]);
+  }
+});

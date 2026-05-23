@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,6 @@
 <title>Daily Sales — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  /* ── Tab Toggle ── */
   .record-tabs {
     display: flex; gap: 0; margin-bottom: 20px;
     border-radius: var(--radius-sm); overflow: hidden;
@@ -22,11 +21,9 @@
   .record-tab.active { background: var(--gold); color: #000; }
   .record-tab:first-child { border-right: 1px solid var(--gold-border); }
 
-  /* ── Form panels ── */
   .form-panel { display: none; }
   .form-panel.active { display: block; }
 
-  /* ── Premium extras ── */
   .source-grid {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; margin-bottom: 4px;
@@ -54,19 +51,11 @@
     padding: 6px 10px; background: var(--dark3);
     border-radius: var(--radius-sm); border-left: 3px solid var(--gold-border);
   }
-
-  /* ── Update / Edit badges ── */
   .update-badge {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(255,165,0,0.12); border: 1px solid var(--gold-border);
     border-radius: 20px; padding: 4px 12px;
     font-size: 0.75rem; color: var(--gold); margin-bottom: 12px;
-  }
-  .edited-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: rgba(224,85,85,0.1); border: 1px solid var(--danger);
-    border-radius: 20px; padding: 2px 8px;
-    font-size: 0.7rem; color: var(--danger);
   }
   .audit-row {
     font-size: 0.75rem; color: var(--muted);
@@ -74,9 +63,36 @@
     border-radius: var(--radius-sm); margin-top: 4px;
     border-left: 3px solid var(--gold-border);
   }
-  .audit-row.changed { border-left-color: var(--danger); color: var(--danger); }
+  .auto-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(91,155,213,0.12); border: 1px solid rgba(91,155,213,0.3);
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 0.7rem; color: var(--info);
+  }
+  .manual-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(201,168,76,0.1); border: 1px solid var(--gold-border);
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 0.7rem; color: var(--gold);
+  }
 
-  /* ── Print styles ── */
+  /* Delete confirm */
+  .delete-confirm-input {
+    font-size: 1rem; font-weight: 700; letter-spacing: 0.12em;
+    text-align: center; border: 2px solid var(--danger) !important;
+    color: var(--danger) !important;
+  }
+  .delete-confirm-input:focus {
+    box-shadow: 0 0 0 3px rgba(224,85,85,0.2) !important;
+    border-color: var(--danger) !important;
+  }
+  .delete-warning-box {
+    background: rgba(224,85,85,0.08); border: 1px solid var(--danger);
+    border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;
+    font-size: 0.85rem; color: var(--white2); line-height: 1.7;
+  }
+
+  /* Print styles */
   @media print {
     body * { visibility: hidden !important; }
     #print-receipt, #print-receipt * { visibility: visible !important; }
@@ -88,8 +104,6 @@
     }
     .no-print { display: none !important; }
   }
-
-  /* ── Print receipt overlay ── */
   #print-receipt {
     display: none; position: fixed; top: 0; left: 0;
     width: 100%; height: 100%; background: #fff; color: #111;
@@ -121,7 +135,7 @@
     font-size: 0.85rem; z-index: 10000;
   }
 
-  /* ── Edit history modal ── */
+  /* Edit history modal */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.7); z-index: 1000;
@@ -146,14 +160,13 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="page-title">Daily Sales</div>
-    <div class="page-subtitle">Record your daily sales. One record per day — saving again updates with a full audit trail.</div>
+    <div class="page-subtitle">Record your daily sales. POS entries from Purchases page auto-sync here.</div>
 
     <div class="grid-2">
-      <!-- ── Entry Form Card ── -->
+      <!-- Entry Form -->
       <div class="card">
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:16px;">➕ Record Today's Sales</div>
 
-        <!-- Tab Toggle -->
         <div class="record-tabs">
           <button class="record-tab active" id="tab-simple" onclick="switchTab('simple')">Simple Sales Record</button>
           <button class="record-tab" id="tab-premium" onclick="switchTab('premium')">⭐ Premium Sales Record</button>
@@ -161,18 +174,14 @@
 
         <div id="form-msg"></div>
 
-        <!-- Existing record warning -->
-        <div id="existing-badge" style="display:none;">
-          <div class="update-badge">⚠️ A record exists for this date — saving will update it and log the change.</div>
-        </div>
+        <div id="existing-badge" style="display:none;"></div>
 
-        <!-- Shared: Date -->
         <div class="form-group">
           <label>Date</label>
           <input type="date" id="sale-date" onchange="checkExisting()">
         </div>
 
-        <!-- ══ SIMPLE PANEL ══ -->
+        <!-- SIMPLE PANEL -->
         <div class="form-panel active" id="panel-simple">
           <div class="form-group">
             <label>Total Sales Amount (₦)</label>
@@ -189,9 +198,8 @@
           <button class="btn btn-gold btn-full" onclick="saveSale('simple')" style="margin-top:8px;">Save Sale Record →</button>
         </div>
 
-        <!-- ══ PREMIUM PANEL ══ -->
+        <!-- PREMIUM PANEL -->
         <div class="form-panel" id="panel-premium">
-
           <div class="section-label">💳 Sales by Payment Source</div>
           <div class="source-grid">
             <div class="form-group" style="margin-bottom:0;">
@@ -219,7 +227,6 @@
               <input type="number" id="p-qty" placeholder="0" min="0">
             </div>
           </div>
-
           <div class="source-total">
             <span style="font-size:0.82rem;color:var(--muted);">Total Sales (Auto)</span>
             <span style="font-weight:700;color:var(--gold);font-family:var(--font-display);font-size:1.1rem;" id="p-auto-total">₦0.00</span>
@@ -228,20 +235,12 @@
           <div class="section-label">💰 Cash Float Tracker</div>
           <div class="float-row">
             <div class="form-group">
-              <label>Opening Balance (₦)
-                <span style="font-size:0.72rem;color:var(--muted);font-weight:400;">
-                  — cash in till at start of day
-                </span>
-              </label>
-              <input type="number" id="p-opening" placeholder="Enter 0 if starting fresh" min="0" step="0.01" oninput="calcPremium()">
+              <label>Opening Balance (₦)</label>
+              <input type="number" id="p-opening" placeholder="0.00" min="0" step="0.01" oninput="calcPremium()">
             </div>
             <div class="form-group">
-              <label>Cash Paid Out (₦)
-                <span style="font-size:0.72rem;color:var(--muted);font-weight:400;">
-                  — change given + cash expenses
-                </span>
-              </label>
-              <input type="number" id="p-cashout" placeholder="Change given to customers…" min="0" step="0.01" oninput="calcPremium()">
+              <label>Cash Paid Out (₦)</label>
+              <input type="number" id="p-cashout" placeholder="Change given…" min="0" step="0.01" oninput="calcPremium()">
             </div>
           </div>
           <div class="closing-box">
@@ -256,12 +255,11 @@
             <label>Notes (optional)</label>
             <textarea id="p-notes" placeholder="e.g. Busy market day, wine restock needed…"></textarea>
           </div>
-
           <button class="btn btn-gold btn-full" onclick="saveSale('premium')" style="margin-top:8px;">Save Premium Record →</button>
         </div>
       </div>
 
-      <!-- ── Monthly Summary ── -->
+      <!-- Monthly Summary -->
       <div class="card">
         <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">📊 This Month Summary</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
@@ -286,10 +284,13 @@
             <div class="card-value" id="month-count">0</div>
           </div>
         </div>
+        <div style="margin-top:14px;padding:10px 14px;background:var(--dark3);border-radius:var(--radius-sm);font-size:0.78rem;color:var(--muted);border-left:3px solid var(--gold-border);">
+          💡 Cash/Transfer/POS breakdown only shows when <strong style="color:var(--white2);">Premium Sales Record</strong> or <strong style="color:var(--info);">Purchases/POS page</strong> is used.
+        </div>
       </div>
     </div>
 
-    <!-- ── Sales History Table ── -->
+    <!-- Sales History -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="modal-title" style="font-size:1.1rem;margin:0;">Sales History</div>
@@ -301,13 +302,13 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- ── Print Receipt Overlay ── -->
+<!-- Print Receipt -->
 <div id="print-receipt">
   <button class="print-close-btn no-print" onclick="closePrint()">✕ Close</button>
   <div class="pr-header">
     <div>
       <div class="pr-biz" id="pr-biz-name">Business Name</div>
-      <div style="font-size:0.82rem;color:#555;margin-top:2px;" id="pr-biz-sub">Sales Receipt</div>
+      <div style="font-size:0.82rem;color:#555;margin-top:2px;">GrowthIve Monitor — Daily Sales Receipt</div>
     </div>
     <div style="text-align:right;font-size:0.8rem;color:#555;">
       <div id="pr-date-line"></div>
@@ -316,19 +317,43 @@
   </div>
   <div style="font-size:1.1rem;font-weight:600;margin-bottom:20px;">Daily Sales Record</div>
   <div id="pr-body"></div>
-  <div class="pr-footer">
-    Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span>
-  </div>
+  <div class="pr-footer">Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span></div>
 </div>
 
-<!-- ── Edit History Modal ── -->
+<!-- Edit History Modal -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div class="modal-title" style="font-size:1rem;margin:0;">✏️ Edit History</div>
+      <div class="modal-title" style="font-size:1rem;margin:0;">📋 Edit History</div>
       <button onclick="closeEditModal()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
     </div>
     <div id="edit-history-body"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--danger);font-size:1rem;">🗑️ Confirm Sale Deletion</div>
+    <div class="delete-warning-box">
+      <strong style="color:var(--danger);">⚠️ You are about to delete this sale record:</strong><br>
+      <span id="delete-sale-info" style="color:var(--white);font-weight:600;"></span><br><br>
+      This action is <strong>permanently logged</strong>. The record cannot be recovered after deletion.
+      If you need to correct a figure, use the <strong>update</strong> feature instead.
+    </div>
+    <div class="form-group">
+      <label style="color:var(--danger);font-weight:600;">Type <strong>DELETE</strong> to confirm:</label>
+      <input type="text" id="delete-confirm-input" class="delete-confirm-input"
+        placeholder="Type DELETE here…" oninput="checkDeleteConfirm()"
+        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+    <div id="delete-modal-msg"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDelete()" disabled
+        style="opacity:0.4;cursor:not-allowed;">🗑️ Yes, Delete Record</button>
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+    </div>
+    <input type="hidden" id="delete-pending-id">
   </div>
 </div>
 
@@ -352,7 +377,6 @@ let activeTab = 'simple';
   loadSales();
 })();
 
-/* ── Tab switching ── */
 function switchTab(tab) {
   activeTab = tab;
   document.getElementById('tab-simple').classList.toggle('active', tab === 'simple');
@@ -361,7 +385,6 @@ function switchTab(tab) {
   document.getElementById('panel-premium').classList.toggle('active', tab === 'premium');
 }
 
-/* ── Premium live calcs ── */
 function calcPremium() {
   const cash     = parseFloat(document.getElementById('p-cash').value)     || 0;
   const transfer = parseFloat(document.getElementById('p-transfer').value) || 0;
@@ -370,39 +393,32 @@ function calcPremium() {
   const pos3     = parseFloat(document.getElementById('p-pos3').value)     || 0;
   const total    = cash + transfer + pos1 + pos2 + pos3;
   document.getElementById('p-auto-total').textContent = formatCurrency(total);
-
-  const opening = parseFloat(document.getElementById('p-opening').value)  || 0;
-  const paidOut = parseFloat(document.getElementById('p-cashout').value)  || 0;
+  const opening = parseFloat(document.getElementById('p-opening').value) || 0;
+  const paidOut = parseFloat(document.getElementById('p-cashout').value) || 0;
   const closing = opening + cash - paidOut;
-
   const el = document.getElementById('p-closing');
-  el.textContent  = formatCurrency(closing);
-  el.style.color  = closing >= 0 ? 'var(--success)' : 'var(--danger)';
-
-  // Live formula display
+  el.textContent = formatCurrency(closing);
+  el.style.color = closing >= 0 ? 'var(--success)' : 'var(--danger)';
   document.getElementById('p-formula').textContent =
-    `Formula: ${formatCurrency(opening)} (opening) + ${formatCurrency(cash)} (cash sales) − ${formatCurrency(paidOut)} (paid out) = ${formatCurrency(closing)}`;
+    `Formula: ${formatCurrency(opening)} (opening) + ${formatCurrency(cash)} (cash) − ${formatCurrency(paidOut)} (paid out) = ${formatCurrency(closing)}`;
 }
 
-/* ── Check if record exists for selected date ── */
 async function checkExisting() {
   const date = document.getElementById('sale-date').value;
   if (!date || !currentUser) return;
   const { data } = await _supabase
-    .from('sales').select('id, total_amount, updated_at, created_at')
+    .from('sales').select('id, total_amount, created_at, source')
     .eq('user_id', currentUser.id).eq('date', date).maybeSingle();
-
   const badge = document.getElementById('existing-badge');
   if (data) {
-    const createdAt = new Date(data.created_at).toLocaleString('en-GB');
-    const updatedAt = data.updated_at ? new Date(data.updated_at).toLocaleString('en-GB') : null;
+    const source = data.source === 'pos' ? '🛒 Auto-synced from Purchases/POS' : '✍️ Manual entry';
     badge.style.display = 'block';
     badge.innerHTML = `
-      <div class="update-badge">⚠️ A record exists for this date — saving will update it and log the change.</div>
+      <div class="update-badge">⚠️ A record exists for this date — saving will update it.</div>
       <div class="audit-row">
-        📅 First recorded: ${createdAt}
-        ${updatedAt && updatedAt !== createdAt ? `<br>✏️ Last edited: ${updatedAt}` : ''}
-        <br>💰 Current total: ${formatCurrency(data.total_amount)}
+        ${source}<br>
+        📅 Recorded: ${new Date(data.created_at).toLocaleString('en-GB')}<br>
+        💰 Current total: ${formatCurrency(data.total_amount)}
       </div>`;
   } else {
     badge.style.display = 'none';
@@ -410,18 +426,15 @@ async function checkExisting() {
   }
 }
 
-/* ── Auto-prefill yesterday's closing balance ── */
 async function prefillOpeningBalance() {
   const dateEl = document.getElementById('sale-date');
   if (!dateEl.value) return;
   const yesterday = new Date(dateEl.value);
   yesterday.setDate(yesterday.getDate() - 1);
   const yDate = yesterday.toISOString().split('T')[0];
-
   const { data } = await _supabase
     .from('sales').select('opening_balance, cash_amount, cash_paid_out')
     .eq('user_id', currentUser.id).eq('date', yDate).maybeSingle();
-
   if (data) {
     const yesterdayClosing = Number(data.opening_balance||0) + Number(data.cash_amount||0) - Number(data.cash_paid_out||0);
     if (yesterdayClosing > 0) {
@@ -431,7 +444,6 @@ async function prefillOpeningBalance() {
   }
 }
 
-/* ── Load sales history ── */
 async function loadSales() {
   const month = document.getElementById('filter-month').value;
   if (!month) return;
@@ -467,18 +479,16 @@ async function loadSales() {
       <tr>
         <th>Date</th><th>Total</th><th>Cash</th><th>Transfer</th>
         <th>POS</th><th>Closing Cash</th><th>Qty</th><th>Notes</th>
-        <th>Recorded</th><th>Actions</th>
+        <th>Source</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>
       ${(data||[]).map(r => {
         const pos     = Number(r.pos_amount||0);
         const closing = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
-        const created = new Date(r.created_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-        const updated = r.updated_at && r.updated_at !== r.created_at
-          ? new Date(r.updated_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-          : null;
-        const wasEdited = updated !== null;
+        const recorded = new Date(r.created_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+        const isAutoSync = r.source === 'pos';
+        const hasEdits   = r.updated_at && r.updated_at !== r.created_at;
 
         return `<tr>
           <td>${formatDate(r.date)}</td>
@@ -490,15 +500,21 @@ async function loadSales() {
           <td>${r.total_quantity||'—'}</td>
           <td>${r.notes||'—'}</td>
           <td style="font-size:0.75rem;">
-            <div style="color:var(--muted);">📅 ${created}</div>
-            ${wasEdited ? `<div class="edited-badge" style="margin-top:4px;">✏️ Edited ${updated}</div>` : ''}
+            <div style="margin-bottom:4px;">
+              ${isAutoSync
+                ? '<span class="auto-badge">🛒 Auto-POS</span>'
+                : '<span class="manual-badge">✍️ Manual</span>'}
+            </div>
+            <div style="color:var(--muted);font-size:0.72rem;">📅 ${recorded}</div>
           </td>
           <td style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn-sm" style="background:var(--dark3);color:var(--gold);border:1px solid var(--gold-border);"
               onclick="printReceipt(${JSON.stringify(r).replace(/"/g,'&quot;')})">🖨️</button>
-            ${wasEdited ? `<button class="btn btn-sm" style="background:var(--dark3);color:var(--info);border:1px solid var(--gold-border);"
-              onclick="viewEditHistory('${r.id}')">📋</button>` : ''}
-            <button class="btn btn-danger btn-sm" onclick="deleteSale('${r.id}')">Delete</button>
+            ${hasEdits
+              ? `<button class="btn btn-sm" style="background:var(--dark3);color:var(--info);border:1px solid var(--gold-border);"
+                  onclick="viewEditHistory('${r.id}')">📋</button>`
+              : ''}
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${r.id}','${formatDate(r.date)}','${formatCurrency(r.total_amount)}')">Delete</button>
           </td>
         </tr>`;
       }).join('')}
@@ -506,104 +522,67 @@ async function loadSales() {
   </table></div>`;
 }
 
-/* ── Save (insert or update with audit trail) ── */
 async function saveSale(type) {
   const date = document.getElementById('sale-date').value;
   const msg  = document.getElementById('form-msg');
+  if (!date) { msg.innerHTML = '<div class="alert alert-danger">⚠️ Please select a date.</div>'; return; }
 
-  if (!date) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Please select a date.</div>'; return;
-  }
-
-  let payload = { user_id: currentUser.id, date, updated_at: new Date().toISOString() };
+  let payload = { user_id: currentUser.id, date, updated_at: new Date().toISOString(), source: 'manual' };
 
   if (type === 'simple') {
     const amount = parseFloat(document.getElementById('s-amount').value) || 0;
-    if (amount <= 0) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter a sales amount.</div>'; return;
-    }
-    payload = {
-      ...payload,
-      total_amount:    amount,
-      cash_amount:     0,
-      transfer_amount: 0,
-      pos_amount:      0,
-      total_quantity:  parseInt(document.getElementById('s-qty').value) || null,
-      notes:           document.getElementById('s-notes').value.trim()
-    };
+    if (amount <= 0) { msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter a sales amount.</div>'; return; }
+    payload = { ...payload, total_amount: amount, cash_amount: 0, transfer_amount: 0, pos_amount: 0,
+      total_quantity: parseInt(document.getElementById('s-qty').value) || null,
+      notes: document.getElementById('s-notes').value.trim() };
   } else {
-    const cash     = parseFloat(document.getElementById('p-cash').value)     || 0;
+    const cash = parseFloat(document.getElementById('p-cash').value) || 0;
     const transfer = parseFloat(document.getElementById('p-transfer').value) || 0;
-    const pos1     = parseFloat(document.getElementById('p-pos1').value)     || 0;
-    const pos2     = parseFloat(document.getElementById('p-pos2').value)     || 0;
-    const pos3     = parseFloat(document.getElementById('p-pos3').value)     || 0;
-    const total    = cash + transfer + pos1 + pos2 + pos3;
-    if (total <= 0) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter at least one sales amount.</div>'; return;
-    }
-    payload = {
-      ...payload,
-      total_amount:    total,
-      cash_amount:     cash,
-      transfer_amount: transfer,
-      pos_amount:      pos1 + pos2 + pos3,
+    const pos1 = parseFloat(document.getElementById('p-pos1').value) || 0;
+    const pos2 = parseFloat(document.getElementById('p-pos2').value) || 0;
+    const pos3 = parseFloat(document.getElementById('p-pos3').value) || 0;
+    const total = cash + transfer + pos1 + pos2 + pos3;
+    if (total <= 0) { msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter at least one amount.</div>'; return; }
+    payload = { ...payload, total_amount: total, cash_amount: cash, transfer_amount: transfer,
+      pos_amount: pos1+pos2+pos3,
       opening_balance: parseFloat(document.getElementById('p-opening').value) || 0,
-      cash_paid_out:   parseFloat(document.getElementById('p-cashout').value) || 0,
-      total_quantity:  parseInt(document.getElementById('p-qty').value) || null,
-      notes:           document.getElementById('p-notes').value.trim()
-    };
+      cash_paid_out: parseFloat(document.getElementById('p-cashout').value) || 0,
+      total_quantity: parseInt(document.getElementById('p-qty').value) || null,
+      notes: document.getElementById('p-notes').value.trim() };
   }
 
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
 
-  // Check if record exists
   const { data: existing } = await _supabase
-    .from('sales').select('*')
-    .eq('user_id', currentUser.id).eq('date', date).maybeSingle();
+    .from('sales').select('*').eq('user_id', currentUser.id).eq('date', date).maybeSingle();
 
   let error;
-
   if (existing) {
-    // ── Log the change to audit table BEFORE updating ──
-    const { error: auditErr } = await _supabase.from('sales_edits').insert({
-      sale_id:      existing.id,
-      user_id:      currentUser.id,
-      edited_at:    new Date().toISOString(),
-      old_total:    existing.total_amount,
-      new_total:    payload.total_amount,
-      old_cash:     existing.cash_amount,
-      new_cash:     payload.cash_amount,
-      old_transfer: existing.transfer_amount,
-      new_transfer: payload.transfer_amount,
-      old_pos:      existing.pos_amount,
-      new_pos:      payload.pos_amount,
-      old_notes:    existing.notes,
-      new_notes:    payload.notes
-    });
+    // Log audit trail before updating
+    await _supabase.from('sales_edits').insert({
+      sale_id: existing.id, user_id: currentUser.id, edited_at: new Date().toISOString(),
+      old_total: existing.total_amount, new_total: payload.total_amount,
+      old_cash: existing.cash_amount, new_cash: payload.cash_amount,
+      old_transfer: existing.transfer_amount, new_transfer: payload.transfer_amount,
+      old_pos: existing.pos_amount, new_pos: payload.pos_amount,
+      old_notes: existing.notes, new_notes: payload.notes
+    }).catch(e => console.warn('Audit log failed:', e));
 
-    if (auditErr) console.warn('Audit log failed:', auditErr.message);
-
-    // ── Now update the record ──
     ({ error } = await _supabase.from('sales').update(payload).eq('id', existing.id));
-
     if (!error) {
       const diff = Number(payload.total_amount) - Number(existing.total_amount);
       const diffText = diff !== 0
-        ? ` <span style="color:${diff < 0 ? 'var(--danger)' : 'var(--success)'};">(${diff > 0 ? '+' : ''}${formatCurrency(diff)} change)</span>`
+        ? ` <span style="color:${diff<0?'var(--danger)':'var(--success)'};">(${diff>0?'+':''}${formatCurrency(diff)})</span>`
         : ' (no change in total)';
-      msg.innerHTML = `<div class="alert alert-success">✅ Sale record updated! ${diffText} — Change logged at ${new Date().toLocaleTimeString('en-GB')}</div>`;
+      msg.innerHTML = `<div class="alert alert-success">✅ Sale updated!${diffText}</div>`;
     }
   } else {
-    // ── Insert new record ──
     ({ error } = await _supabase.from('sales').insert(payload));
-    if (!error) {
-      msg.innerHTML = '<div class="alert alert-success">✅ Sale recorded successfully!</div>';
-    }
+    if (!error) msg.innerHTML = '<div class="alert alert-success">✅ Sale recorded successfully!</div>';
   }
 
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
 
-  // Clear form
   if (type === 'simple') {
     ['s-amount','s-qty','s-notes'].forEach(id => document.getElementById(id).value = '');
   } else {
@@ -611,25 +590,70 @@ async function saveSale(type) {
       .forEach(id => document.getElementById(id).value = '');
     document.getElementById('p-auto-total').textContent = '₦0.00';
     document.getElementById('p-closing').textContent    = '₦0.00';
-    document.getElementById('p-formula').textContent    = 'Formula: Opening Balance + Cash Sales − Cash Paid Out = Closing Cash';
   }
-
   document.getElementById('existing-badge').style.display = 'none';
   loadSales();
   setTimeout(() => msg.innerHTML = '', 6000);
 }
 
-/* ── View edit history for a sale ── */
+// ── DELETE FLOW WITH CONFIRMATION ──
+function openDeleteModal(id, dateStr, amountStr) {
+  document.getElementById('delete-pending-id').value = id;
+  document.getElementById('delete-sale-info').textContent = `${dateStr} — ${amountStr}`;
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('delete-modal-msg').innerHTML = '';
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+  document.getElementById('delete-modal').classList.add('show');
+  setTimeout(() => document.getElementById('delete-confirm-input').focus(), 300);
+}
+
+function checkDeleteConfirm() {
+  const val = document.getElementById('delete-confirm-input').value.trim().toUpperCase();
+  const btn = document.getElementById('confirm-delete-btn');
+  const isValid = val === 'DELETE';
+  btn.disabled = !isValid;
+  btn.style.opacity = isValid ? '1' : '0.4';
+  btn.style.cursor  = isValid ? 'pointer' : 'not-allowed';
+  document.getElementById('delete-confirm-input').style.borderColor =
+    isValid ? 'var(--success)' : 'var(--danger)';
+}
+
+async function confirmDelete() {
+  const id  = document.getElementById('delete-pending-id').value;
+  const msg = document.getElementById('delete-modal-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Deleting…</div>';
+
+  // Log deletion to sales_edits before deleting
+  await _supabase.from('sales_edits').insert({
+    sale_id: id, user_id: currentUser.id, edited_at: new Date().toISOString(),
+    old_total: null, new_total: null,
+    old_notes: 'RECORD DELETED', new_notes: 'RECORD DELETED'
+  }).catch(e => console.warn('Delete log failed:', e));
+
+  await _supabase.from('sales_edits').delete().eq('sale_id', id);
+  const { error } = await _supabase.from('sales').delete().eq('id', id);
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+
+  closeDeleteModal();
+  loadSales();
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('show');
+  document.getElementById('delete-confirm-input').value = '';
+}
+
+// ── EDIT HISTORY ──
 async function viewEditHistory(saleId) {
   document.getElementById('edit-modal').classList.add('show');
   document.getElementById('edit-history-body').innerHTML = '<div class="spinner"></div>';
 
-  const { data, error } = await _supabase
-    .from('sales_edits').select('*')
-    .eq('sale_id', saleId)
+  const { data } = await _supabase
+    .from('sales_edits').select('*').eq('sale_id', saleId)
     .order('edited_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
+  if (!data || data.length === 0) {
     document.getElementById('edit-history-body').innerHTML =
       '<p style="color:var(--muted);font-size:0.85rem;">No edit history found.</p>';
     return;
@@ -637,38 +661,45 @@ async function viewEditHistory(saleId) {
 
   document.getElementById('edit-history-body').innerHTML = data.map((e, idx) => {
     const editedAt  = new Date(e.edited_at).toLocaleString('en-GB');
-    const totalDiff = Number(e.new_total) - Number(e.old_total);
-    const changed   = totalDiff !== 0;
-    return `
-      <div class="edit-history-row">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-weight:600;color:var(--white2);">Edit #${data.length - idx}</span>
+    const isDeleted = e.old_notes === 'RECORD DELETED';
+    if (isDeleted) {
+      return `<div class="edit-history-row">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:var(--danger);font-weight:600;">🗑️ Record Deleted</span>
           <span style="font-size:0.75rem;color:var(--muted);">🕐 ${editedAt}</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.8rem;">
-          <div>
-            <div style="color:var(--muted);margin-bottom:2px;">Before</div>
-            <div>Total: <span style="color:var(--white);">${formatCurrency(e.old_total)}</span></div>
-            ${Number(e.old_cash||0) > 0 ? `<div>Cash: ${formatCurrency(e.old_cash)}</div>` : ''}
-            ${Number(e.old_transfer||0) > 0 ? `<div>Transfer: ${formatCurrency(e.old_transfer)}</div>` : ''}
-            ${Number(e.old_pos||0) > 0 ? `<div>POS: ${formatCurrency(e.old_pos)}</div>` : ''}
-            ${e.old_notes ? `<div>Notes: ${e.old_notes}</div>` : ''}
-          </div>
-          <div>
-            <div style="color:var(--muted);margin-bottom:2px;">After</div>
-            <div>Total: <span style="color:var(--white);">${formatCurrency(e.new_total)}</span></div>
-            ${Number(e.new_cash||0) > 0 ? `<div>Cash: ${formatCurrency(e.new_cash)}</div>` : ''}
-            ${Number(e.new_transfer||0) > 0 ? `<div>Transfer: ${formatCurrency(e.new_transfer)}</div>` : ''}
-            ${Number(e.new_pos||0) > 0 ? `<div>POS: ${formatCurrency(e.new_pos)}</div>` : ''}
-            ${e.new_notes ? `<div>Notes: ${e.new_notes}</div>` : ''}
-          </div>
-        </div>
-        ${changed ? `<div style="margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm);
-          background:${totalDiff < 0 ? 'rgba(224,85,85,0.1)' : 'rgba(76,175,125,0.1)'};
-          color:${totalDiff < 0 ? 'var(--danger)' : 'var(--success)'};font-size:0.8rem;font-weight:600;">
-          ${totalDiff < 0 ? '⚠️ Reduced by' : '✅ Increased by'} ${formatCurrency(Math.abs(totalDiff))}
-        </div>` : '<div style="margin-top:6px;font-size:0.78rem;color:var(--muted);">No change in total amount</div>'}
       </div>`;
+    }
+    const totalDiff = Number(e.new_total) - Number(e.old_total);
+    return `<div class="edit-history-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:600;color:var(--white2);">Edit #${data.length - idx}</span>
+        <span style="font-size:0.75rem;color:var(--muted);">🕐 ${editedAt}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.8rem;">
+        <div>
+          <div style="color:var(--muted);margin-bottom:2px;">Before</div>
+          <div>Total: <span style="color:var(--white);">${formatCurrency(e.old_total)}</span></div>
+          ${Number(e.old_cash||0)>0?`<div>Cash: ${formatCurrency(e.old_cash)}</div>`:''}
+          ${Number(e.old_transfer||0)>0?`<div>Transfer: ${formatCurrency(e.old_transfer)}</div>`:''}
+          ${Number(e.old_pos||0)>0?`<div>POS: ${formatCurrency(e.old_pos)}</div>`:''}
+          ${e.old_notes?`<div>Notes: ${e.old_notes}</div>`:''}
+        </div>
+        <div>
+          <div style="color:var(--muted);margin-bottom:2px;">After</div>
+          <div>Total: <span style="color:var(--white);">${formatCurrency(e.new_total)}</span></div>
+          ${Number(e.new_cash||0)>0?`<div>Cash: ${formatCurrency(e.new_cash)}</div>`:''}
+          ${Number(e.new_transfer||0)>0?`<div>Transfer: ${formatCurrency(e.new_transfer)}</div>`:''}
+          ${Number(e.new_pos||0)>0?`<div>POS: ${formatCurrency(e.new_pos)}</div>`:''}
+          ${e.new_notes?`<div>Notes: ${e.new_notes}</div>`:''}
+        </div>
+      </div>
+      ${totalDiff !== 0 ? `<div style="margin-top:8px;padding:6px 10px;border-radius:var(--radius-sm);
+        background:${totalDiff<0?'rgba(224,85,85,0.1)':'rgba(76,175,125,0.1)'};
+        color:${totalDiff<0?'var(--danger)':'var(--success)'};font-size:0.8rem;font-weight:600;">
+        ${totalDiff<0?'⚠️ Reduced by':'✅ Increased by'} ${formatCurrency(Math.abs(totalDiff))}
+      </div>` : ''}
+    </div>`;
   }).join('');
 }
 
@@ -676,15 +707,7 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('show');
 }
 
-/* ── Delete ── */
-async function deleteSale(id) {
-  if (!confirm('Delete this sale record? This cannot be undone.')) return;
-  await _supabase.from('sales_edits').delete().eq('sale_id', id); // clean up audit trail
-  await _supabase.from('sales').delete().eq('id', id);
-  loadSales();
-}
-
-/* ── Print receipt ── */
+// ── PRINT ──
 async function printReceipt(record) {
   let bizName = 'My Business';
   try {
@@ -696,26 +719,20 @@ async function printReceipt(record) {
   const pos     = Number(record.pos_amount||0);
   const closing = Number(record.opening_balance||0) + Number(record.cash_amount||0) - Number(record.cash_paid_out||0);
   const now     = new Date();
-  const created = new Date(record.created_at).toLocaleString('en-GB');
-  const updated = record.updated_at && record.updated_at !== record.created_at
-    ? new Date(record.updated_at).toLocaleString('en-GB') : null;
 
   document.getElementById('pr-biz-name').textContent   = bizName;
-  document.getElementById('pr-biz-sub').textContent    = 'GrowthIve Monitor — Daily Sales Receipt';
   document.getElementById('pr-date-line').textContent  = `Sale Date: ${formatDate(record.date)}`;
   document.getElementById('pr-printed-on').textContent = `Printed: ${now.toLocaleString()}`;
   document.getElementById('pr-footer-date').textContent= now.toLocaleDateString();
 
   const rows = [];
-  if (Number(record.cash_amount||0) > 0)     rows.push(['Cash Sales',     formatCurrency(record.cash_amount)]);
-  if (Number(record.transfer_amount||0) > 0)  rows.push(['Transfer Sales', formatCurrency(record.transfer_amount)]);
-  if (pos > 0)                                rows.push(['POS Sales',       formatCurrency(pos)]);
-  if (Number(record.opening_balance||0) > 0)  rows.push(['Opening Balance', formatCurrency(record.opening_balance)]);
-  if (Number(record.cash_paid_out||0) > 0)    rows.push(['Cash Paid Out',   formatCurrency(record.cash_paid_out)]);
-  if (record.total_quantity)                  rows.push(['Quantity Sold',   record.total_quantity]);
-  if (record.notes)                           rows.push(['Notes',           record.notes]);
-  rows.push(['First Recorded', created]);
-  if (updated) rows.push(['Last Edited', updated]);
+  if (Number(record.cash_amount||0) > 0)    rows.push(['Cash Sales',     formatCurrency(record.cash_amount)]);
+  if (Number(record.transfer_amount||0) > 0) rows.push(['Transfer Sales', formatCurrency(record.transfer_amount)]);
+  if (pos > 0)                               rows.push(['POS Sales',       formatCurrency(pos)]);
+  if (Number(record.opening_balance||0) > 0) rows.push(['Opening Balance', formatCurrency(record.opening_balance)]);
+  if (Number(record.cash_paid_out||0) > 0)   rows.push(['Cash Paid Out',   formatCurrency(record.cash_paid_out)]);
+  if (record.total_quantity)                 rows.push(['Quantity Sold',   record.total_quantity]);
+  if (record.notes)                          rows.push(['Notes',           record.notes]);
 
   document.getElementById('pr-body').innerHTML = `
     ${rows.map(([k,v]) => `<div class="pr-row"><span>${k}</span><span>${v}</span></div>`).join('')}
@@ -724,12 +741,6 @@ async function printReceipt(record) {
     <div class="pr-row" style="margin-top:8px;">
       <span>Closing Cash Balance</span>
       <span style="color:${closing>=0?'#1a7a1a':'#cc0000'};">${formatCurrency(closing)}</span>
-    </div>
-    <div style="font-size:0.72rem;color:#888;margin-top:4px;">
-      Formula: ${formatCurrency(record.opening_balance||0)} + ${formatCurrency(record.cash_amount||0)} − ${formatCurrency(record.cash_paid_out||0)} = ${formatCurrency(closing)}
-    </div>` : ''}
-    ${updated ? `<div style="margin-top:12px;padding:8px;background:#fff3cd;border-radius:4px;font-size:0.78rem;color:#856404;">
-      ⚠️ This record was edited. Last change: ${updated}
     </div>` : ''}
   `;
 
@@ -741,7 +752,6 @@ function closePrint() {
   document.getElementById('print-receipt').style.display = 'none';
 }
 
-// Auto-prefill opening balance when switching to premium tab
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tab-premium').addEventListener('click', () => {
     const opening = document.getElementById('p-opening');

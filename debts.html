@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -11,58 +11,58 @@
 <div class="layout">
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
-    <div class="page-title">Debt Tracker</div>
-    <div class="page-subtitle">Track money owed to you and money you owe others.</div>
+    <div class="page-title" data-lang="debts_title">Debt Tracker</div>
+    <div class="page-subtitle" data-lang="debts_sub">Track money owed to you and money you owe others.</div>
 
     <div class="grid-2">
       <!-- Form -->
       <div class="card">
-        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ Add Debt Record</div>
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">➕ <span data-lang="add_debt">Add Debt Record</span></div>
         <div id="form-msg"></div>
         <div class="form-group">
-          <label>Person / Business Name</label>
-          <input type="text" id="debt-person" placeholder="e.g. Ade Bakery, Musa Supplier…">
+          <label data-lang="debtor_name">Person / Business Name</label>
+          <input type="text" id="debt-person" data-lang-placeholder="debtor_name" placeholder="e.g. Ade Bakery, Musa Supplier…">
         </div>
         <div class="form-group">
-          <label>Amount (₦)</label>
+          <label data-lang="amount">Amount</label>
           <input type="number" id="debt-amount" placeholder="0.00" min="0" step="0.01">
         </div>
         <div class="form-group">
-          <label>Type</label>
+          <label data-lang="debt_type">Type</label>
           <select id="debt-type">
-            <option value="owed_to_me">They owe me (Credit)</option>
-            <option value="i_owe">I owe them (Debit)</option>
+            <option value="owed_to_me" data-lang="owed_to_me">They owe me (Credit)</option>
+            <option value="i_owe" data-lang="i_owe">I owe them (Debit)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Due Date (optional)</label>
+          <label data-lang="due_date">Due Date (optional)</label>
           <input type="date" id="debt-due">
         </div>
-        <button class="btn btn-gold" onclick="saveDebt()">Add Debt Record →</button>
+        <button class="btn btn-gold" onclick="saveDebt()"><span data-lang="add_debt">Add Debt Record</span> →</button>
       </div>
 
       <!-- Summary -->
       <div class="card">
-        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">💰 Debt Summary</div>
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">💰 <span data-lang="debt_summary">Debt Summary</span></div>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <div class="card-title" style="margin:0 0 4px;">Owed To Me</div>
-              <div class="card-meta">Others owe you</div>
+              <div class="card-title" style="margin:0 0 4px;" data-lang="owed_to_me_label">Owed To Me</div>
+              <div class="card-meta" data-lang="owed_to_me_sub">Others owe you</div>
             </div>
             <div class="card-value success" id="total-owed-me">₦0.00</div>
           </div>
           <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <div class="card-title" style="margin:0 0 4px;">I Owe</div>
-              <div class="card-meta">You owe others</div>
+              <div class="card-title" style="margin:0 0 4px;" data-lang="i_owe_label">I Owe</div>
+              <div class="card-meta" data-lang="i_owe_sub">You owe others</div>
             </div>
             <div class="card-value danger" id="total-i-owe">₦0.00</div>
           </div>
           <div style="padding:16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <div class="card-title" style="margin:0 0 4px;">Net Position</div>
-              <div class="card-meta">After all debts</div>
+              <div class="card-title" style="margin:0 0 4px;" data-lang="net_position">Net Position</div>
+              <div class="card-meta" data-lang="net_position_sub">After all debts</div>
             </div>
             <div class="card-value" id="net-debt">₦0.00</div>
           </div>
@@ -72,8 +72,8 @@
 
     <!-- Tabs -->
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button class="btn btn-gold btn-sm" onclick="showTab('unpaid')">Unpaid</button>
-      <button class="btn btn-outline btn-sm" onclick="showTab('paid')">Paid / Settled</button>
+      <button class="btn btn-gold btn-sm" onclick="showTab('unpaid')" data-lang="unpaid">Unpaid</button>
+      <button class="btn btn-outline btn-sm" onclick="showTab('paid')" data-lang="paid_settled">Paid / Settled</button>
     </div>
 
     <div class="card">
@@ -107,33 +107,53 @@ function showTab(tab) {
 async function loadDebts() {
   const { data } = await _supabase.from('debts').select('*').eq('user_id', currentUser.id).eq('status', currentTab === 'unpaid' ? 'unpaid' : 'paid').order('created_at', { ascending: false });
 
-  // Summary (always from unpaid)
   const { data: all } = await _supabase.from('debts').select('*').eq('user_id', currentUser.id).eq('status', 'unpaid');
   const owedMe = (all || []).filter(r => r.type === 'owed_to_me').reduce((s, r) => s + Number(r.amount), 0);
-  const iOwe = (all || []).filter(r => r.type === 'i_owe').reduce((s, r) => s + Number(r.amount), 0);
+  const iOwe   = (all || []).filter(r => r.type === 'i_owe').reduce((s, r) => s + Number(r.amount), 0);
   document.getElementById('total-owed-me').textContent = formatCurrency(owedMe);
-  document.getElementById('total-i-owe').textContent = formatCurrency(iOwe);
-  const net = owedMe - iOwe;
+  document.getElementById('total-i-owe').textContent   = formatCurrency(iOwe);
+  const net   = owedMe - iOwe;
   const netEl = document.getElementById('net-debt');
   netEl.textContent = formatCurrency(net);
-  netEl.className = 'card-value ' + (net >= 0 ? 'success' : 'danger');
+  netEl.className   = 'card-value ' + (net >= 0 ? 'success' : 'danger');
 
   const el = document.getElementById('debt-table');
   if (!data || data.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">🤝</div><p>No ${currentTab} debts found.</p></div>`; return;
+    el.innerHTML = `<div class="empty-state"><div class="icon">🤝</div><p>${t('no_data')}</p></div>`; return;
   }
+
+  const thPerson   = t('debtor_name');
+  const thAmount   = t('amount');
+  const thType     = t('debt_type');
+  const thDue      = t('due_date');
+  const thStatus   = t('status');
+  const thActions  = t('actions');
+  const lblOwesMe  = t('owes_me');
+  const lblIOwe    = t('i_owe');
+  const lblPaid    = t('paid');
+  const lblUnpaid  = t('pending');
+  const lblMarkPaid= t('mark_paid');
+  const lblDelete  = t('delete');
+
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Person</th><th>Amount</th><th>Type</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr>
+      <th>${thPerson}</th>
+      <th>${thAmount}</th>
+      <th>${thType}</th>
+      <th>${thDue}</th>
+      <th>${thStatus}</th>
+      <th>${thActions}</th>
+    </tr></thead>
     <tbody>${data.map(r => `
       <tr>
         <td style="font-weight:500;">${r.person_name}</td>
         <td style="font-weight:600;color:${r.type === 'owed_to_me' ? 'var(--success)' : 'var(--danger)'};">${formatCurrency(r.amount)}</td>
-        <td><span class="badge ${r.type === 'owed_to_me' ? 'badge-success' : 'badge-danger'}">${r.type === 'owed_to_me' ? 'Owes Me' : 'I Owe'}</span></td>
+        <td><span class="badge ${r.type === 'owed_to_me' ? 'badge-success' : 'badge-danger'}">${r.type === 'owed_to_me' ? lblOwesMe : lblIOwe}</span></td>
         <td>${formatDate(r.due_date)}</td>
-        <td><span class="badge ${r.status === 'paid' ? 'badge-success' : 'badge-gold'}">${r.status}</span></td>
+        <td><span class="badge ${r.status === 'paid' ? 'badge-success' : 'badge-gold'}">${r.status === 'paid' ? lblPaid : lblUnpaid}</span></td>
         <td style="display:flex;gap:6px;flex-wrap:wrap;">
-          ${r.status === 'unpaid' ? `<button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="markPaid('${r.id}')">✓ Paid</button>` : ''}
-          <button class="btn btn-danger btn-sm" onclick="deleteDebt('${r.id}')">Delete</button>
+          ${r.status === 'unpaid' ? `<button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="markPaid('${r.id}')">✓ ${lblMarkPaid}</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteDebt('${r.id}')">${lblDelete}</button>
         </td>
       </tr>`).join('')}
     </tbody>
@@ -142,20 +162,20 @@ async function loadDebts() {
 
 async function saveDebt() {
   const person_name = document.getElementById('debt-person').value.trim();
-  const amount = parseFloat(document.getElementById('debt-amount').value);
-  const type = document.getElementById('debt-type').value;
-  const due_date = document.getElementById('debt-due').value || null;
-  const msg = document.getElementById('form-msg');
+  const amount      = parseFloat(document.getElementById('debt-amount').value);
+  const type        = document.getElementById('debt-type').value;
+  const due_date    = document.getElementById('debt-due').value || null;
+  const msg         = document.getElementById('form-msg');
   if (!person_name || isNaN(amount) || amount <= 0) {
-    msg.innerHTML = '<div class="alert alert-danger">Please enter a name and valid amount.</div>'; return;
+    msg.innerHTML = `<div class="alert alert-danger">${t('error')}: ${t('debtor_name')} & ${t('amount')} required.</div>`; return;
   }
-  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  msg.innerHTML = `<div class="alert alert-gold">${t('saving')}</div>`;
   const { error } = await _supabase.from('debts').insert({ user_id: currentUser.id, person_name, amount, type, due_date, status: 'unpaid' });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">Debt record added!</div>';
+  msg.innerHTML = `<div class="alert alert-success">✅ ${t('add_debt')} — ${t('success')}</div>`;
   document.getElementById('debt-person').value = '';
   document.getElementById('debt-amount').value = '';
-  document.getElementById('debt-due').value = '';
+  document.getElementById('debt-due').value    = '';
   loadDebts();
   setTimeout(() => msg.innerHTML = '', 3000);
 }
@@ -166,7 +186,7 @@ async function markPaid(id) {
 }
 
 async function deleteDebt(id) {
-  if (!confirm('Delete this debt record?')) return;
+  if (!confirm(t('delete') + '?')) return;
   await _supabase.from('debts').delete().eq('id', id);
   loadDebts();
 }

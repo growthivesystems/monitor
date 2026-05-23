@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -38,12 +38,12 @@
       </div>
     </div>
 
-    <!-- ROW 2: Monthly confirmed KPIs -->
+    <!-- ROW 2: Monthly confirmed KPIs (from sales table) -->
     <div class="grid-4">
       <div class="card">
         <div class="card-title">Monthly Revenue</div>
         <div class="card-value gold" id="kpi-month-sales">₦0.00</div>
-        <div class="card-meta">All POS sales this month</div>
+        <div class="card-meta">Confirmed daily records</div>
       </div>
       <div class="card">
         <div class="card-title">Total Expenses</div>
@@ -53,7 +53,7 @@
       <div class="card">
         <div class="card-title">Net Profit / Loss</div>
         <div class="card-value" id="kpi-profit">₦0.00</div>
-        <div class="card-meta">POS revenue − expenses this month</div>
+        <div class="card-meta">Monthly revenue − expenses</div>
       </div>
       <div class="card">
         <div class="card-title">Outstanding Debts</div>
@@ -121,21 +121,6 @@
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script>
-/* ══════════════════════════════════════════
-   STOCK STATUS HELPER — mirrors inventory.html exactly.
-   qty === 0  → untracked/service. NOT low stock. NOT out of stock.
-   qty < 0    → negative (sold untracked). NOT low stock alert.
-   qty > 0 && qty <= threshold → genuinely LOW stock → show alert.
-   qty > threshold → OK.
-══════════════════════════════════════════ */
-function stockStatus(item) {
-  const qty = Number(item.quantity);
-  if (qty === 0) return 'untracked';
-  if (qty < 0)  return 'negative';
-  if (qty <= Number(item.low_stock_threshold || 5)) return 'low';
-  return 'ok';
-}
-
 (async () => {
   const user = await requireAuth();
   if (!user) return;
@@ -151,7 +136,7 @@ function stockStatus(item) {
   // ══════════════════════════════════════════════
   // ROW 1 — TODAY'S LIVE POS DATA
   // Source: purchase_transactions
-  // Includes ALL sales: tracked goods, untracked goods, services
+  // Real-time sales happening today via POS
   // ══════════════════════════════════════════════
   const { data: txnsToday } = await _supabase
     .from('purchase_transactions')
@@ -172,19 +157,17 @@ function stockStatus(item) {
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
 
   // ══════════════════════════════════════════════
-  // ROW 2 — MONTHLY REVENUE
-  // Source: purchase_transactions (automatic)
-  // Every sale made through the POS this month —
-  // tracked goods, untracked goods, and services —
-  // all count automatically. No manual entry needed.
+  // ROW 2 — MONTHLY CONFIRMED REVENUE
+  // Source: sales table (manual daily records)
+  // Owner-confirmed end-of-day totals for the month
   // ══════════════════════════════════════════════
-  const { data: monthTxns } = await _supabase
-    .from('purchase_transactions')
+  const { data: salesMonth } = await _supabase
+    .from('sales')
     .select('total_amount')
     .eq('user_id', user.id)
     .gte('date', startOfMonth);
 
-  const totalMonthSales = (monthTxns||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalMonthSales = (salesMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
   document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
 
   // ── Expenses this month ──
@@ -216,6 +199,7 @@ function stockStatus(item) {
 
   // ══════════════════════════════════════════════
   // TODAY'S TRANSACTIONS WIDGET
+  // Source: purchase_transactions — live POS only
   // ══════════════════════════════════════════════
   const { data: recentTxns } = await _supabase
     .from('purchase_transactions')
@@ -242,7 +226,9 @@ function stockStatus(item) {
           const itemList = Array.isArray(r.items)
             ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
             : r.notes || '—';
-          const timeStr  = new Date(r.created_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+          const timeStr  = new Date(r.created_at).toLocaleTimeString('en-GB', {
+            hour:'2-digit', minute:'2-digit'
+          });
           const payColor = r.payment_method === 'cash'     ? 'var(--success)'
                          : r.payment_method === 'transfer' ? 'var(--info)'
                          : 'var(--gold2)';
@@ -266,44 +252,29 @@ function stockStatus(item) {
 
   // ══════════════════════════════════════════════
   // LOW STOCK ALERTS
-  // FIX: Only show genuinely LOW items (qty > 0 and below threshold).
-  //      qty === 0 → untracked/service → NO alert.
-  //      qty < 0  → negative/untracked → NO alert.
-  //      Only qty > 0 AND qty <= threshold fires the alert.
   // ══════════════════════════════════════════════
   const { data: inv } = await _supabase
     .from('inventory')
     .select('*')
-    .eq('user_id', user.id)
-    .is('deleted_at', null);
+    .eq('user_id', user.id);
 
-  // Use stockStatus() — same logic as inventory.html and purchases.html
-  const lowStockItems = (inv||[]).filter(i => stockStatus(i) === 'low');
-  const lsEl          = document.getElementById('low-stock');
+  const lowStock   = (inv||[]).filter(i => Number(i.quantity) <= Number(i.low_stock_threshold || 5));
+  const outOfStock = (inv||[]).filter(i => Number(i.quantity) <= 0);
+  const lsEl       = document.getElementById('low-stock');
 
-  if (lowStockItems.length === 0) {
-    lsEl.innerHTML = `<div class="empty-state">
-      <div class="icon">✅</div>
-      <p>All tracked stock levels are healthy.</p>
-    </div>`;
+  if (lowStock.length === 0) {
+    lsEl.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>All stock levels are healthy.</p></div>';
   } else {
     lsEl.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Item</th><th>Qty</th><th>Threshold</th><th>Status</th></tr></thead>
+      <thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead>
       <tbody>
-        ${lowStockItems.map(i => {
-          const qty = Number(i.quantity);
-          return `<tr>
-            <td>${i.item_name}</td>
-            <td style="color:var(--danger);font-weight:700;">${qty}</td>
-            <td style="color:var(--muted);font-size:0.8rem;">min ${i.low_stock_threshold || 5}</td>
-            <td><span class="badge badge-danger">Low Stock</span></td>
-          </tr>`;
-        }).join('')}
+        ${lowStock.map(i => `<tr>
+          <td>${i.item_name}</td>
+          <td style="color:${Number(i.quantity) <= 0 ? 'var(--danger)' : 'var(--gold)'};">${i.quantity}</td>
+          <td><span class="badge badge-danger">${Number(i.quantity) <= 0 ? 'Out of Stock' : 'Low Stock'}</span></td>
+        </tr>`).join('')}
       </tbody>
-    </table></div>
-    <div style="margin-top:10px;font-size:0.78rem;color:var(--muted);">
-      Items with qty 0 (services/untracked) are excluded — they don't need restocking.
-    </div>`;
+    </table></div>`;
   }
 
   // ══════════════════════════════════════════════
@@ -330,32 +301,15 @@ function stockStatus(item) {
 
   // ══════════════════════════════════════════════
   // BUSINESS HEALTH SCORE
-  // Uses corrected low stock count (no untracked items included).
-  // Also factors in untracked/service revenue so service businesses
-  // don't get penalised for having no tracked stock.
+  // Today activity  → purchase_transactions
+  // Monthly profit  → sales − expenses
   // ══════════════════════════════════════════════
-  const untrackedItems = (inv||[]).filter(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
-  const hasServices    = untrackedItems.length > 0;
-
   let score = 40;
-
-  // Revenue signals
-  if (totalMonthSales > 0) score += 15; // confirmed monthly sales
-  if (profit > 0)          score += 20; // profitable
-  if (todaySales > 0)      score += 10; // active today
-
-  // Stock health — only penalise for tracked items
-  // If business is purely services (all untracked), don't penalise for "no stock"
-  const trackedItems = (inv||[]).filter(i => stockStatus(i) === 'ok' || stockStatus(i) === 'low');
-  if (trackedItems.length > 0) {
-    // Has tracked goods — apply stock rules
-    if (lowStockItems.length === 0) score += 10; // no low stock
-    if (lowStockItems.length < 3)   score += 5;  // well managed
-  } else if (hasServices) {
-    // Purely service/untracked business — give stock points for free
-    score += 15;
-  }
-
+  if (totalMonthSales > 0)     score += 15; // confirmed monthly sales exist
+  if (profit > 0)              score += 20; // profitable this month
+  if (todaySales > 0)          score += 10; // active POS today
+  if (outOfStock.length === 0) score += 10; // no out-of-stock items
+  if (lowStock.length < 3)     score += 5;  // stock well managed
   score = Math.min(score, 100);
 
   document.getElementById('health-val').textContent = score;

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -12,27 +12,27 @@
   .catalogue-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-    max-height: 520px;
-    overflow-y: auto;
-    padding-right: 4px;
+    gap: 12px; max-height: 520px; overflow-y: auto; padding-right: 4px;
   }
 
+  /* ── Catalogue item states ── */
   .catalogue-item {
-    background: var(--dark3);
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius);
-    padding: 14px;
-    cursor: pointer;
-    transition: var(--transition);
-    position: relative;
+    background: var(--dark3); border: 1px solid var(--gold-border);
+    border-radius: var(--radius); padding: 14px; cursor: pointer;
+    transition: var(--transition); position: relative;
   }
   .catalogue-item:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: var(--shadow-gold); }
-  .catalogue-item.out-of-stock { opacity: 0.45; cursor: not-allowed; }
-  .catalogue-item.out-of-stock:hover { transform: none; box-shadow: none; border-color: var(--gold-border); }
 
-  .cat-icon { font-size: 1.8rem; margin-bottom: 8px; }
-  .cat-name { font-weight: 600; color: var(--white); font-size: 0.88rem; margin-bottom: 4px; line-height: 1.3; }
+  /* TRACKED items that hit zero = out of stock (blocked) */
+  .catalogue-item.hard-oos { opacity: 0.45; cursor: not-allowed; }
+  .catalogue-item.hard-oos:hover { transform: none; box-shadow: none; border-color: var(--gold-border); }
+
+  /* UNTRACKED / SERVICE items — always sellable, shown with a subtle tint */
+  .catalogue-item.untracked { border-color: rgba(91,155,213,0.35); }
+  .catalogue-item.untracked:hover { border-color: var(--gold); }
+
+  .cat-icon  { font-size: 1.8rem; margin-bottom: 8px; }
+  .cat-name  { font-weight: 600; color: var(--white); font-size: 0.88rem; margin-bottom: 4px; line-height: 1.3; }
   .cat-price { color: var(--gold); font-size: 0.92rem; font-weight: 700; }
   .cat-stock { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
   .cat-stock.low { color: var(--danger); }
@@ -40,6 +40,22 @@
   .oos-badge {
     position: absolute; top: 8px; right: 8px;
     background: var(--danger); color: #fff;
+    font-size: 0.6rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .service-badge {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(91,155,213,0.2); color: var(--info);
+    border: 1px solid rgba(91,155,213,0.4);
+    font-size: 0.6rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .negative-badge {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(201,168,76,0.15); color: var(--gold);
+    border: 1px solid var(--gold-border);
     font-size: 0.6rem; font-weight: 700;
     padding: 2px 6px; border-radius: 4px;
     text-transform: uppercase; letter-spacing: 0.05em;
@@ -70,8 +86,7 @@
   .order-total-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px 0; border-top: 1px solid var(--gold-border);
-    font-weight: 700; font-size: 1rem; color: var(--white);
-    margin-bottom: 16px;
+    font-weight: 700; font-size: 1rem; color: var(--white); margin-bottom: 16px;
   }
   .order-total-row span:last-child { color: var(--gold); font-size: 1.2rem; }
 
@@ -101,19 +116,16 @@
 
   /* Print receipt */
   .print-receipt-area {
-    display: none;
-    position: fixed; inset: 0; background: #fff; color: #111;
-    z-index: 9999; padding: 48px;
-    font-family: 'Segoe UI', Georgia, serif;
-    overflow-y: auto;
+    display: none; position: fixed; inset: 0;
+    background: #fff; color: #111; z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, serif; overflow-y: auto;
   }
   @media print {
     body * { visibility: hidden !important; }
     .print-receipt-area, .print-receipt-area * { visibility: visible !important; }
     .print-receipt-area {
       position: fixed !important; top: 0; left: 0;
-      width: 100%; background: #fff !important;
-      color: #000 !important; padding: 40px !important;
+      width: 100%; background: #fff !important; color: #000 !important; padding: 40px !important;
     }
     .no-print { display: none !important; }
   }
@@ -129,8 +141,7 @@
   .ftab {
     padding: 5px 14px; border-radius: 20px; font-size: 0.8rem;
     border: 1px solid var(--gold-border); background: transparent;
-    color: var(--muted); cursor: pointer; transition: var(--transition);
-    font-family: var(--font-body);
+    color: var(--muted); cursor: pointer; transition: var(--transition); font-family: var(--font-body);
   }
   .ftab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 600; }
 
@@ -144,6 +155,14 @@
   .pay-opt:hover { border-color: var(--gold); color: var(--white); }
   .pay-opt.selected { border-color: var(--gold); background: rgba(201,168,76,0.12); color: var(--gold); font-weight: 600; }
   .pay-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+
+  /* Untracked qty input in cart */
+  .untracked-qty-input {
+    width: 52px; background: var(--dark3); border: 1px solid var(--gold-border);
+    border-radius: var(--radius-sm); color: var(--white); font-size: 0.88rem;
+    font-weight: 700; text-align: center; padding: 2px 4px;
+  }
+  .untracked-qty-input:focus { outline: none; border-color: var(--gold); }
 </style>
 </head>
 <body>
@@ -155,7 +174,7 @@
       <div class="page-title" style="margin:0;">🛒 Purchases / Sales Point</div>
       <a href="sales.html" class="btn btn-outline btn-sm">📋 View Daily Sales</a>
     </div>
-    <div class="page-subtitle">Select items from your catalogue. Inventory is automatically updated on checkout.</div>
+    <div class="page-subtitle">Select items from your catalogue. Stock is updated automatically — services and untracked goods can be sold freely.</div>
 
     <div id="page-msg"></div>
 
@@ -168,9 +187,16 @@
             <a href="inventory.html" class="btn btn-outline btn-sm">Manage Stock →</a>
           </div>
 
+          <!-- Legend -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:0.72rem;color:var(--muted);">
+            <span>✅ Tracked stock</span>
+            <span style="color:var(--info);">🔷 Service / Untracked</span>
+            <span style="color:var(--danger);">❌ Out of stock (tracked)</span>
+          </div>
+
           <div class="search-bar">
             <span class="s-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="Search items…" oninput="filterItems()">
+            <input type="text" id="search-input" placeholder="Search items or services…" oninput="filterItems()">
           </div>
 
           <div class="filter-tabs" id="cat-filters">
@@ -208,15 +234,9 @@
 
           <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Payment Method</div>
           <div class="payment-method">
-            <div class="pay-opt selected" onclick="selectPay(this,'cash')">
-              <span class="pay-icon">💵</span>Cash
-            </div>
-            <div class="pay-opt" onclick="selectPay(this,'transfer')">
-              <span class="pay-icon">📲</span>Transfer
-            </div>
-            <div class="pay-opt" onclick="selectPay(this,'pos')">
-              <span class="pay-icon">💳</span>POS
-            </div>
+            <div class="pay-opt selected" onclick="selectPay(this,'cash')"><span class="pay-icon">💵</span>Cash</div>
+            <div class="pay-opt" onclick="selectPay(this,'transfer')"><span class="pay-icon">📲</span>Transfer</div>
+            <div class="pay-opt" onclick="selectPay(this,'pos')"><span class="pay-icon">💳</span>POS</div>
           </div>
 
           <div class="form-group" style="margin-bottom:16px;">
@@ -237,7 +257,7 @@
           <div class="card-title">📊 Today's Stats</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div style="text-align:center;padding:12px;background:var(--dark3);border-radius:var(--radius-sm);">
-              <div class="card-title" style="font-size:0.75rem;">POS Sales Today</div>
+              <div class="card-title" style="font-size:0.75rem;">Sales Today</div>
               <div class="card-value success" id="stat-sales" style="font-size:1.1rem;">₦0.00</div>
             </div>
             <div style="text-align:center;padding:12px;background:var(--dark3);border-radius:var(--radius-sm);">
@@ -249,7 +269,7 @@
       </div>
     </div>
 
-    <!-- Recent Transactions — now from purchase_transactions -->
+    <!-- Recent Transactions -->
     <div class="card" style="margin-top:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="card-title" style="margin:0;">🧾 Recent Transactions</div>
@@ -261,7 +281,7 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- ── In-app Receipt Modal ── -->
+<!-- In-app Receipt Modal -->
 <div class="receipt-modal" id="receipt-modal">
   <div class="receipt-box">
     <div class="receipt-header">
@@ -270,10 +290,7 @@
       <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;" id="receipt-date"></div>
     </div>
     <div id="receipt-lines"></div>
-    <div class="receipt-total-line">
-      <span>TOTAL</span>
-      <span id="receipt-total-display"></span>
-    </div>
+    <div class="receipt-total-line"><span>TOTAL</span><span id="receipt-total-display"></span></div>
     <div style="font-size:0.78rem;color:var(--muted);text-align:center;margin-top:8px;" id="receipt-pay-method"></div>
     <div style="text-align:center;margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
       <button class="btn btn-gold" onclick="closeReceipt()">✅ Done</button>
@@ -285,7 +302,7 @@
   </div>
 </div>
 
-<!-- ── Print Receipt Overlay ── -->
+<!-- Print Receipt Overlay -->
 <div class="print-receipt-area" id="print-receipt-area">
   <button class="print-close-btn no-print" onclick="closePrintReceipt()">✕ Close</button>
   <div class="pr-header">
@@ -300,9 +317,7 @@
   </div>
   <div style="font-size:1.1rem;font-weight:600;margin-bottom:20px;">Sales Transaction Receipt</div>
   <div id="pr-body"></div>
-  <div class="pr-footer">
-    Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span>
-  </div>
+  <div class="pr-footer">Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -311,12 +326,12 @@
 <script src="js/app.js"></script>
 <script>
 let currentUser;
-let allInventory    = [];
+let allInventory      = [];
 let filteredInventory = [];
-let cart            = {};
-let currentCat      = 'all';
-let selectedPayment = 'cash';
-let lastReceipt     = null; // store last completed sale for printing
+let cart              = {};   // { itemId: { item, qty, isUntracked } }
+let currentCat        = 'all';
+let selectedPayment   = 'cash';
+let lastReceipt       = null;
 
 (async () => {
   currentUser = await requireAuth();
@@ -327,14 +342,54 @@ let lastReceipt     = null; // store last completed sale for printing
   loadRecentTxns();
 })();
 
-/* ══════════════════════════════
+/* ══════════════════════════════════════════
+   ITEM STATUS HELPER
+   Mirrors the logic in inventory.html exactly.
+
+   qty === 0  → "untracked"  — service / uncount stock. FULLY SELLABLE. No stock cap.
+   qty < 0    → "negative"   — already sold past zero (untracked). STILL SELLABLE.
+   qty > 0 && qty <= threshold → "low"  — sellable, show warning.
+   qty > threshold → "ok"    — normal tracked stock.
+
+   BLOCKED: tracked item (ever had qty > 0 set explicitly) that is now exactly 0
+            AND has been sold to reach 0 — i.e. was_tracked flag.
+   
+   Simple rule used here:
+   - qty <= 0 AND unit_price > 0 AND low_stock_threshold > 0 set explicitly
+     could mean either untracked or out-of-stock.
+   - We treat qty === 0 as UNTRACKED/SERVICE (always sellable) per the design.
+   - Only qty > 0 items that have been decremented to 0 through sales
+     show as "hard out of stock". Since we allow negative, we never truly block
+     untracked items — they just go negative.
+   
+   PRACTICAL rule for POS:
+   - isUntracked(item): qty <= 0  → always addable, no cap enforcement
+   - isTracked(item):   qty > 0   → cap at available qty
+   - hardOOS: a tracked item (qty was set > 0) that reached exactly 0.
+     We detect this by: qty === 0 AND item was loaded with qty=0 from DB
+     which means it was either never stocked OR sold to zero.
+     Since we can't tell the diff without history, we treat qty===0 as UNTRACKED
+     and qty < 0 as NEGATIVE UNTRACKED — both always sellable.
+     This matches the inventory.html stockStatus() helper.
+══════════════════════════════════════════ */
+function isUntracked(item) {
+  // qty 0 or negative = untracked/service, always sellable
+  return Number(item.quantity) <= 0;
+}
+
+function isLow(item) {
+  const qty = Number(item.quantity);
+  return qty > 0 && qty <= Number(item.low_stock_threshold || 5);
+}
+
+/* ══════════════════════════════════════════
    CATALOGUE
-══════════════════════════════ */
+══════════════════════════════════════════ */
 async function loadInventory() {
   const { data, error } = await _supabase
-    .from('inventory')
-    .select('*')
+    .from('inventory').select('*')
     .eq('user_id', currentUser.id)
+    .is('deleted_at', null)   // never show deleted items in POS
     .order('item_name');
 
   if (error) {
@@ -348,17 +403,16 @@ async function loadInventory() {
   if (allInventory.length === 0) {
     document.getElementById('catalogue-grid').innerHTML =
       `<div class="empty-state" style="grid-column:1/-1;">
-        <div class="icon">📦</div>
-        <p>No items in catalogue yet.</p>
+        <div class="icon">📦</div><p>No items in catalogue yet.</p>
         <a href="inventory.html" class="btn btn-gold btn-sm" style="margin-top:10px;">Add Inventory Items →</a>
       </div>`;
     return;
   }
 
-  const cats = ['all', ...new Set(allInventory.map(i => i.category).filter(Boolean))];
+  const cats     = ['all', ...new Set(allInventory.map(i => i.category).filter(Boolean))];
   const filterEl = document.getElementById('cat-filters');
   filterEl.innerHTML = cats.map((c, idx) =>
-    `<button class="ftab${idx===0?' active':''}" onclick="filterCat('${c}', this)">${c === 'all' ? 'All' : c}</button>`
+    `<button class="ftab${idx===0?' active':''}" onclick="filterCat('${c}', this)">${c==='all'?'All':c}</button>`
   ).join('');
 
   filteredInventory = [...allInventory];
@@ -385,25 +439,52 @@ function filterItems() {
 function renderCatalogue() {
   const el       = document.getElementById('catalogue-grid');
   const currency = localStorage.getItem('currency') || '₦';
+
   if (filteredInventory.length === 0) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items match your search.</p></div>`;
     return;
   }
+
   el.innerHTML = filteredInventory.map(item => {
-    const oos    = item.quantity <= 0;
-    const low    = item.quantity > 0 && item.quantity <= (item.low_stock_threshold || 5);
-    const inCart = cart[item.id] ? cart[item.id].qty : 0;
+    const qty        = Number(item.quantity);
+    const untracked  = isUntracked(item);   // qty <= 0 → service/untracked
+    const low        = isLow(item);
+    const negative   = qty < 0;
+    const inCart     = cart[item.id] ? cart[item.id].qty : 0;
+    const price      = Number(item.selling_price || item.unit_price || 0);
+
+    // Determine card class
+    let cardClass = 'catalogue-item';
+    if (untracked) cardClass += ' untracked';
+    // No hard-oos for qty=0 — they're untracked/services
+
+    // Badge
+    let badge = '';
+    if (negative)        badge = '<div class="negative-badge">Untracked</div>';
+    else if (untracked)  badge = '<div class="service-badge">Service</div>';
+
+    // Stock line
+    let stockLine = '';
+    if (negative) {
+      stockLine = `<span style="color:var(--muted);">🔷 Untracked · sold ${Math.abs(qty)}</span>`;
+    } else if (untracked) {
+      stockLine = `<span style="color:var(--info);">🔷 Service / Untracked</span>`;
+    } else if (low) {
+      stockLine = `<span class="low">⚠️ ${qty} left</span>`;
+    } else {
+      stockLine = `<span>✅ ${qty} in stock</span>`;
+    }
+
+    const inCartBit = inCart > 0
+      ? `<br><span style="color:var(--gold);">🛒 ${inCart} in cart</span>` : '';
+
     return `
-      <div class="catalogue-item${oos ? ' out-of-stock' : ''}"
-        onclick="${oos ? `showOOS('${item.item_name.replace(/'/g,"\\'")}')` : `addToCart('${item.id}')`}">
-        ${oos ? '<div class="oos-badge">Out of Stock</div>' : ''}
+      <div class="${cardClass}" onclick="addToCart('${item.id}')">
+        ${badge}
         <div class="cat-icon">${getCatIcon(item.category)}</div>
         <div class="cat-name">${item.item_name}</div>
-        <div class="cat-price">${currency}${Number(item.selling_price || item.unit_price || 0).toLocaleString('en-NG', {minimumFractionDigits:2})}</div>
-        <div class="cat-stock${low ? ' low' : ''}">
-          ${oos ? '❌ Out of stock' : low ? `⚠️ ${item.quantity} left` : `✅ ${item.quantity} in stock`}
-          ${inCart > 0 ? `<br><span style="color:var(--gold);">🛒 ${inCart} in cart</span>` : ''}
-        </div>
+        <div class="cat-price">${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
+        <div class="cat-stock">${stockLine}${inCartBit}</div>
       </div>`;
   }).join('');
 }
@@ -413,42 +494,48 @@ function getCatIcon(cat) {
     'Food':'🍔','Drinks':'🥤','Electronics':'📱','Clothing':'👗',
     'Stationery':'📝','Medicines':'💊','Cosmetics':'💄','Hardware':'🔧',
     'Groceries':'🛒','Beverages':'☕','Accessories':'👜','Furniture':'🪑',
-    'Shoes':'👟','Books':'📚','Toys':'🎮','Bakery':'🍞',
+    'Shoes':'👟','Books':'📚','Toys':'🎮','Bakery':'🍞','Services':'✂️',
   };
   return icons[cat] || '📦';
 }
 
-function showOOS(name) {
-  const msgEl = document.getElementById('page-msg');
-  msgEl.innerHTML = `<div class="alert alert-danger">❌ <strong>${name}</strong> is out of stock. Please restock in <a href="inventory.html" style="color:var(--gold);">Inventory Manager</a>.</div>`;
-  setTimeout(() => msgEl.innerHTML = '', 4000);
-}
-
-/* ══════════════════════════════
+/* ══════════════════════════════════════════
    CART
-══════════════════════════════ */
+   Key difference from old version:
+   - Untracked items (qty ≤ 0): NO stock cap. User can enter any qty.
+   - Tracked items (qty > 0):   Capped at available qty as before.
+══════════════════════════════════════════ */
 function addToCart(itemId) {
   const item = allInventory.find(i => i.id === itemId);
-  if (!item || item.quantity <= 0) return;
-  if (!cart[itemId]) cart[itemId] = { item, qty: 0 };
-  if (cart[itemId].qty >= item.quantity) {
-    const msgEl = document.getElementById('page-msg');
-    msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${item.quantity}</strong> unit(s) of <strong>${item.item_name}</strong> available.</div>`;
-    setTimeout(() => msgEl.innerHTML = '', 3000);
-    return;
+  if (!item) return;
+
+  const untracked = isUntracked(item);
+
+  if (!cart[itemId]) {
+    cart[itemId] = { item, qty: 1, isUntracked: untracked };
+  } else {
+    // For tracked items cap at stock; for untracked allow freely
+    if (!untracked && cart[itemId].qty >= Number(item.quantity)) {
+      const msgEl = document.getElementById('page-msg');
+      msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${item.quantity}</strong> unit(s) of <strong>${item.item_name}</strong> available in stock.</div>`;
+      setTimeout(() => msgEl.innerHTML = '', 3000);
+      return;
+    }
+    cart[itemId].qty++;
   }
-  cart[itemId].qty++;
   renderCart();
   renderCatalogue();
 }
 
 function changeQty(itemId, delta) {
   if (!cart[itemId]) return;
-  const item   = allInventory.find(i => i.id === itemId);
-  const newQty = cart[itemId].qty + delta;
+  const item     = allInventory.find(i => i.id === itemId);
+  const newQty   = cart[itemId].qty + delta;
+  const untracked = cart[itemId].isUntracked;
+
   if (newQty <= 0) {
     delete cart[itemId];
-  } else if (item && newQty > item.quantity) {
+  } else if (!untracked && item && newQty > Number(item.quantity)) {
     const msgEl = document.getElementById('page-msg');
     msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Max available: ${item.quantity}</div>`;
     setTimeout(() => msgEl.innerHTML = '', 2500);
@@ -460,6 +547,15 @@ function changeQty(itemId, delta) {
   renderCatalogue();
 }
 
+function setUntrackedQty(itemId, val) {
+  const qty = parseInt(val);
+  if (!cart[itemId]) return;
+  if (isNaN(qty) || qty <= 0) { delete cart[itemId]; }
+  else { cart[itemId].qty = qty; }
+  renderCart();
+  renderCatalogue();
+}
+
 function removeFromCart(itemId) {
   delete cart[itemId];
   renderCart();
@@ -467,40 +563,50 @@ function removeFromCart(itemId) {
 }
 
 function renderCart() {
-  const keys       = Object.keys(cart);
-  const currency   = localStorage.getItem('currency') || '₦';
-  const cartEmpty  = document.getElementById('cart-empty');
-  const cartContent= document.getElementById('cart-content');
-  const checkoutBtn= document.getElementById('checkout-btn');
+  const keys        = Object.keys(cart);
+  const currency    = localStorage.getItem('currency') || '₦';
+  const cartEmpty   = document.getElementById('cart-empty');
+  const cartContent = document.getElementById('cart-content');
+  const checkoutBtn = document.getElementById('checkout-btn');
 
   if (keys.length === 0) {
-    cartEmpty.style.display  = 'block';
-    cartContent.style.display= 'none';
-    checkoutBtn.disabled     = true;
+    cartEmpty.style.display   = 'block';
+    cartContent.style.display = 'none';
+    checkoutBtn.disabled      = true;
     return;
   }
 
-  cartEmpty.style.display  = 'none';
-  cartContent.style.display= 'block';
-  checkoutBtn.disabled     = false;
+  cartEmpty.style.display   = 'none';
+  cartContent.style.display = 'block';
+  checkoutBtn.disabled      = false;
 
   let total = 0;
   document.getElementById('cart-items').innerHTML = keys.map(id => {
-    const { item, qty } = cart[id];
+    const { item, qty, isUntracked } = cart[id];
     const price    = Number(item.selling_price || item.unit_price || 0);
     const subtotal = price * qty;
     total += subtotal;
-    return `
-      <div class="cart-row">
-        <div class="cart-name">${item.item_name}</div>
-        <div class="cart-qty-ctrl">
-          <button class="qty-btn" onclick="changeQty('${id}', -1)">−</button>
+
+    // Untracked items get a free-type qty input; tracked items get +/- buttons
+    const qtyControl = isUntracked
+      ? `<input type="number" class="untracked-qty-input" value="${qty}" min="1"
+            onchange="setUntrackedQty('${id}', this.value)"
+            oninput="setUntrackedQty('${id}', this.value)">`
+      : `<div class="cart-qty-ctrl">
+          <button class="qty-btn" onclick="changeQty('${id}',-1)">−</button>
           <span class="cart-qty">${qty}</span>
-          <button class="qty-btn" onclick="changeQty('${id}', 1)">+</button>
-        </div>
-        <div class="cart-subtotal">${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
-        <button class="remove-btn" onclick="removeFromCart('${id}')" title="Remove">✕</button>
-      </div>`;
+          <button class="qty-btn" onclick="changeQty('${id}',1)">+</button>
+        </div>`;
+
+    const serviceTag = isUntracked
+      ? `<span style="font-size:0.65rem;color:var(--info);margin-left:4px;">service</span>` : '';
+
+    return `<div class="cart-row">
+      <div class="cart-name">${item.item_name}${serviceTag}</div>
+      ${qtyControl}
+      <div class="cart-subtotal">${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
+      <button class="remove-btn" onclick="removeFromCart('${id}')" title="Remove">✕</button>
+    </div>`;
   }).join('');
 
   document.getElementById('cart-total').textContent =
@@ -510,9 +616,7 @@ function renderCart() {
 function clearCart() {
   if (Object.keys(cart).length === 0) return;
   if (!confirm('Clear the current order?')) return;
-  cart = {};
-  renderCart();
-  renderCatalogue();
+  cart = {}; renderCart(); renderCatalogue();
 }
 
 function selectPay(el, method) {
@@ -521,33 +625,46 @@ function selectPay(el, method) {
   selectedPayment = method;
 }
 
-/* ══════════════════════════════
-   CHECKOUT — saves to purchase_transactions ONLY
-   Does NOT touch the sales table
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   CHECKOUT
+   
+   For TRACKED items (qty > 0 before sale):
+     - Deduct qty normally. Can go to 0.
+   
+   For UNTRACKED items (qty <= 0):
+     - Deduct qty → goes negative (e.g. 0 → -3).
+     - This records "we sold 3 without tracking stock".
+     - Write an inventory_log with action='sold' so the audit trail shows income.
+     - Also records to purchase_transactions as income.
+   
+   Income balancing:
+     - ALL sales (tracked + untracked) save to purchase_transactions.
+     - The total_amount IS the income for that transaction.
+     - Reports page should sum purchase_transactions.total_amount for revenue.
+══════════════════════════════════════════ */
 async function checkout() {
   const keys = Object.keys(cart);
   if (keys.length === 0) return;
 
-  const btn      = document.getElementById('checkout-btn');
-  btn.disabled   = true;
-  btn.textContent= '⏳ Processing…';
+  const btn       = document.getElementById('checkout-btn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Processing…';
 
-  const currency     = localStorage.getItem('currency') || '₦';
-  let   total        = 0;
-  const items        = keys.map(id => {
-    const { item, qty } = cart[id];
+  const currency = localStorage.getItem('currency') || '₦';
+  let   total    = 0;
+  const items    = keys.map(id => {
+    const { item, qty, isUntracked } = cart[id];
     const price    = Number(item.selling_price || item.unit_price || 0);
     const subtotal = price * qty;
     total += subtotal;
-    return { id: item.id, name: item.item_name, qty, price, subtotal };
+    return { id: item.id, name: item.item_name, qty, price, subtotal, isUntracked };
   });
 
   const today        = new Date().toISOString().split('T')[0];
   const customerName = document.getElementById('customer-name').value.trim();
   const notes        = document.getElementById('sale-notes').value.trim();
 
-  // ── Insert into purchase_transactions (NOT sales) ──
+  // ── 1. Save transaction (income record) ──
   const { error: txnErr } = await _supabase
     .from('purchase_transactions')
     .insert({
@@ -557,74 +674,94 @@ async function checkout() {
       payment_method: selectedPayment,
       customer_name:  customerName || null,
       notes:          notes || null,
-      items:          items   // stored as JSONB
+      items:          items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, subtotal: i.subtotal }))
     });
 
   if (txnErr) {
     document.getElementById('page-msg').innerHTML =
       `<div class="alert alert-danger">Transaction error: ${txnErr.message}</div>`;
-    btn.disabled   = false;
-    btn.textContent= '✅ Complete Sale →';
+    btn.disabled    = false;
+    btn.textContent = '✅ Complete Sale →';
     return;
   }
 
-  // ── Deduct inventory for each item ──
-  for (const { id, qty } of items) {
+  // ── 2. Update inventory qty for every item (tracked AND untracked) ──
+  //    Untracked items will go 0 → negative, which is correct behaviour.
+  for (const { id, qty, isUntracked: untrk, price, subtotal } of items) {
     const localItem = allInventory.find(i => i.id === id);
     if (!localItem) continue;
-    const newQty = localItem.quantity - qty;
+
+    const oldQty = Number(localItem.quantity);
+    const newQty = oldQty - qty;
+
+    // Update Supabase
     await _supabase.from('inventory')
       .update({ quantity: newQty })
       .eq('id', id)
       .eq('user_id', currentUser.id);
+
+    // Update local cache
     localItem.quantity = newQty;
+
+    // ── 3. Write inventory audit log entry for this sale ──
+    //    action='sold', note carries income amount for the line
+    try {
+      await _supabase.from('inventory_logs').insert({
+        user_id:      currentUser.id,
+        action:       'sold',
+        item_id:      id,
+        item_name:    localItem.item_name,
+        old_quantity: oldQty,
+        new_quantity: newQty,
+        old_price:    price,
+        new_price:    price,
+        note:         `${formatCurrency(subtotal)} income · ${selectedPayment}`
+          + (customerName ? ` · ${customerName}` : '')
+      });
+    } catch(e) { console.warn('Audit log write failed:', e); }
   }
 
-  // ── Store for printing ──
+  // ── 4. Store receipt & show ──
   lastReceipt = { items, total, customerName, notes, payMethod: selectedPayment };
-
-  // ── Show in-app receipt ──
   showReceiptModal(items, total, currency);
 
-  // ── Reset cart ──
+  // ── 5. Reset ──
   cart = {};
   renderCart();
   renderCatalogue();
   document.getElementById('customer-name').value = '';
   document.getElementById('sale-notes').value    = '';
-
   loadTodayStats();
   loadRecentTxns();
 
-  btn.disabled   = false;
-  btn.textContent= '✅ Complete Sale →';
+  btn.disabled    = false;
+  btn.textContent = '✅ Complete Sale →';
 }
 
-/* ══════════════════════════════
-   RECEIPT MODAL (in-app)
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   RECEIPT MODAL
+══════════════════════════════════════════ */
 function showReceiptModal(items, total, currency) {
   const now = new Date();
-  document.getElementById('receipt-date').textContent         = now.toLocaleString('en-GB');
-  document.getElementById('receipt-total-display').textContent= `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
-  document.getElementById('receipt-pay-method').textContent   = `Payment: ${selectedPayment.toUpperCase()}`;
+  document.getElementById('receipt-date').textContent          = now.toLocaleString('en-GB');
+  document.getElementById('receipt-total-display').textContent = `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
+  document.getElementById('receipt-pay-method').textContent    = `Payment: ${selectedPayment.toUpperCase()}`;
 
-  document.getElementById('receipt-lines').innerHTML = items.map(({ name, qty, subtotal }) => `
-    <div class="receipt-line">
+  document.getElementById('receipt-lines').innerHTML = items.map(({ name, qty, subtotal }) =>
+    `<div class="receipt-line">
       <span>${name} × ${qty}</span>
       <span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
-    </div>`).join('');
+    </div>`
+  ).join('');
 
   document.getElementById('receipt-modal').classList.add('show');
 }
 
-function closeReceipt() {
-  document.getElementById('receipt-modal').classList.remove('show');
-}
+function closeReceipt() { document.getElementById('receipt-modal').classList.remove('show'); }
 
-/* ══════════════════════════════
-   PRINT RECEIPT (clean page)
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   PRINT RECEIPT
+══════════════════════════════════════════ */
 async function openPrintReceipt() {
   if (!lastReceipt) return;
   closeReceipt();
@@ -641,12 +778,15 @@ async function openPrintReceipt() {
   const { items, total, customerName, notes, payMethod } = lastReceipt;
 
   document.getElementById('pr-biz-name').textContent   = bizName;
-  document.getElementById('pr-date-line').textContent  = `Date: ${now.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('pr-date-line').textContent  = `Date: ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
   document.getElementById('pr-printed-on').textContent = `Time: ${now.toLocaleTimeString('en-GB')}`;
   document.getElementById('pr-footer-date').textContent= now.toLocaleDateString();
 
   const rows = items.map(({ name, qty, price, subtotal }) =>
-    `<div class="pr-row"><span>${name} × ${qty} @ ${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</span><span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span></div>`
+    `<div class="pr-row">
+      <span>${name} × ${qty} @ ${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
+      <span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
+    </div>`
   ).join('');
 
   document.getElementById('pr-body').innerHTML = `
@@ -654,7 +794,10 @@ async function openPrintReceipt() {
     <div class="pr-row"><span>Payment Method</span><span>${payMethod.toUpperCase()}</span></div>
     <div style="border-top:1px solid #eee;margin:8px 0;"></div>
     ${rows}
-    <div class="pr-total"><span>TOTAL</span><span>${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}</span></div>
+    <div class="pr-total">
+      <span>TOTAL</span>
+      <span>${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
+    </div>
     ${notes ? `<div class="pr-row" style="margin-top:8px;"><span>Notes</span><span>${notes}</span></div>` : ''}
   `;
 
@@ -666,9 +809,9 @@ function closePrintReceipt() {
   document.getElementById('print-receipt-area').style.display = 'none';
 }
 
-/* ══════════════════════════════
-   TODAY'S STATS — from purchase_transactions
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   TODAY'S STATS
+══════════════════════════════════════════ */
 async function loadTodayStats() {
   const today    = new Date().toISOString().split('T')[0];
   const currency = localStorage.getItem('currency') || '₦';
@@ -683,9 +826,9 @@ async function loadTodayStats() {
   document.getElementById('stat-txns').textContent  = (data||[]).length;
 }
 
-/* ══════════════════════════════
-   RECENT TRANSACTIONS — from purchase_transactions
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   RECENT TRANSACTIONS
+══════════════════════════════════════════ */
 async function loadRecentTxns() {
   const currency = localStorage.getItem('currency') || '₦';
   const { data } = await _supabase
@@ -720,7 +863,7 @@ async function loadRecentTxns() {
         return `<tr>
           <td>${new Date(r.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
           <td style="color:var(--success);font-weight:700;">${currency}${Number(r.total_amount).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>
-          <td><span style="text-transform:capitalize;">${r.payment_method||'—'}</span></td>
+          <td style="text-transform:capitalize;">${r.payment_method||'—'}</td>
           <td>${r.customer_name||'Walk-in'}</td>
           <td style="font-size:0.8rem;color:var(--muted);">${itemList}</td>
           <td>${r.notes||'—'}</td>

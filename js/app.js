@@ -2,40 +2,44 @@
 
 function renderSidebar(activePage) {
   const links = [
-    { href: 'dashboard.html',    icon: '📊', label: 'Dashboard',    id: 'dashboard' },
-    { href: 'sales.html',        icon: '💰', label: 'Daily Sales',  id: 'sales' },
-    { href: 'expenses.html',     icon: '📋', label: 'Expenses',     id: 'expenses' },
-    { href: 'debts.html',        icon: '🤝', label: 'Debts',        id: 'debts' },
-    { href: 'inventory.html',    icon: '📦', label: 'Inventory',    id: 'inventory' },
-    { href: 'purchases.html',    icon: '🛒', label: 'Purchases',    id: 'purchases' },
-    { href: 'reports.html',      icon: '📈', label: 'Reports',      id: 'reports' },
-    { href: 'health-score.html', icon: '🏆', label: 'Health Score', id: 'health-score' },
-    { href: 'calendar.html',     icon: '📅', label: 'Calendar',     id: 'calendar' },
-    { href: 'settings.html',     icon: '⚙️', label: 'Settings',     id: 'settings' },
-    { href: 'contact.html',      icon: '💬', label: 'Support',      id: 'contact' },
+    { href: 'dashboard.html',    icon: '📊', label: 'Dashboard',    labelKey: 'dashboard',    id: 'dashboard' },
+    { href: 'sales.html',        icon: '💰', label: 'Daily Sales',  labelKey: 'daily_sales',  id: 'sales' },
+    { href: 'expenses.html',     icon: '📋', label: 'Expenses',     labelKey: 'expenses',     id: 'expenses' },
+    { href: 'debts.html',        icon: '🤝', label: 'Debts',        labelKey: 'debts',        id: 'debts' },
+    { href: 'inventory.html',    icon: '📦', label: 'Inventory',    labelKey: 'inventory',    id: 'inventory' },
+    { href: 'purchases.html',    icon: '🛒', label: 'Purchases',    labelKey: 'purchases',    id: 'purchases' },
+    { href: 'reports.html',      icon: '📈', label: 'Reports',      labelKey: 'reports',      id: 'reports' },
+    { href: 'health-score.html', icon: '🏆', label: 'Health Score', labelKey: 'health_score', id: 'health-score' },
+    { href: 'calendar.html',     icon: '📅', label: 'Calendar',     labelKey: 'calendar',     id: 'calendar' },
+    { href: 'settings.html',     icon: '⚙️', label: 'Settings',     labelKey: 'settings',     id: 'settings' },
+    { href: 'contact.html',      icon: '💬', label: 'Support',      labelKey: 'support',      id: 'contact' },
   ];
 
   const el = document.getElementById('sidebar');
   if (!el) return;
 
+  // Use t() if lang.js is loaded, otherwise fall back to English label
+  const label = (l) => (typeof t === 'function') ? t(l.labelKey) : l.label;
+  const menuLabel = (key, fallback) => (typeof t === 'function') ? t(key) : fallback;
+
   el.innerHTML = `
-    <span class="sidebar-label">Main Menu</span>
+    <span class="sidebar-label">${menuLabel('main_menu', 'Main Menu')}</span>
     ${links.slice(0,6).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
-        <span class="icon">${l.icon}</span> ${l.label}
+        <span class="icon">${l.icon}</span> ${label(l)}
       </a>`).join('')}
-    <span class="sidebar-label">Analytics</span>
+    <span class="sidebar-label">${menuLabel('analytics', 'Analytics')}</span>
     ${links.slice(6,9).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
-        <span class="icon">${l.icon}</span> ${l.label}
+        <span class="icon">${l.icon}</span> ${label(l)}
       </a>`).join('')}
-    <span class="sidebar-label">Account</span>
+    <span class="sidebar-label">${menuLabel('account', 'Account')}</span>
     ${links.slice(9).map(l => `
       <a href="${l.href}" class="${activePage === l.id ? 'active' : ''}">
-        <span class="icon">${l.icon}</span> ${l.label}
+        <span class="icon">${l.icon}</span> ${label(l)}
       </a>`).join('')}
     <div class="sidebar-logout">
-      <button onclick="logout()">🚪 Sign Out</button>
+      <button onclick="logout()">🚪 ${menuLabel('sign_out', 'Sign Out')}</button>
     </div>
   `;
 }
@@ -91,11 +95,16 @@ function renderFooter() {
 function renderNavbar() {
   const el = document.getElementById('main-navbar');
   if (!el) return;
+
+  // Language switcher — only shows if lang.js is loaded
+  const langBar = (typeof renderLangSwitcher === 'function') ? renderLangSwitcher() : '';
+
   el.innerHTML = `
     <nav class="navbar">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
       <a href="dashboard.html" class="navbar-brand">GrowthIve <span>Monitor</span></a>
       <div class="navbar-spacer"></div>
+      ${langBar}
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
       <div class="navbar-user" onclick="window.location.href='settings.html'">
         <img src="https://ui-avatars.com/api/?name=User&background=1c1c1c&color=c9a84c&size=80" alt="avatar" class="navbar-avatar" id="user-avatar">
@@ -155,5 +164,7 @@ async function initPage(activeId) {
   renderNavbar();
   renderSidebar(activeId);
   renderFooter();
+  // Apply translations if lang.js is loaded
+  if (typeof applyTranslations === 'function') applyTranslations();
   await loadUserHeader();
 }

@@ -568,10 +568,7 @@ function getLang() {
   return localStorage.getItem('growthive_lang') || 'en';
 }
 
-function setLang(code) {
-  localStorage.setItem('growthive_lang', code);
-  location.reload();
-}
+// setLang defined below with Supabase persistence
 
 function t(key) {
   const lang = getLang();

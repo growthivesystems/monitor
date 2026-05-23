@@ -9,8 +9,6 @@
   .auth-wrap {
     background: radial-gradient(ellipse at 40% 60%, rgba(201,168,76,0.08) 0%, transparent 60%), var(--dark);
   }
-
-  /* ── FIXED T&C ROW ── */
   .tc-row {
     display: flex; align-items: flex-start;
     gap: 12px; margin-bottom: 18px;
@@ -19,68 +17,52 @@
     border: 1px solid var(--gold-border);
     border-radius: var(--radius-sm);
   }
-
-  /* Large tappable checkbox — works on iOS & Android */
   .tc-checkbox-wrap {
-    flex-shrink: 0;
-    width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    margin-top: 1px;
+    flex-shrink: 0; width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
   }
   .tc-checkbox-wrap input[type=checkbox] {
-    width: 24px; height: 24px;
-    min-width: 24px;
-    accent-color: var(--gold);
-    cursor: pointer;
-    margin: 0; padding: 0;
-    /* Force visible on dark backgrounds */
-    background: var(--dark4);
-    border: 2px solid var(--gold-border);
-    border-radius: 4px;
-    -webkit-appearance: checkbox;
-    appearance: checkbox;
+    width: 24px; height: 24px; min-width: 24px;
+    accent-color: var(--gold); cursor: pointer; margin: 0; padding: 0;
+    background: var(--dark4); border: 2px solid var(--gold-border);
+    border-radius: 4px; -webkit-appearance: checkbox; appearance: checkbox;
   }
-
-  .tc-text {
-    font-size: 0.83rem;
-    color: var(--muted);
-    line-height: 1.6;
-    flex: 1;
-  }
-  .tc-text a {
-    color: var(--gold);
-    text-decoration: underline;
-    font-weight: 500;
-    /* Separate tap target from checkbox area */
-    display: inline-block;
-    padding: 2px 0;
-  }
-
-  /* Visual checked state feedback */
-  .tc-row.checked {
-    border-color: var(--gold);
-    background: var(--gold-dim);
-  }
-
+  .tc-text { font-size: 0.83rem; color: var(--muted); line-height: 1.6; flex: 1; }
+  .tc-text a { color: var(--gold); text-decoration: underline; font-weight: 500; display: inline-block; padding: 2px 0; }
+  .tc-row.checked { border-color: var(--gold); background: var(--gold-dim); }
   .pw-wrap { position: relative; }
   .pw-toggle {
-    position: absolute; right: 12px; top: 50%;
-    transform: translateY(-50%);
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     background: none; border: none; cursor: pointer;
     color: var(--muted); font-size: 1rem; padding: 4px;
     -webkit-tap-highlight-color: transparent;
   }
   .pw-wrap input { padding-right: 40px; }
-  .strength-bar {
-    height: 4px; border-radius: 2px;
-    background: var(--dark4); margin-top: 6px; overflow: hidden;
-  }
-  .strength-fill {
-    height: 100%; border-radius: 2px;
-    transition: width 0.3s ease, background 0.3s ease;
-    width: 0%;
-  }
+  .strength-bar { height: 4px; border-radius: 2px; background: var(--dark4); margin-top: 6px; overflow: hidden; }
+  .strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease, background 0.3s ease; width: 0%; }
   .strength-text { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── Language picker ── */
+  .lang-picker-row {
+    display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .lang-option {
+    flex: 1; min-width: 70px; padding: 10px 6px; text-align: center;
+    border: 1px solid var(--gold-border); border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 0.8rem; color: var(--muted);
+    transition: all 0.2s; background: var(--dark3); font-family: var(--font-body);
+    font-weight: 500;
+  }
+  .lang-option:hover { border-color: var(--gold); color: var(--white2); }
+  .lang-option.selected {
+    border-color: var(--gold); background: rgba(201,168,76,0.15);
+    color: var(--gold); font-weight: 700;
+  }
+  .lang-option .lang-flag { font-size: 1.2rem; display: block; margin-bottom: 3px; }
+  .lang-section-label {
+    font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px; font-weight: 600;
+  }
 </style>
 </head>
 <body>
@@ -138,19 +120,37 @@
       </div>
     </div>
 
-    <!-- TERMS & CONDITIONS — FIXED -->
+    <!-- ── LANGUAGE PREFERENCE ── -->
+    <div style="margin-bottom:18px;">
+      <div class="lang-section-label">🌐 Preferred Language</div>
+      <div class="lang-picker-row" id="lang-picker">
+        <div class="lang-option selected" onclick="selectLang('en', this)">
+          <span class="lang-flag">🇬🇧</span>English
+        </div>
+        <div class="lang-option" onclick="selectLang('ha', this)">
+          <span class="lang-flag">🇳🇬</span>Hausa
+        </div>
+        <div class="lang-option" onclick="selectLang('yo', this)">
+          <span class="lang-flag">🇳🇬</span>Yoruba
+        </div>
+        <div class="lang-option" onclick="selectLang('ig', this)">
+          <span class="lang-flag">🇳🇬</span>Igbo
+        </div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);">
+        You can change this anytime from Settings.
+      </div>
+    </div>
+
+    <!-- TERMS & CONDITIONS -->
     <div class="tc-row" id="tc-row">
       <div class="tc-checkbox-wrap">
         <input type="checkbox" id="tc" onchange="toggleTCStyle()">
       </div>
       <div class="tc-text">
-        <label for="tc" style="cursor:pointer;color:var(--muted);">
-          I have read and agree to the
-        </label>
+        <label for="tc" style="cursor:pointer;color:var(--muted);">I have read and agree to the</label>
         <a href="terms.html" target="_blank" onclick="event.stopPropagation()">Terms &amp; Conditions</a>
-        <label for="tc" style="cursor:pointer;color:var(--muted);">
-          of GrowthIve Monitor.
-        </label>
+        <label for="tc" style="cursor:pointer;color:var(--muted);">of GrowthIve Monitor.</label>
       </div>
     </div>
 
@@ -161,23 +161,16 @@
 
     <div class="divider">or</div>
 
-    <!-- LOGIN LINK -->
     <p style="text-align:center;font-size:0.88rem;color:var(--muted);">
       Already have an account?
       <a href="login.html" style="color:var(--gold);font-weight:600;">Sign in</a>
     </p>
-
-    <!-- BACK HOME -->
     <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:14px;">
       <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
-
-    <!-- CONTACT SUPPORT -->
     <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:8px;">
       Problem registering? <a href="contact.html" style="color:var(--gold);">Contact Support</a>
     </p>
-
-    <!-- POWERED BY -->
     <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
       <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
         Powered by GrowthIve Systems
@@ -190,25 +183,40 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script>
 
-  // ── THEME ──
+<script>
+  // Theme
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
 
-  // ── IF ALREADY LOGGED IN → RETURNING ──
+  // Track selected language
+  let selectedLang = localStorage.getItem('growthive_lang') || 'en';
+
+  // Pre-select saved language if user comes back to register page
+  document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('selected'));
+  const preselect = document.querySelector(`.lang-option[onclick*="'${selectedLang}'"]`);
+  if (preselect) preselect.classList.add('selected');
+
+  function selectLang(code, el) {
+    selectedLang = code;
+    document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    // Apply immediately so labels change if user picks Hausa etc
+    localStorage.setItem('growthive_lang', code);
+  }
+
+  // Redirect if already logged in
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     if (user) window.location.href = 'returning.html';
   })();
 
-  // ── T&C VISUAL FEEDBACK ──
+  // T&C visual feedback
   function toggleTCStyle() {
-    const checked = document.getElementById('tc').checked;
-    document.getElementById('tc-row').classList.toggle('checked', checked);
+    document.getElementById('tc-row').classList.toggle('checked', document.getElementById('tc').checked);
   }
 
-  // ── PASSWORD STRENGTH ──
+  // Password strength
   function checkStrength() {
     const pw   = document.getElementById('password').value;
     const fill = document.getElementById('strength-fill');
@@ -220,11 +228,11 @@
     if (/[0-9]/.test(pw))        score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     const levels = [
-      { label: '',           color: '',          width: '0%'   },
-      { label: 'Weak',       color: '#e05555',   width: '25%'  },
-      { label: 'Fair',       color: '#e0a855',   width: '50%'  },
-      { label: 'Good',       color: '#5b9bd5',   width: '75%'  },
-      { label: 'Strong 💪',  color: '#4caf7d',   width: '100%' },
+      { label: '',          color: '',         width: '0%'   },
+      { label: 'Weak',      color: '#e05555',  width: '25%'  },
+      { label: 'Fair',      color: '#e0a855',  width: '50%'  },
+      { label: 'Good',      color: '#5b9bd5',  width: '75%'  },
+      { label: 'Strong 💪', color: '#4caf7d',  width: '100%' },
     ];
     const lvl = Math.min(score, 4);
     fill.style.width      = levels[lvl].width;
@@ -233,7 +241,6 @@
     text.style.color      = levels[lvl].color;
   }
 
-  // ── SHOW/HIDE PASSWORD ──
   function togglePw() {
     const input = document.getElementById('password');
     const eye   = document.getElementById('pw-eye');
@@ -247,61 +254,47 @@
     eye.textContent = input.type === 'password' ? '👁' : '🙈';
   }
 
-  // ── REGISTER ──
+  // Register
   async function doRegister() {
-    const fullname = document.getElementById('fullname').value.trim();
-    const bizname  = document.getElementById('bizname').value.trim();
-    const email    = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const password2= document.getElementById('password2').value;
-    const tc       = document.getElementById('tc').checked;
-    const msg      = document.getElementById('msg');
-    const btn      = document.getElementById('reg-btn');
+    const fullname  = document.getElementById('fullname').value.trim();
+    const bizname   = document.getElementById('bizname').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const password  = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+    const tc        = document.getElementById('tc').checked;
+    const msg       = document.getElementById('msg');
+    const btn       = document.getElementById('reg-btn');
 
     msg.innerHTML = '';
 
-    // ── VALIDATION ──
     if (!fullname || !bizname || !email || !password || !password2) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in all fields.</div>';
-      return;
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in all fields.</div>'; return;
     }
     if (password.length < 6) {
-      msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>';
-      return;
+      msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
     }
     if (password !== password2) {
-      msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>';
-      return;
+      msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
     }
     if (!tc) {
-      // Highlight the T&C box so user knows exactly what to tap
       const row = document.getElementById('tc-row');
       row.style.borderColor = 'var(--danger)';
       row.style.background  = 'rgba(224,85,85,0.08)';
-      setTimeout(() => {
-        row.style.borderColor = '';
-        row.style.background  = '';
-      }, 3000);
-      msg.innerHTML = '<div class="alert alert-danger">📄 Please tick the box to accept the Terms &amp; Conditions before registering.</div>';
-      // Scroll to checkbox so mobile users can see it
+      setTimeout(() => { row.style.borderColor = ''; row.style.background = ''; }, 3000);
+      msg.innerHTML = '<div class="alert alert-danger">📄 Please tick the Terms &amp; Conditions checkbox.</div>';
       document.getElementById('tc-row').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    btn.disabled        = true;
-    btn.textContent     = 'Creating account…';
-    msg.innerHTML       = '<div class="alert alert-gold">⏳ Setting up your account, please wait…</div>';
+    btn.disabled    = true;
+    btn.textContent = 'Creating account…';
+    msg.innerHTML   = '<div class="alert alert-gold">⏳ Setting up your account, please wait…</div>';
 
-    // ── SIGN UP ──
     const { data, error } = await _supabase.auth.signUp({
-      email,
-      password,
+      email, password,
       options: {
         emailRedirectTo: 'https://growthivesystems.github.io/monitor/login.html',
-        data: {
-          full_name:     fullname,
-          business_name: bizname
-        }
+        data: { full_name: fullname, business_name: bizname }
       }
     });
 
@@ -316,20 +309,21 @@
       return;
     }
 
-    // ── SAVE PROFILE ──
+    // Save profile including preferred language
     const userId = data.user?.id;
     if (userId) {
       await _supabase.from('profiles').upsert({
-        id:            userId,
-        full_name:     fullname,
-        business_name: bizname
+        id:                 userId,
+        full_name:          fullname,
+        business_name:      bizname,
+        preferred_language: selectedLang   // ← saves chosen language to DB
       });
     }
 
-    // ── SET FIRST TIME FLAG ──
+    // Apply chosen language immediately
+    localStorage.setItem('growthive_lang', selectedLang);
     localStorage.setItem('growthive_new_user', 'true');
 
-    // ── SUCCESS ──
     msg.innerHTML = `
       <div class="alert alert-success">
         ✅ Account created successfully!<br><br>
@@ -338,21 +332,16 @@
         <a href="login.html" style="color:var(--success);font-weight:600;">sign in here</a>.
       </div>`;
 
-    // Clear form
     ['fullname','bizname','email','password','password2'].forEach(id => {
       document.getElementById(id).value = '';
     });
-    document.getElementById('tc').checked                = false;
+    document.getElementById('tc').checked = false;
     document.getElementById('tc-row').classList.remove('checked');
     document.getElementById('strength-fill').style.width = '0%';
-    document.getElementById('strength-text').textContent  = '';
+    document.getElementById('strength-text').textContent = '';
   }
 
-  // ── ENTER KEY ──
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doRegister();
-  });
-
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
 </script>
 </body>
 </html>

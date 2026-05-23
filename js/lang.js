@@ -1,5 +1,4 @@
- 
-// ═══════════════════════════════════════════════════════════════
+ // ═══════════════════════════════════════════════════════════════
 // GrowthIve Monitor — Complete Language System
 // Supports: English (en), Hausa (ha), Yoruba (yo), Igbo (ig)
 // Auto-translates page titles, subtitles and common elements

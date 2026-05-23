@@ -449,7 +449,7 @@ const TRANSLATIONS = {
     expenses_title: 'Onye Ntọala Ego A Na-eji',
     expenses_sub: 'Dee ego niile i na-eji maka azụmaahịa.',
     debts_title: 'Onye Ntọala Ụgwọ',
-    debts_sub: 'Soro ego a na-ákwụ gị na nke i na-áọ ndị ọzọ.',
+    debts_sub: 'Soro ego a na-ákwụ gị na nke i na-akwụ ndị ọzọ.',
     inventory_title: 'Onye Njikwa Ngwongwo',
     inventory_sub: 'Soro ọkwa ihe ị nwere ma nweta ọdịmma.',
     purchases_title: 'Ịzụta Ihe / Ebe Ire Ahịa',

@@ -449,7 +449,7 @@ const TRANSLATIONS = {
     expenses_title: 'Onye Ntọala Ego A Na-eji',
     expenses_sub: 'Dee ego niile i na-eji maka azụmaahịa.',
     debts_title: 'Onye Ntọala Ụgwọ',
-    debts_sub: 'Soro ego a na-ákwụ gị na nke i na-akwụ ndị ọzọ.',
+    debts_sub: 'Soro ego a na-ákwụ gị na nke i na-áọ ndị ọzọ.',
     inventory_title: 'Onye Njikwa Ngwongwo',
     inventory_sub: 'Soro ọkwa ihe ị nwere ma nweta ọdịmma.',
     purchases_title: 'Ịzụta Ihe / Ebe Ire Ahịa',
@@ -712,4 +712,33 @@ function renderLangSwitcher() {
     </div>
   `;
 }
- 
+
+/* ═══════════════════════════════════════════════════════════════
+   UPDATED setLang — saves to BOTH localStorage AND Supabase
+   so language survives logout, device switches, and browser clears.
+═══════════════════════════════════════════════════════════════ */
+
+// Override the basic setLang with one that also saves to Supabase
+async function setLang(code) {
+  // 1. Save immediately to localStorage so page reloads in correct language
+  localStorage.setItem('growthive_lang', code);
+
+  // 2. Also save to Supabase so it survives logout and device switches
+  try {
+    if (typeof _supabase !== 'undefined') {
+      const { data: { user } } = await _supabase.auth.getUser();
+      if (user) {
+        await _supabase
+          .from('profiles')
+          .update({ preferred_language: code })
+          .eq('id', user.id);
+      }
+    }
+  } catch (e) {
+    // Silent fail — localStorage version still works
+    console.warn('Could not save language to Supabase:', e);
+  }
+
+  // 3. Reload page to apply new language everywhere
+  location.reload();
+}

@@ -1,5 +1,4 @@
-   
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -15,12 +14,12 @@
     <div class="page-title">Dashboard</div>
     <div class="page-subtitle" id="dash-date">Loading…</div>
 
-    <!-- ROW 1: Today's live KPIs (from purchase_transactions) -->
+    <!-- ROW 1: Today's live KPIs -->
     <div class="grid-4">
       <div class="card">
         <div class="card-title">Today's Sales</div>
         <div class="card-value gold" id="kpi-sales">₦0.00</div>
-        <div class="card-meta" id="kpi-sales-meta">Live POS transactions</div>
+        <div class="card-meta" id="kpi-sales-meta">Loading…</div>
       </div>
       <div class="card">
         <div class="card-title">Cash Sales Today</div>
@@ -44,7 +43,7 @@
       <div class="card">
         <div class="card-title">Monthly Revenue</div>
         <div class="card-value gold" id="kpi-month-sales">₦0.00</div>
-        <div class="card-meta">Daily sales + POS this month</div>
+        <div class="card-meta" id="kpi-month-meta">This month</div>
       </div>
       <div class="card">
         <div class="card-title">Total Expenses</div>
@@ -54,7 +53,7 @@
       <div class="card">
         <div class="card-title">Net Profit / Loss</div>
         <div class="card-value" id="kpi-profit">₦0.00</div>
-        <div class="card-meta">Revenue − expenses this month</div>
+        <div class="card-meta">Revenue − expenses</div>
       </div>
       <div class="card">
         <div class="card-title">Outstanding Debts</div>
@@ -64,7 +63,7 @@
     </div>
 
     <div class="grid-2">
-      <!-- Today's Live Transactions -->
+      <!-- Today's Transactions -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div class="card-title" style="margin:0;">🛒 Today's Transactions</div>
@@ -120,16 +119,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/lang.js"></script>
 <script src="js/app.js"></script>
 <script>
-/* ══════════════════════════════════════════
-   STOCK STATUS HELPER
-   qty === 0  → untracked/service  → NO alert
-   qty < 0   → negative/untracked → NO alert
-   qty > 0 && qty <= threshold    → LOW → alert
-   qty > threshold                → OK
-══════════════════════════════════════════ */
+
 function stockStatus(item) {
   const qty = Number(item.quantity);
   if (qty === 0) return 'untracked';
@@ -150,15 +142,9 @@ function stockStatus(item) {
   document.getElementById('dash-date').textContent =
     now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-  // ══════════════════════════════════════════════
-  // FETCH ALL DATA IN PARALLEL
-  // Queries both tables simultaneously so the page
-  // loads fast instead of waiting one by one.
-  // ══════════════════════════════════════════════
   const [
     { data: txnsToday },
-    { data: monthTxns },
-    { data: salesMonth },   // legacy manual daily sales — keeps existing client data
+    { data: salesMonth },
     { data: expMonth },
     { data: debts },
     { data: inv },
@@ -166,23 +152,17 @@ function stockStatus(item) {
     { data: reminders }
   ] = await Promise.all([
 
-    // Row 1 — today's POS breakdown
+    // Today's POS transactions (for payment breakdown row 1)
     _supabase.from('purchase_transactions')
       .select('total_amount, payment_method')
       .eq('user_id', user.id)
       .eq('date', today),
 
-    // Row 2 — this month's POS sales
-    _supabase.from('purchase_transactions')
-      .select('total_amount')
-      .eq('user_id', user.id)
-      .gte('date', startOfMonth),
-
-    // Row 2 — this month's manual daily sales (Daily Sales page entries)
-    // These are the ₦33,000 / ₦15,000 / ₦20,000 entries from the sales table.
-    // Combined with POS so nothing is lost for existing clients.
+    // Monthly revenue — from sales table ONLY (single source of truth)
+    // This includes both manual entries AND auto-synced POS entries
+    // because purchases.html now upserts into sales table after checkout
     _supabase.from('sales')
-      .select('total_amount')
+      .select('total_amount, cash_amount, transfer_amount, pos_amount')
       .eq('user_id', user.id)
       .gte('date', startOfMonth),
 
@@ -199,13 +179,13 @@ function stockStatus(item) {
       .eq('status', 'unpaid')
       .eq('type', 'i_owe'),
 
-    // Inventory — deleted items excluded
+    // Inventory
     _supabase.from('inventory')
       .select('*')
       .eq('user_id', user.id)
       .is('deleted_at', null),
 
-    // Today's recent transactions widget
+    // Today's recent POS transactions widget
     _supabase.from('purchase_transactions')
       .select('*')
       .eq('user_id', user.id)
@@ -222,9 +202,7 @@ function stockStatus(item) {
       .limit(5)
   ]);
 
-  // ══════════════════════════════════════════════
-  // ROW 1 — TODAY'S LIVE POS DATA
-  // ══════════════════════════════════════════════
+  // ── ROW 1: Today's POS breakdown ──
   const todaySales    = (txnsToday||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
   const todayCash     = (txnsToday||[]).filter(r => r.payment_method === 'cash').reduce((s,r) => s + Number(r.total_amount||0), 0);
   const todayTransfer = (txnsToday||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
@@ -237,23 +215,13 @@ function stockStatus(item) {
   document.getElementById('kpi-transfer').textContent   = formatCurrency(todayTransfer);
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
 
-  // ══════════════════════════════════════════════
-  // ROW 2 — MONTHLY REVENUE
-  // = POS transactions this month (purchase_transactions)
-  // + Manual daily sales entries (sales table)
-  //
-  // This means:
-  // - ₦33,000 entered on Daily Sales page ✅ counted
-  // - ₦15,000 entered on Daily Sales page ✅ counted
-  // - ₦20,000 entered on Daily Sales page ✅ counted
-  // - Any future POS checkout              ✅ counted automatically
-  // Total = ₦68,000 + any future POS sales
-  // ══════════════════════════════════════════════
-  const totalPOSMonth    = (monthTxns  ||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const totalManualMonth = (salesMonth ||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const totalMonthSales  = totalPOSMonth + totalManualMonth;
+  // ── ROW 2: Monthly revenue from sales table ONLY ──
+  // No double counting — purchases.html auto-syncs into sales table
+  const totalMonthSales = (salesMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const entryCount      = (salesMonth||[]).length;
 
   document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
+  document.getElementById('kpi-month-meta').textContent  = `${entryCount} entr${entryCount !== 1 ? 'ies' : 'y'} this month`;
 
   // ── Expenses ──
   const totalExp = (expMonth||[]).reduce((s,r) => s + Number(r.amount||0), 0);
@@ -269,11 +237,7 @@ function stockStatus(item) {
   const totalDebt = (debts||[]).reduce((s,r) => s + Number(r.amount||0), 0);
   document.getElementById('kpi-debts').textContent = formatCurrency(totalDebt);
 
-  // ══════════════════════════════════════════════
-  // TODAY'S TRANSACTIONS WIDGET
-  // Shows POS checkouts. Manual daily sales are on
-  // the Daily Sales page — linked below if empty.
-  // ══════════════════════════════════════════════
+  // ── Today's Transactions Widget ──
   const rsEl = document.getElementById('recent-sales');
   if (!recentTxns || recentTxns.length === 0) {
     rsEl.innerHTML = `<div class="empty-state">
@@ -315,19 +279,11 @@ function stockStatus(item) {
     </table></div>`;
   }
 
-  // ══════════════════════════════════════════════
-  // LOW STOCK ALERTS
-  // qty=0 (services) and qty<0 (negative) excluded.
-  // Only qty>0 AND below threshold shows here.
-  // ══════════════════════════════════════════════
+  // ── Low Stock ──
   const lowStockItems = (inv||[]).filter(i => stockStatus(i) === 'low');
   const lsEl          = document.getElementById('low-stock');
-
   if (lowStockItems.length === 0) {
-    lsEl.innerHTML = `<div class="empty-state">
-      <div class="icon">✅</div>
-      <p>All tracked stock levels are healthy.</p>
-    </div>`;
+    lsEl.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>All tracked stock levels are healthy.</p></div>`;
   } else {
     lsEl.innerHTML = `<div class="table-wrap"><table>
       <thead><tr><th>Item</th><th>Qty</th><th>Threshold</th><th>Status</th></tr></thead>
@@ -341,13 +297,11 @@ function stockStatus(item) {
       </tbody>
     </table></div>
     <div style="margin-top:10px;font-size:0.78rem;color:var(--muted);">
-      Services and untracked items are excluded — they don't need restocking.
+      Services and untracked items are excluded.
     </div>`;
   }
 
-  // ══════════════════════════════════════════════
-  // UPCOMING REMINDERS
-  // ══════════════════════════════════════════════
+  // ── Reminders ──
   const remEl = document.getElementById('reminders-list');
   if (!reminders || reminders.length === 0) {
     remEl.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No upcoming reminders.</p></div>';
@@ -359,27 +313,20 @@ function stockStatus(item) {
       </div>`).join('');
   }
 
-  // ══════════════════════════════════════════════
-  // BUSINESS HEALTH SCORE
-  // totalMonthSales now correctly includes both
-  // manual daily sales AND POS transactions.
-  // ══════════════════════════════════════════════
-  const untrackedItems = (inv||[]).filter(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
-  const hasServices    = untrackedItems.length > 0;
+  // ── Health Score ──
   const trackedItems   = (inv||[]).filter(i => stockStatus(i) === 'ok' || stockStatus(i) === 'low');
+  const hasServices    = (inv||[]).some(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
 
   let score = 40;
   if (totalMonthSales > 0) score += 15;
   if (profit > 0)          score += 20;
   if (todaySales > 0)      score += 10;
-
   if (trackedItems.length > 0) {
     if (lowStockItems.length === 0) score += 10;
     if (lowStockItems.length < 3)   score += 5;
   } else if (hasServices) {
     score += 15;
   }
-
   score = Math.min(score, 100);
 
   document.getElementById('health-val').textContent = score;
@@ -393,4 +340,3 @@ function stockStatus(item) {
 </script>
 </body>
 </html>
- 

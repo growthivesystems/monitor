@@ -15,19 +15,14 @@
     gap: 12px; max-height: 520px; overflow-y: auto; padding-right: 4px;
   }
 
-  /* ── Catalogue item states ── */
   .catalogue-item {
     background: var(--dark3); border: 1px solid var(--gold-border);
     border-radius: var(--radius); padding: 14px; cursor: pointer;
     transition: var(--transition); position: relative;
   }
   .catalogue-item:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: var(--shadow-gold); }
-
-  /* TRACKED items that hit zero = out of stock (blocked) */
   .catalogue-item.hard-oos { opacity: 0.45; cursor: not-allowed; }
   .catalogue-item.hard-oos:hover { transform: none; box-shadow: none; border-color: var(--gold-border); }
-
-  /* UNTRACKED / SERVICE items — always sellable, shown with a subtle tint */
   .catalogue-item.untracked { border-color: rgba(91,155,213,0.35); }
   .catalogue-item.untracked:hover { border-color: var(--gold); }
 
@@ -61,7 +56,6 @@
     text-transform: uppercase; letter-spacing: 0.05em;
   }
 
-  /* Cart / Order Panel */
   .order-panel { position: sticky; top: 80px; }
   .cart-items { max-height: 280px; overflow-y: auto; margin-bottom: 16px; }
   .cart-row {
@@ -97,7 +91,6 @@
   .empty-cart { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.88rem; }
   .empty-cart .icon { font-size: 2.5rem; margin-bottom: 8px; }
 
-  /* Receipt Modal */
   .receipt-modal {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.7); z-index: 1000;
@@ -114,7 +107,6 @@
   .receipt-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.85rem; color: var(--white2); }
   .receipt-total-line { display: flex; justify-content: space-between; padding: 10px 0; font-size: 1rem; font-weight: 700; color: var(--gold); border-top: 1px dashed var(--gold-border); margin-top: 8px; }
 
-  /* Print receipt */
   .print-receipt-area {
     display: none; position: fixed; inset: 0;
     background: #fff; color: #111; z-index: 9999; padding: 48px;
@@ -156,13 +148,20 @@
   .pay-opt.selected { border-color: var(--gold); background: rgba(201,168,76,0.12); color: var(--gold); font-weight: 600; }
   .pay-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
 
-  /* Untracked qty input in cart */
   .untracked-qty-input {
     width: 52px; background: var(--dark3); border: 1px solid var(--gold-border);
     border-radius: var(--radius-sm); color: var(--white); font-size: 0.88rem;
     font-weight: 700; text-align: center; padding: 2px 4px;
   }
   .untracked-qty-input:focus { outline: none; border-color: var(--gold); }
+
+  .sync-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.72rem; color: var(--success);
+    margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -174,7 +173,7 @@
       <div class="page-title" style="margin:0;">🛒 Purchases / Sales Point</div>
       <a href="sales.html" class="btn btn-outline btn-sm">📋 View Daily Sales</a>
     </div>
-    <div class="page-subtitle">Select items from your catalogue. Stock is updated automatically — services and untracked goods can be sold freely.</div>
+    <div class="page-subtitle">Select items from your catalogue. Every completed sale auto-syncs to Daily Sales records.</div>
 
     <div id="page-msg"></div>
 
@@ -187,7 +186,6 @@
             <a href="inventory.html" class="btn btn-outline btn-sm">Manage Stock →</a>
           </div>
 
-          <!-- Legend -->
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:0.72rem;color:var(--muted);">
             <span>✅ Tracked stock</span>
             <span style="color:var(--info);">🔷 Service / Untracked</span>
@@ -250,6 +248,10 @@
           <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="clearCart()">
             🗑️ Clear Cart
           </button>
+
+          <div id="sync-status" style="display:none;margin-top:10px;text-align:center;">
+            <span class="sync-badge">✅ Synced to Daily Sales</span>
+          </div>
         </div>
 
         <!-- Today's quick stats -->
@@ -281,7 +283,7 @@
 </div>
 <div id="main-footer"></div>
 
-<!-- In-app Receipt Modal -->
+<!-- Receipt Modal -->
 <div class="receipt-modal" id="receipt-modal">
   <div class="receipt-box">
     <div class="receipt-header">
@@ -323,13 +325,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/lang.js"></script>
 <script src="js/app.js"></script>
 <script>
 let currentUser;
 let allInventory      = [];
 let filteredInventory = [];
-let cart              = {};   // { itemId: { item, qty, isUntracked } }
+let cart              = {};
 let currentCat        = 'all';
 let selectedPayment   = 'cash';
 let lastReceipt       = null;
@@ -343,38 +344,7 @@ let lastReceipt       = null;
   loadRecentTxns();
 })();
 
-/* ══════════════════════════════════════════
-   ITEM STATUS HELPER
-   Mirrors the logic in inventory.html exactly.
-
-   qty === 0  → "untracked"  — service / uncount stock. FULLY SELLABLE. No stock cap.
-   qty < 0    → "negative"   — already sold past zero (untracked). STILL SELLABLE.
-   qty > 0 && qty <= threshold → "low"  — sellable, show warning.
-   qty > threshold → "ok"    — normal tracked stock.
-
-   BLOCKED: tracked item (ever had qty > 0 set explicitly) that is now exactly 0
-            AND has been sold to reach 0 — i.e. was_tracked flag.
-   
-   Simple rule used here:
-   - qty <= 0 AND unit_price > 0 AND low_stock_threshold > 0 set explicitly
-     could mean either untracked or out-of-stock.
-   - We treat qty === 0 as UNTRACKED/SERVICE (always sellable) per the design.
-   - Only qty > 0 items that have been decremented to 0 through sales
-     show as "hard out of stock". Since we allow negative, we never truly block
-     untracked items — they just go negative.
-   
-   PRACTICAL rule for POS:
-   - isUntracked(item): qty <= 0  → always addable, no cap enforcement
-   - isTracked(item):   qty > 0   → cap at available qty
-   - hardOOS: a tracked item (qty was set > 0) that reached exactly 0.
-     We detect this by: qty === 0 AND item was loaded with qty=0 from DB
-     which means it was either never stocked OR sold to zero.
-     Since we can't tell the diff without history, we treat qty===0 as UNTRACKED
-     and qty < 0 as NEGATIVE UNTRACKED — both always sellable.
-     This matches the inventory.html stockStatus() helper.
-══════════════════════════════════════════ */
 function isUntracked(item) {
-  // qty 0 or negative = untracked/service, always sellable
   return Number(item.quantity) <= 0;
 }
 
@@ -383,14 +353,12 @@ function isLow(item) {
   return qty > 0 && qty <= Number(item.low_stock_threshold || 5);
 }
 
-/* ══════════════════════════════════════════
-   CATALOGUE
-══════════════════════════════════════════ */
+/* ── CATALOGUE ── */
 async function loadInventory() {
   const { data, error } = await _supabase
     .from('inventory').select('*')
     .eq('user_id', currentUser.id)
-    .is('deleted_at', null)   // never show deleted items in POS
+    .is('deleted_at', null)
     .order('item_name');
 
   if (error) {
@@ -410,9 +378,8 @@ async function loadInventory() {
     return;
   }
 
-  const cats     = ['all', ...new Set(allInventory.map(i => i.category).filter(Boolean))];
-  const filterEl = document.getElementById('cat-filters');
-  filterEl.innerHTML = cats.map((c, idx) =>
+  const cats = ['all', ...new Set(allInventory.map(i => i.category).filter(Boolean))];
+  document.getElementById('cat-filters').innerHTML = cats.map((c, idx) =>
     `<button class="ftab${idx===0?' active':''}" onclick="filterCat('${c}', this)">${c==='all'?'All':c}</button>`
   ).join('');
 
@@ -439,7 +406,7 @@ function filterItems() {
 
 function renderCatalogue() {
   const el       = document.getElementById('catalogue-grid');
-  const currency = localStorage.getItem('currency') || '₦';
+  const currency = '₦';
 
   if (filteredInventory.length === 0) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items match your search.</p></div>`;
@@ -447,46 +414,35 @@ function renderCatalogue() {
   }
 
   el.innerHTML = filteredInventory.map(item => {
-    const qty        = Number(item.quantity);
-    const untracked  = isUntracked(item);   // qty <= 0 → service/untracked
-    const low        = isLow(item);
-    const negative   = qty < 0;
-    const inCart     = cart[item.id] ? cart[item.id].qty : 0;
-    const price      = Number(item.selling_price || item.unit_price || 0);
+    const qty       = Number(item.quantity);
+    const untracked = isUntracked(item);
+    const low       = isLow(item);
+    const negative  = qty < 0;
+    const inCart    = cart[item.id] ? cart[item.id].qty : 0;
+    const price     = Number(item.selling_price || item.unit_price || 0);
 
-    // Determine card class
     let cardClass = 'catalogue-item';
     if (untracked) cardClass += ' untracked';
-    // No hard-oos for qty=0 — they're untracked/services
 
-    // Badge
     let badge = '';
-    if (negative)        badge = '<div class="negative-badge">Untracked</div>';
-    else if (untracked)  badge = '<div class="service-badge">Service</div>';
+    if (negative)       badge = '<div class="negative-badge">Untracked</div>';
+    else if (untracked) badge = '<div class="service-badge">Service</div>';
 
-    // Stock line
     let stockLine = '';
-    if (negative) {
-      stockLine = `<span style="color:var(--muted);">🔷 Untracked · sold ${Math.abs(qty)}</span>`;
-    } else if (untracked) {
-      stockLine = `<span style="color:var(--info);">🔷 Service / Untracked</span>`;
-    } else if (low) {
-      stockLine = `<span class="low">⚠️ ${qty} left</span>`;
-    } else {
-      stockLine = `<span>✅ ${qty} in stock</span>`;
-    }
+    if (negative)        stockLine = `<span style="color:var(--muted);">🔷 Untracked · sold ${Math.abs(qty)}</span>`;
+    else if (untracked)  stockLine = `<span style="color:var(--info);">🔷 Service / Untracked</span>`;
+    else if (low)        stockLine = `<span class="low">⚠️ ${qty} left</span>`;
+    else                 stockLine = `<span>✅ ${qty} in stock</span>`;
 
-    const inCartBit = inCart > 0
-      ? `<br><span style="color:var(--gold);">🛒 ${inCart} in cart</span>` : '';
+    const inCartBit = inCart > 0 ? `<br><span style="color:var(--gold);">🛒 ${inCart} in cart</span>` : '';
 
-    return `
-      <div class="${cardClass}" onclick="addToCart('${item.id}')">
-        ${badge}
-        <div class="cat-icon">${getCatIcon(item.category)}</div>
-        <div class="cat-name">${item.item_name}</div>
-        <div class="cat-price">${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
-        <div class="cat-stock">${stockLine}${inCartBit}</div>
-      </div>`;
+    return `<div class="${cardClass}" onclick="addToCart('${item.id}')">
+      ${badge}
+      <div class="cat-icon">${getCatIcon(item.category)}</div>
+      <div class="cat-name">${item.item_name}</div>
+      <div class="cat-price">${currency}${price.toLocaleString('en-NG',{minimumFractionDigits:2})}</div>
+      <div class="cat-stock">${stockLine}${inCartBit}</div>
+    </div>`;
   }).join('');
 }
 
@@ -500,25 +456,17 @@ function getCatIcon(cat) {
   return icons[cat] || '📦';
 }
 
-/* ══════════════════════════════════════════
-   CART
-   Key difference from old version:
-   - Untracked items (qty ≤ 0): NO stock cap. User can enter any qty.
-   - Tracked items (qty > 0):   Capped at available qty as before.
-══════════════════════════════════════════ */
+/* ── CART ── */
 function addToCart(itemId) {
   const item = allInventory.find(i => i.id === itemId);
   if (!item) return;
-
   const untracked = isUntracked(item);
-
   if (!cart[itemId]) {
     cart[itemId] = { item, qty: 1, isUntracked: untracked };
   } else {
-    // For tracked items cap at stock; for untracked allow freely
     if (!untracked && cart[itemId].qty >= Number(item.quantity)) {
       const msgEl = document.getElementById('page-msg');
-      msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${item.quantity}</strong> unit(s) of <strong>${item.item_name}</strong> available in stock.</div>`;
+      msgEl.innerHTML = `<div class="alert alert-danger">⚠️ Only <strong>${item.quantity}</strong> unit(s) available.</div>`;
       setTimeout(() => msgEl.innerHTML = '', 3000);
       return;
     }
@@ -530,10 +478,9 @@ function addToCart(itemId) {
 
 function changeQty(itemId, delta) {
   if (!cart[itemId]) return;
-  const item     = allInventory.find(i => i.id === itemId);
-  const newQty   = cart[itemId].qty + delta;
+  const item      = allInventory.find(i => i.id === itemId);
+  const newQty    = cart[itemId].qty + delta;
   const untracked = cart[itemId].isUntracked;
-
   if (newQty <= 0) {
     delete cart[itemId];
   } else if (!untracked && item && newQty > Number(item.quantity)) {
@@ -565,7 +512,7 @@ function removeFromCart(itemId) {
 
 function renderCart() {
   const keys        = Object.keys(cart);
-  const currency    = localStorage.getItem('currency') || '₦';
+  const currency    = '₦';
   const cartEmpty   = document.getElementById('cart-empty');
   const cartContent = document.getElementById('cart-content');
   const checkoutBtn = document.getElementById('checkout-btn');
@@ -588,7 +535,6 @@ function renderCart() {
     const subtotal = price * qty;
     total += subtotal;
 
-    // Untracked items get a free-type qty input; tracked items get +/- buttons
     const qtyControl = isUntracked
       ? `<input type="number" class="untracked-qty-input" value="${qty}" min="1"
             onchange="setUntrackedQty('${id}', this.value)"
@@ -627,22 +573,70 @@ function selectPay(el, method) {
 }
 
 /* ══════════════════════════════════════════
-   CHECKOUT
-   
-   For TRACKED items (qty > 0 before sale):
-     - Deduct qty normally. Can go to 0.
-   
-   For UNTRACKED items (qty <= 0):
-     - Deduct qty → goes negative (e.g. 0 → -3).
-     - This records "we sold 3 without tracking stock".
-     - Write an inventory_log with action='sold' so the audit trail shows income.
-     - Also records to purchase_transactions as income.
-   
-   Income balancing:
-     - ALL sales (tracked + untracked) save to purchase_transactions.
-     - The total_amount IS the income for that transaction.
-     - Reports page should sum purchase_transactions.total_amount for revenue.
+   AUTO-SYNC TO DAILY SALES
+   After every checkout, upsert today's total
+   into the sales table with source='pos'.
+   This is the KEY function that fixes double counting.
+   Dashboard reads from sales table only.
+   No more combining two tables.
 ══════════════════════════════════════════ */
+async function syncToSalesTable(today, total, payMethod) {
+  try {
+    // Get all of today's POS transactions to calculate accurate totals
+    const { data: todayTxns } = await _supabase
+      .from('purchase_transactions')
+      .select('total_amount, payment_method')
+      .eq('user_id', currentUser.id)
+      .eq('date', today);
+
+    const totalSales    = (todayTxns||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+    const totalCash     = (todayTxns||[]).filter(r => r.payment_method === 'cash').reduce((s,r) => s + Number(r.total_amount||0), 0);
+    const totalTransfer = (todayTxns||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
+    const totalPOS      = (todayTxns||[]).filter(r => r.payment_method === 'pos').reduce((s,r) => s + Number(r.total_amount||0), 0);
+
+    // Check if a sales entry exists for today
+    const { data: existing } = await _supabase
+      .from('sales')
+      .select('id, source')
+      .eq('user_id', currentUser.id)
+      .eq('date', today)
+      .maybeSingle();
+
+    const payload = {
+      user_id:          currentUser.id,
+      date:             today,
+      total_amount:     totalSales,
+      cash_amount:      totalCash,
+      transfer_amount:  totalTransfer,
+      pos_amount:       totalPOS,
+      source:           'pos',
+      updated_at:       new Date().toISOString(),
+      notes:            `Auto-synced from ${(todayTxns||[]).length} POS transaction(s)`
+    };
+
+    if (existing) {
+      // Only auto-update if the existing record was also from POS
+      // Don't overwrite a manual entry the owner typed themselves
+      if (existing.source === 'pos' || existing.source === null) {
+        await _supabase.from('sales').update(payload).eq('id', existing.id);
+      }
+      // If source is 'manual', leave it alone — owner manually entered it
+    } else {
+      // No entry for today — create one
+      await _supabase.from('sales').insert(payload);
+    }
+
+    // Show sync badge
+    const syncEl = document.getElementById('sync-status');
+    syncEl.style.display = 'block';
+    setTimeout(() => syncEl.style.display = 'none', 4000);
+
+  } catch(e) {
+    console.warn('Sales sync failed:', e);
+  }
+}
+
+/* ── CHECKOUT ── */
 async function checkout() {
   const keys = Object.keys(cart);
   if (keys.length === 0) return;
@@ -651,7 +645,7 @@ async function checkout() {
   btn.disabled    = true;
   btn.textContent = '⏳ Processing…';
 
-  const currency = localStorage.getItem('currency') || '₦';
+  const currency = '₦';
   let   total    = 0;
   const items    = keys.map(id => {
     const { item, qty, isUntracked } = cart[id];
@@ -665,7 +659,7 @@ async function checkout() {
   const customerName = document.getElementById('customer-name').value.trim();
   const notes        = document.getElementById('sale-notes').value.trim();
 
-  // ── 1. Save transaction (income record) ──
+  // 1. Save to purchase_transactions
   const { error: txnErr } = await _supabase
     .from('purchase_transactions')
     .insert({
@@ -686,47 +680,33 @@ async function checkout() {
     return;
   }
 
-  // ── 2. Update inventory qty for every item (tracked AND untracked) ──
-  //    Untracked items will go 0 → negative, which is correct behaviour.
-  for (const { id, qty, isUntracked: untrk, price, subtotal } of items) {
+  // 2. Update inventory quantities
+  for (const { id, qty, price, subtotal } of items) {
     const localItem = allInventory.find(i => i.id === id);
     if (!localItem) continue;
-
     const oldQty = Number(localItem.quantity);
     const newQty = oldQty - qty;
-
-    // Update Supabase
-    await _supabase.from('inventory')
-      .update({ quantity: newQty })
-      .eq('id', id)
-      .eq('user_id', currentUser.id);
-
-    // Update local cache
+    await _supabase.from('inventory').update({ quantity: newQty }).eq('id', id).eq('user_id', currentUser.id);
     localItem.quantity = newQty;
-
-    // ── 3. Write inventory audit log entry for this sale ──
-    //    action='sold', note carries income amount for the line
     try {
       await _supabase.from('inventory_logs').insert({
-        user_id:      currentUser.id,
-        action:       'sold',
-        item_id:      id,
-        item_name:    localItem.item_name,
-        old_quantity: oldQty,
-        new_quantity: newQty,
-        old_price:    price,
-        new_price:    price,
-        note:         `${formatCurrency(subtotal)} income · ${selectedPayment}`
-          + (customerName ? ` · ${customerName}` : '')
+        user_id: currentUser.id, action: 'sold',
+        item_id: id, item_name: localItem.item_name,
+        old_quantity: oldQty, new_quantity: newQty,
+        old_price: price, new_price: price,
+        note: `${formatCurrency(subtotal)} income · ${selectedPayment}${customerName ? ` · ${customerName}` : ''}`
       });
     } catch(e) { console.warn('Audit log write failed:', e); }
   }
 
-  // ── 4. Store receipt & show ──
+  // 3. AUTO-SYNC to sales table (this is the fix for double counting)
+  await syncToSalesTable(today, total, selectedPayment);
+
+  // 4. Show receipt
   lastReceipt = { items, total, customerName, notes, payMethod: selectedPayment };
   showReceiptModal(items, total, currency);
 
-  // ── 5. Reset ──
+  // 5. Reset
   cart = {};
   renderCart();
   renderCatalogue();
@@ -739,42 +719,33 @@ async function checkout() {
   btn.textContent = '✅ Complete Sale →';
 }
 
-/* ══════════════════════════════════════════
-   RECEIPT MODAL
-══════════════════════════════════════════ */
+/* ── RECEIPT ── */
 function showReceiptModal(items, total, currency) {
   const now = new Date();
   document.getElementById('receipt-date').textContent          = now.toLocaleString('en-GB');
   document.getElementById('receipt-total-display').textContent = `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
   document.getElementById('receipt-pay-method').textContent    = `Payment: ${selectedPayment.toUpperCase()}`;
-
   document.getElementById('receipt-lines').innerHTML = items.map(({ name, qty, subtotal }) =>
     `<div class="receipt-line">
       <span>${name} × ${qty}</span>
       <span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
     </div>`
   ).join('');
-
   document.getElementById('receipt-modal').classList.add('show');
 }
 
 function closeReceipt() { document.getElementById('receipt-modal').classList.remove('show'); }
 
-/* ══════════════════════════════════════════
-   PRINT RECEIPT
-══════════════════════════════════════════ */
 async function openPrintReceipt() {
   if (!lastReceipt) return;
   closeReceipt();
-
   let bizName = 'My Business';
   try {
-    const { data: profile } = await _supabase
-      .from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
+    const { data: profile } = await _supabase.from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
     if (profile?.business_name) bizName = profile.business_name;
   } catch(e) {}
 
-  const currency = localStorage.getItem('currency') || '₦';
+  const currency = '₦';
   const now      = new Date();
   const { items, total, customerName, notes, payMethod } = lastReceipt;
 
@@ -810,12 +781,10 @@ function closePrintReceipt() {
   document.getElementById('print-receipt-area').style.display = 'none';
 }
 
-/* ══════════════════════════════════════════
-   TODAY'S STATS
-══════════════════════════════════════════ */
+/* ── TODAY'S STATS ── */
 async function loadTodayStats() {
   const today    = new Date().toISOString().split('T')[0];
-  const currency = localStorage.getItem('currency') || '₦';
+  const currency = '₦';
   const { data } = await _supabase
     .from('purchase_transactions')
     .select('total_amount')
@@ -827,11 +796,9 @@ async function loadTodayStats() {
   document.getElementById('stat-txns').textContent  = (data||[]).length;
 }
 
-/* ══════════════════════════════════════════
-   RECENT TRANSACTIONS
-══════════════════════════════════════════ */
+/* ── RECENT TRANSACTIONS ── */
 async function loadRecentTxns() {
-  const currency = localStorage.getItem('currency') || '₦';
+  const currency = '₦';
   const { data } = await _supabase
     .from('purchase_transactions')
     .select('*')
@@ -841,26 +808,20 @@ async function loadRecentTxns() {
 
   const el = document.getElementById('txn-table');
   if (!data || data.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🧾</div><p>No transactions yet. Complete a sale above to see it here.</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="icon">🧾</div><p>No transactions yet.</p></div>';
     return;
   }
 
   el.innerHTML = `<div class="table-wrap"><table>
     <thead>
       <tr>
-        <th>Date & Time</th>
-        <th>Amount</th>
-        <th>Payment</th>
-        <th>Customer</th>
-        <th>Items</th>
-        <th>Notes</th>
+        <th>Date & Time</th><th>Amount</th><th>Payment</th>
+        <th>Customer</th><th>Items</th><th>Notes</th>
       </tr>
     </thead>
     <tbody>
       ${data.map(r => {
-        const itemList = Array.isArray(r.items)
-          ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
-          : '—';
+        const itemList = Array.isArray(r.items) ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ') : '—';
         return `<tr>
           <td>${new Date(r.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
           <td style="color:var(--success);font-weight:700;">${currency}${Number(r.total_amount).toLocaleString('en-NG',{minimumFractionDigits:2})}</td>

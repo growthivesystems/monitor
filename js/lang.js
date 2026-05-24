@@ -893,4 +893,46 @@ async function setLang(code) {
   } catch(e) { console.warn('Could not save language to Supabase:', e); }
   location.reload();
 }
- 
+
+/* ═══════════════════════════════════════════════════════════════
+   MUTATION OBSERVER — Re-translates whenever new content
+   is added to the page by JavaScript (Supabase data loads,
+   dynamic rendering etc). Works on every page automatically.
+═══════════════════════════════════════════════════════════════ */
+(function startObserver() {
+  if (getLang() === 'en') return; // English needs no translation
+
+  let debounceTimer;
+  let isTranslating = false;
+
+  const observer = new MutationObserver((mutations) => {
+    // Only react to actual content changes
+    const hasNewContent = mutations.some(m =>
+      m.addedNodes.length > 0 &&
+      Array.from(m.addedNodes).some(n =>
+        n.nodeType === 1 || // Element node
+        (n.nodeType === 3 && n.textContent.trim()) // Text node with content
+      )
+    );
+
+    if (!hasNewContent || isTranslating) return;
+
+    // Debounce — wait for all rapid changes to finish before translating
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      isTranslating = true;
+      autoTranslatePage();
+      isTranslating = false;
+    }, 400);
+  });
+
+  // Start watching the whole page for new content
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    // If body not ready yet, wait for it
+    document.addEventListener('DOMContentLoaded', () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+})();

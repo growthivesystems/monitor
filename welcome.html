@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,225 +7,198 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .welcome-wrap {
-    min-height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    background:
-      radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.12) 0%, transparent 55%),
-      radial-gradient(ellipse at 70% 80%, rgba(201,168,76,0.07) 0%, transparent 50%),
-      var(--dark);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background: radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.12) 0%, transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(201,168,76,0.07) 0%, transparent 50%),
+                var(--dark);
   }
-
   .welcome-card {
-    background: var(--dark2);
-    border: 1px solid var(--gold-border);
-    border-radius: 20px;
-    padding: 48px 40px;
-    width: 100%; max-width: 520px;
-    box-shadow: 0 8px 48px rgba(0,0,0,0.5);
-    text-align: center;
-    animation: fadeUp 0.7s ease both;
+    background:var(--dark2); border:1px solid var(--gold-border);
+    border-radius:20px; padding:48px 40px;
+    width:100%; max-width:520px;
+    box-shadow:0 8px 48px rgba(0,0,0,0.5);
+    text-align:center; animation:fadeUp 0.7s ease both;
   }
-
-  .welcome-emoji {
-    font-size: 3rem;
-    margin-bottom: 16px;
-    animation: bounceIn 0.8s ease both;
-  }
-
-  .welcome-greeting {
-    font-family: var(--font-display);
-    font-size: clamp(1.8rem, 5vw, 2.6rem);
-    font-weight: 700;
-    color: var(--white);
-    line-height: 1.2;
-    margin-bottom: 8px;
-  }
-
-  .welcome-greeting span {
-    color: var(--gold);
-  }
-
-  .welcome-biz {
-    font-size: 0.9rem;
-    color: var(--muted);
-    margin-bottom: 28px;
-  }
-
-  .welcome-biz strong {
-    color: var(--gold2);
-  }
-
-  .welcome-divider {
-    width: 60px; height: 1px;
-    background: var(--gold-border);
-    margin: 0 auto 28px;
-  }
-
-  .welcome-desc {
-    color: var(--muted);
-    font-size: 0.92rem;
-    line-height: 1.8;
-    margin-bottom: 32px;
-    padding: 0 8px;
-  }
-
-  .welcome-features {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 32px;
-  }
-
-  .welcome-feature {
-    background: var(--dark3);
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius-sm);
-    padding: 12px 10px;
-    font-size: 0.82rem;
-    color: var(--muted);
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  .welcome-feature .f-icon { font-size: 1.1rem; flex-shrink: 0; }
-
-  .welcome-btns {
-    display: flex; flex-direction: column; gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  .welcome-footer {
-    font-size: 0.8rem;
-    color: var(--muted);
-    padding-top: 20px;
-    border-top: 1px solid var(--gold-border);
-  }
-
-  .welcome-footer a { color: var(--gold); text-decoration: none; }
-  .welcome-footer a:hover { color: var(--gold2); }
-
-  .welcome-logo {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--gold);
-    margin-bottom: 24px;
-    letter-spacing: 0.04em;
-  }
-  .welcome-logo span { color: var(--white); }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes bounceIn {
-    0% { transform: scale(0.3); opacity: 0; }
-    50% { transform: scale(1.1); }
-    70% { transform: scale(0.95); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @media (max-width: 480px) {
-    .welcome-card { padding: 36px 24px; }
-    .welcome-features { grid-template-columns: 1fr; }
-  }
+  .welcome-logo { font-family:var(--font-display); font-size:1rem; color:var(--gold); margin-bottom:24px; letter-spacing:0.04em; }
+  .welcome-logo span { color:var(--white); }
+  .welcome-emoji { font-size:3rem; margin-bottom:16px; animation:bounceIn 0.8s ease both; }
+  .welcome-greeting { font-family:var(--font-display); font-size:clamp(1.8rem,5vw,2.6rem); font-weight:700; color:var(--white); line-height:1.2; margin-bottom:8px; }
+  .welcome-greeting span { color:var(--gold); }
+  .welcome-biz { font-size:0.9rem; color:var(--muted); margin-bottom:28px; }
+  .welcome-biz strong { color:var(--gold2); }
+  .welcome-divider { width:60px; height:1px; background:var(--gold-border); margin:0 auto 28px; }
+  .welcome-desc { color:var(--muted); font-size:0.92rem; line-height:1.8; margin-bottom:32px; padding:0 8px; }
+  .welcome-features { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:32px; }
+  .welcome-feature { background:var(--dark3); border:1px solid var(--gold-border); border-radius:var(--radius-sm); padding:12px 10px; font-size:0.82rem; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .welcome-feature .f-icon { font-size:1.1rem; flex-shrink:0; }
+  .welcome-btns { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
+  .welcome-footer { font-size:0.8rem; color:var(--muted); padding-top:20px; border-top:1px solid var(--gold-border); }
+  .welcome-footer a { color:var(--gold); text-decoration:none; }
+  .lang-bar { display:flex; justify-content:center; gap:6px; margin-bottom:20px; }
+  .lang-bar button { background:var(--dark3); border:1px solid var(--gold-border); color:var(--muted); border-radius:14px; padding:4px 12px; font-size:0.75rem; cursor:pointer; font-family:var(--font-body); transition:all 0.2s; }
+  .lang-bar button.active { background:var(--gold); color:var(--dark); font-weight:700; border-color:var(--gold); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes bounceIn { 0%{transform:scale(0.3);opacity:0} 50%{transform:scale(1.1)} 70%{transform:scale(0.95)} 100%{transform:scale(1);opacity:1} }
+  @media(max-width:480px) { .welcome-card{padding:36px 24px} .welcome-features{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-
 <div class="welcome-wrap">
   <div class="welcome-card">
-
-    <!-- Logo -->
     <div class="welcome-logo">GrowthIve <span>Monitor</span></div>
 
-    <!-- Emoji -->
-    <div class="welcome-emoji">👋</div>
+    <!-- Language bar for new users -->
+    <div class="lang-bar" id="lang-bar"></div>
 
-    <!-- Greeting -->
+    <div class="welcome-emoji">👋</div>
     <div class="welcome-greeting">Hello, <span id="user-firstname">there</span>!</div>
     <div class="welcome-biz">Your business <strong id="user-bizname">—</strong> is all set up and ready to go.</div>
-
     <div class="welcome-divider"></div>
 
-    <!-- Description -->
-    <p class="welcome-desc">
+    <p class="welcome-desc" id="welcome-desc">
       GrowthIve Monitor helps you track your daily sales, log expenses, manage inventory,
       monitor debts and get a full picture of your business health — all in one place.
       Here's a quick look at what you can do:
     </p>
 
-    <!-- Feature Pills -->
     <div class="welcome-features">
-      <div class="welcome-feature"><span class="f-icon">💰</span> Record Daily Sales</div>
-      <div class="welcome-feature"><span class="f-icon">📋</span> Track Expenses</div>
-      <div class="welcome-feature"><span class="f-icon">📦</span> Manage Inventory</div>
-      <div class="welcome-feature"><span class="f-icon">🤝</span> Monitor Debts</div>
-      <div class="welcome-feature"><span class="f-icon">📈</span> View Reports</div>
-      <div class="welcome-feature"><span class="f-icon">🏆</span> Health Score</div>
+      <div class="welcome-feature"><span class="f-icon">💰</span> <span id="wf1">Record Daily Sales</span></div>
+      <div class="welcome-feature"><span class="f-icon">📋</span> <span id="wf2">Track Expenses</span></div>
+      <div class="welcome-feature"><span class="f-icon">📦</span> <span id="wf3">Manage Inventory</span></div>
+      <div class="welcome-feature"><span class="f-icon">🤝</span> <span id="wf4">Monitor Debts</span></div>
+      <div class="welcome-feature"><span class="f-icon">📈</span> <span id="wf5">View Reports</span></div>
+      <div class="welcome-feature"><span class="f-icon">🏆</span> <span id="wf6">Health Score</span></div>
     </div>
 
-    <!-- Buttons -->
     <div class="welcome-btns">
-      <a href="faq.html" class="btn btn-outline btn-full">📖 Read FAQ — Learn How It Works</a>
-      <a href="dashboard.html" class="btn btn-gold btn-full" onclick="skipToDashboard()">
-        Skip to Dashboard →
+      <a href="faq.html" class="btn btn-outline btn-full">📖 <span id="wb1">Read FAQ — Learn How It Works</span></a>
+      <a href="dashboard.html" class="btn btn-gold btn-full">
+        <span id="wb2">Skip to Dashboard →</span>
       </a>
     </div>
 
-    <!-- Footer -->
     <div class="welcome-footer">
-      Need help getting started?
-      <a href="contact.html">Contact Support</a>
+      <span id="wfoot">Need help getting started?</span>
+      <a href="contact.html"> <span id="wf-support">Contact Support</span></a>
       &nbsp;·&nbsp;
       <a href="faq.html">FAQ</a>
       &nbsp;·&nbsp;
-      <a href="dashboard.html" onclick="skipToDashboard()">Skip</a>
+      <a href="dashboard.html"><span id="wf-skip">Skip</span></a>
     </div>
-
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
+<script src="js/lang.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  // Apply theme
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  // Apply theme and language immediately from localStorage — no flash
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
 
-  // Clear the new user flag
+  // Clear new user flag
   localStorage.removeItem('growthive_new_user');
 
-  function skipTodashboard() {
-    window.location.href = 'dashboard.html';
+  // Language content map
+  const welcomeContent = {
+    en: {
+      desc: "GrowthIve Monitor helps you track your daily sales, log expenses, manage inventory, monitor debts and get a full picture of your business health — all in one place. Here's a quick look at what you can do:",
+      wf1:'Record Daily Sales', wf2:'Track Expenses', wf3:'Manage Inventory',
+      wf4:'Monitor Debts', wf5:'View Reports', wf6:'Health Score',
+      wb1:'Read FAQ — Learn How It Works', wb2:'Skip to Dashboard →',
+      wfoot:'Need help getting started?', support:'Contact Support', skip:'Skip'
+    },
+    ha: {
+      desc: "GrowthIve Monitor yana taimaka maka lura da tallacenka na yau, rubuta kashe-kudi, sarrafa kayayyaki, bin bashi da samun cikakken hoto na lafiyar kasuwancinka — duk a wuri ɗaya. Ga abin da zaka iya yi:",
+      wf1:'Yi Rikodin Tallace', wf2:'Lura da Kashe-kudi', wf3:'Sarrafa Kayayyaki',
+      wf4:'Bin Bashi', wf5:'Duba Rahotanni', wf6:'Maki na Kasuwanci',
+      wb1:'Karanta FAQ — Koyi Yadda Ayi Amfani', wb2:'Je Allon Kallo →',
+      wfoot:'Kuna buƙatar taimako?', support:'Tuntuɓi Tallafi', skip:'Tsallake'
+    },
+    yo: {
+      desc: "GrowthIve Monitor ń ràn ọ lọwọ láti tọpa tita ojoojumọ rẹ, kọ inawo silẹ, ṣakoso ọja, bojuto gbèsè àti gba ìwòye kikun ti ilera iṣowo rẹ — gbogbo rẹ ní ibi kan. Èyí ni ohun tí o lè ṣe:",
+      wf1:'Gbasilẹ Tita Ojoojumọ', wf2:'Tọpa Inawo', wf3:'Ṣakoso Ọja',
+      wf4:'Bojuto Gbèsè', wf5:'Wo Ijabọ', wf6:'Àmì Ilera Iṣowo',
+      wb1:'Ka FAQ — Kọ Bí O Ṣe Ń Ṣiṣẹ', wb2:'Lọ si Dasibodu →',
+      wfoot:'Ṣé o nilo iranlọwọ lati bẹrẹ?', support:'Kàn sí Atilẹyin', skip:'Fo'
+    },
+    ig: {
+      desc: "GrowthIve Monitor na-enyere gị aka ịsoro ahịa kwa ụbọchị gị, idekọ ego a na-eji, ijikwa ngwongwo, isoro ụgwọ na inweta ihe nlele zuru oke nke ahụike azụmaahịa gị — niile n'otu ebe. Lee ihe ị nwere ike ime:",
+      wf1:'Debanye Ahịa Kwa Ụbọchị', wf2:'Soro Ego A Na-eji', wf3:'Jikwaa Ngwongwo',
+      wf4:'Soro Ụgwọ', wf5:'Lee Akụkọ', wf6:'Àmà Ahụike Azụmaahịa',
+      wb1:'Gụọ FAQ — Mụta Otu O Si Arụ Ọrụ', wb2:'Gaa Deshbọọdụ →',
+      wfoot:'Ị chọọ enyemaka iji bido?', support:'Kpọtụrụ Nkwado', skip:'Wụfee'
+    }
+  };
+
+  function applyWelcomeLang(lang) {
+    const c = welcomeContent[lang] || welcomeContent['en'];
+    document.getElementById('welcome-desc').textContent = c.desc;
+    document.getElementById('wf1').textContent = c.wf1;
+    document.getElementById('wf2').textContent = c.wf2;
+    document.getElementById('wf3').textContent = c.wf3;
+    document.getElementById('wf4').textContent = c.wf4;
+    document.getElementById('wf5').textContent = c.wf5;
+    document.getElementById('wf6').textContent = c.wf6;
+    document.getElementById('wb1').textContent = c.wb1;
+    document.getElementById('wb2').textContent = c.wb2;
+    document.getElementById('wfoot').textContent = c.wfoot;
+    document.getElementById('wf-support').textContent = c.support;
+    document.getElementById('wf-skip').textContent = c.skip;
+    // Update lang bar active state
+    document.querySelectorAll('.lang-bar button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.code === lang);
+    });
   }
 
+  function renderLangBar() {
+    const current = localStorage.getItem('growthive_lang') || 'en';
+    const langs = [{code:'en',label:'EN'},{code:'ha',label:'HA'},{code:'yo',label:'YO'},{code:'ig',label:'IG'}];
+    document.getElementById('lang-bar').innerHTML = langs.map(l =>
+      `<button data-code="${l.code}" class="${l.code===current?'active':''}" onclick="switchWelcomeLang('${l.code}')">${l.label}</button>`
+    ).join('');
+  }
+
+  async function switchWelcomeLang(code) {
+    localStorage.setItem('growthive_lang', code);
+    applyWelcomeLang(code);
+    renderLangBar();
+    // Save to Supabase in background
+    try {
+      const { data:{user} } = await _supabase.auth.getUser();
+      if (user) await _supabase.from('profiles').update({preferred_language:code}).eq('id',user.id);
+    } catch(e) {}
+  }
+
+  // Init
+  renderLangBar();
+  const currentLang = localStorage.getItem('growthive_lang') || 'en';
+  applyWelcomeLang(currentLang);
+
   (async () => {
-    // Must be logged in
     const user = await requireAuth();
     if (!user) return;
 
-    // Load profile
     const { data: profile } = await _supabase
       .from('profiles')
-      .select('full_name, business_name')
+      .select('full_name, business_name, preferred_language')
       .eq('id', user.id)
       .single();
 
     if (profile) {
-      // Extract first name only
-      const firstName = profile.full_name
-        ? profile.full_name.trim().split(' ')[0]
-        : 'Friend';
-
-      const bizName = profile.business_name || 'your business';
-
+      const firstName = profile.full_name ? profile.full_name.trim().split(' ')[0] : 'Friend';
       document.getElementById('user-firstname').textContent = firstName;
-      document.getElementById('user-bizname').textContent = bizName;
-
-      // Update page title
+      document.getElementById('user-bizname').textContent   = profile.business_name || 'your business';
       document.title = `Welcome, ${firstName} — GrowthIve Monitor`;
+
+      // Sync language from Supabase if different
+      if (profile.preferred_language && profile.preferred_language !== currentLang) {
+        localStorage.setItem('growthive_lang', profile.preferred_language);
+        applyWelcomeLang(profile.preferred_language);
+        renderLangBar();
+      }
     }
   })();
 </script>

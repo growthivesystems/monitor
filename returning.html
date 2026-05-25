@@ -7,118 +7,61 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .returning-wrap {
-    min-height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    background:
-      radial-gradient(ellipse at 70% 20%, rgba(201,168,76,0.1) 0%, transparent 55%),
-      radial-gradient(ellipse at 30% 80%, rgba(201,168,76,0.06) 0%, transparent 50%),
-      var(--dark);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background: radial-gradient(ellipse at 70% 20%, rgba(201,168,76,0.1) 0%, transparent 55%),
+                radial-gradient(ellipse at 30% 80%, rgba(201,168,76,0.06) 0%, transparent 50%),
+                var(--dark);
   }
-
   .returning-card {
-    background: var(--dark2);
-    border: 1px solid var(--gold-border);
-    border-radius: 20px;
-    padding: 44px 40px;
-    width: 100%; max-width: 560px;
-    box-shadow: 0 8px 48px rgba(0,0,0,0.5);
-    animation: fadeUp 0.6s ease both;
+    background:var(--dark2); border:1px solid var(--gold-border);
+    border-radius:20px; padding:44px 40px;
+    width:100%; max-width:560px;
+    box-shadow:0 8px 48px rgba(0,0,0,0.5);
+    animation:fadeUp 0.6s ease both;
   }
-
-  .returning-logo {
-    font-family: var(--font-display);
-    font-size: 1rem; color: var(--gold);
-    margin-bottom: 24px; letter-spacing: 0.04em;
-    text-align: center;
-  }
-  .returning-logo span { color: var(--white); }
-
-  .returning-header { text-align: center; margin-bottom: 28px; }
-  .returning-emoji { font-size: 2.8rem; margin-bottom: 12px; }
-  .returning-greeting {
-    font-family: var(--font-display);
-    font-size: clamp(1.8rem, 5vw, 2.4rem);
-    font-weight: 700; color: var(--white);
-    line-height: 1.2; margin-bottom: 6px;
-  }
-  .returning-greeting span { color: var(--gold); }
-  .returning-biz { font-size: 0.88rem; color: var(--muted); }
-  .returning-biz strong { color: var(--gold2); }
-  .returning-date { font-size: 0.78rem; color: var(--muted); margin-top: 4px; letter-spacing: 0.05em; }
-
-  .divider-line { width: 60px; height: 1px; background: var(--gold-border); margin: 20px auto; }
-
-  .stats-row {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 10px; margin-bottom: 20px;
-  }
-  .stat-box {
-    background: var(--dark3); border: 1px solid var(--gold-border);
-    border-radius: var(--radius-sm); padding: 14px 10px; text-align: center;
-  }
-  .stat-box .s-label {
-    font-size: 0.68rem; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
-  }
-  .stat-box .s-value {
-    font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--gold);
-  }
-  .stat-box .s-value.success { color: var(--success); }
-  .stat-box .s-value.danger  { color: var(--danger); }
-
-  .notif-section { margin-bottom: 24px; }
-  .notif-title {
-    font-size: 0.72rem; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
-  }
-  .notif-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 12px 14px; border-radius: var(--radius-sm);
-    margin-bottom: 8px; font-size: 0.86rem; border-left: 3px solid;
-  }
-  .notif-item.warning { background: rgba(224,85,85,0.08); border-color: var(--danger); color: var(--white2); }
-  .notif-item.info    { background: rgba(201,168,76,0.08); border-color: var(--gold);   color: var(--white2); }
-  .notif-item.success { background: rgba(76,175,125,0.08); border-color: var(--success);color: var(--white2); }
-  .notif-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
-  .notif-text { line-height: 1.5; }
-  .notif-text strong { color: var(--white); }
-
-  .no-notifs {
-    text-align: center; padding: 16px; color: var(--muted); font-size: 0.86rem;
-    background: var(--dark3); border-radius: var(--radius-sm); margin-bottom: 24px;
-  }
-
-  .returning-btns { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-
-  .returning-footer {
-    text-align: center; font-size: 0.78rem; color: var(--muted);
-    padding-top: 16px; border-top: 1px solid var(--gold-border);
-  }
-  .returning-footer a { color: var(--gold); text-decoration: none; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  @media (max-width: 480px) {
-    .returning-card { padding: 32px 20px; }
-    .stats-row { grid-template-columns: 1fr 1fr; }
-  }
+  .returning-logo { font-family:var(--font-display); font-size:1rem; color:var(--gold); margin-bottom:24px; letter-spacing:0.04em; text-align:center; }
+  .returning-logo span { color:var(--white); }
+  .returning-header { text-align:center; margin-bottom:28px; }
+  .returning-emoji { font-size:2.8rem; margin-bottom:12px; }
+  .returning-greeting { font-family:var(--font-display); font-size:clamp(1.8rem,5vw,2.4rem); font-weight:700; color:var(--white); line-height:1.2; margin-bottom:6px; }
+  .returning-greeting span { color:var(--gold); }
+  .returning-biz { font-size:0.88rem; color:var(--muted); }
+  .returning-biz strong { color:var(--gold2); }
+  .returning-date { font-size:0.78rem; color:var(--muted); margin-top:4px; letter-spacing:0.05em; }
+  .divider-line { width:60px; height:1px; background:var(--gold-border); margin:20px auto; }
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+  .stat-box { background:var(--dark3); border:1px solid var(--gold-border); border-radius:var(--radius-sm); padding:14px 10px; text-align:center; }
+  .stat-box .s-label { font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .stat-box .s-value { font-family:var(--font-display); font-size:1.2rem; font-weight:700; color:var(--gold); }
+  .stat-box .s-value.success { color:var(--success); }
+  .stat-box .s-value.danger  { color:var(--danger); }
+  .notif-section { margin-bottom:24px; }
+  .notif-title { font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .notif-item { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:var(--radius-sm); margin-bottom:8px; font-size:0.86rem; border-left:3px solid; }
+  .notif-item.warning { background:rgba(224,85,85,0.08); border-color:var(--danger); color:var(--white2); }
+  .notif-item.info    { background:rgba(201,168,76,0.08); border-color:var(--gold); color:var(--white2); }
+  .notif-item.success { background:rgba(76,175,125,0.08); border-color:var(--success); color:var(--white2); }
+  .notif-icon { font-size:1rem; flex-shrink:0; margin-top:1px; }
+  .notif-text { line-height:1.5; }
+  .notif-text strong { color:var(--white); }
+  .no-notifs { text-align:center; padding:16px; color:var(--muted); font-size:0.86rem; background:var(--dark3); border-radius:var(--radius-sm); margin-bottom:24px; }
+  .returning-btns { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .returning-footer { text-align:center; font-size:0.78rem; color:var(--muted); padding-top:16px; border-top:1px solid var(--gold-border); }
+  .returning-footer a { color:var(--gold); text-decoration:none; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @media(max-width:480px) { .returning-card{padding:32px 20px} .stats-row{grid-template-columns:1fr 1fr} }
 </style>
 </head>
 <body>
-
 <div class="returning-wrap">
   <div class="returning-card">
-
     <div class="returning-logo">GrowthIve <span>Monitor</span></div>
 
     <div class="returning-header">
       <div class="returning-emoji">🌟</div>
-      <div class="returning-greeting">Welcome back, <span id="user-firstname">—</span>!</div>
-      <div class="returning-biz">Managing <strong id="user-bizname">your business</strong></div>
+      <div class="returning-greeting" id="greeting-text">Welcome back, <span id="user-firstname">—</span>!</div>
+      <div class="returning-biz" id="managing-text">Managing <strong id="user-bizname">your business</strong></div>
       <div class="returning-date" id="today-date"></div>
     </div>
 
@@ -126,50 +69,133 @@
 
     <div class="stats-row">
       <div class="stat-box">
-        <div class="s-label">Today's Sales</div>
+        <div class="s-label" id="label-sales">Today's Sales</div>
         <div class="s-value success" id="stat-sales">—</div>
       </div>
       <div class="stat-box">
-        <div class="s-label">Monthly Profit</div>
+        <div class="s-label" id="label-profit">Monthly Profit</div>
         <div class="s-value" id="stat-profit">—</div>
       </div>
       <div class="stat-box">
-        <div class="s-label">Unpaid Debts</div>
+        <div class="s-label" id="label-debts">Unpaid Debts</div>
         <div class="s-value danger" id="stat-debts">—</div>
       </div>
     </div>
 
     <div class="notif-section">
-      <div class="notif-title">🔔 Your Alerts & Reminders</div>
+      <div class="notif-title" id="alerts-title">🔔 Your Alerts & Reminders</div>
       <div id="notif-list">
         <div class="spinner" style="width:24px;height:24px;margin:12px auto;border-width:2px;"></div>
       </div>
     </div>
 
     <div class="returning-btns">
-      <a href="dashboard.html" class="btn btn-gold btn-full">Go to Dashboard →</a>
-      <a href="reports.html" class="btn btn-outline btn-full">📈 View Reports</a>
+      <a href="dashboard.html" class="btn btn-gold btn-full" id="btn-dashboard">Go to Dashboard →</a>
+      <a href="reports.html" class="btn btn-outline btn-full" id="btn-reports">📈 View Reports</a>
     </div>
 
     <div class="returning-footer">
-      <a href="sales.html">Record Sales</a>
+      <a href="sales.html" id="link-sales">Record Sales</a>
       &nbsp;·&nbsp;
-      <a href="expenses.html">Log Expense</a>
+      <a href="expenses.html" id="link-expenses">Log Expense</a>
       &nbsp;·&nbsp;
-      <a href="contact.html">Support</a>
+      <a href="contact.html" id="link-support">Support</a>
       &nbsp;·&nbsp;
       <a href="faq.html">FAQ</a>
     </div>
-
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
+<script src="js/lang.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  // Apply theme immediately
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+  // Language text map for returning page
+  const returningText = {
+    en: {
+      greeting: 'Welcome back,', managing: 'Managing',
+      sales: "Today's Sales", profit: 'Monthly Profit', debts: 'Unpaid Debts',
+      alerts: '🔔 Your Alerts & Reminders',
+      dashboard: 'Go to Dashboard →', reports: '📈 View Reports',
+      rec_sales: 'Record Sales', log_exp: 'Log Expense', support: 'Support',
+      no_sales: 'No sales recorded today.', no_sales_sub: 'Head to the Sales Point to record your first sale.',
+      great: 'Great!', sales_made: "You've made", sales_today: 'in sales today.',
+      low_stock: 'item(s) running low:', restock: 'Restock soon.',
+      overdue: 'overdue debt(s)', need_att: 'need your attention. Total:',
+      today_str: 'Today', tomorrow_str: 'Tomorrow',
+      loss_warn: 'Running at a loss this month.', loss_sub: 'Expenses exceed sales by',
+      loss_review: 'Review your expenses.',
+      all_clear: '🎉 All clear! No alerts at the moment. Keep up the great work!'
+    },
+    ha: {
+      greeting: 'Maraba da komowarka,', managing: 'Ana Sarrafa',
+      sales: 'Tallace na Yau', profit: 'Riba ta Wata', debts: 'Basussuka da Ba a Biya',
+      alerts: '🔔 Faɗakarwarka da Tunatarwarka',
+      dashboard: 'Je Allon Kallo →', reports: '📈 Duba Rahotanni',
+      rec_sales: 'Yi Rikodin Tallace', log_exp: 'Rubuta Kashe-kudi', support: 'Taimako',
+      no_sales: 'Babu tallace da aka rubuta yau.', no_sales_sub: 'Je wurin sayayya don rubuta tallacenka na farko.',
+      great: 'Kyau!', sales_made: 'Ka samu', sales_today: 'a cikin tallace yau.',
+      low_stock: 'kaya suna ƙarewa:', restock: 'Yi sayen kaya da wuri.',
+      overdue: 'bashi da suka wuce lokaci', need_att: 'suna buƙatar kulawarka. Jimla:',
+      today_str: 'Yau', tomorrow_str: 'Gobe',
+      loss_warn: 'Kasuwanci yana asara wannan wata.', loss_sub: 'Kashe-kudi ya zarce tallace da',
+      loss_review: 'Duba kashe-kudinka.',
+      all_clear: '🎉 Komai lafiya! Babu faɗakarwa a yanzu. Ci gaba da kyakkyawan aiki!'
+    },
+    yo: {
+      greeting: 'Ẹ káàbọ̀ padà,', managing: 'Ń Ṣakoso',
+      sales: 'Tita Òní', profit: 'Ere Oṣù', debts: 'Gbèsè Ti A Ko Sanwo',
+      alerts: '🔔 Awọn Itaniji àti Ìránpàdé Rẹ',
+      dashboard: 'Lọ si Dasibodu →', reports: '📈 Wo Ijabọ',
+      rec_sales: 'Gbasilẹ Tita', log_exp: 'Kọ Inawo Silẹ', support: 'Iranlọwọ',
+      no_sales: 'Ko si tita tí a gbasilẹ lónìí.', no_sales_sub: 'Lọ si Ibi Tita lati gbasilẹ tita akọkọ rẹ.',
+      great: 'Ó dára!', sales_made: "O ti ṣe", sales_today: 'ní tita lónìí.',
+      low_stock: 'ohun elo fẹrẹ parí:', restock: 'Tún ra ọja laipẹ.',
+      overdue: 'gbèsè tí ó ti pẹ́', need_att: 'nilo akiyesi rẹ. Àpapọ̀:',
+      today_str: 'Lónìí', tomorrow_str: 'Ọ̀la',
+      loss_warn: 'Ń ṣiṣẹ ní àdánù oṣù yìí.', loss_sub: 'Inawo ju tita lọ nipasẹ',
+      loss_review: 'Ṣayẹwo inawo rẹ.',
+      all_clear: '🎉 Ohun gbogbo dára! Ko si itaniji rárá. Máa ṣiṣẹ kára!'
+    },
+    ig: {
+      greeting: 'Nnọọ na-alọghachi,', managing: 'Na-ahazi',
+      sales: 'Ahịa Taa', profit: 'Uru Ọnwa', debts: 'Ụgwọ A Akwụghị',
+      alerts: '🔔 Ọdịmma gị na Ndetu gị',
+      dashboard: 'Gaa Deshbọọdụ →', reports: '📈 Lee Akụkọ',
+      rec_sales: 'Debanye Ahịa', log_exp: 'Dee Ego A Na-eji', support: 'Enyemaka',
+      no_sales: 'Odeghị ahịa ọ bụla taa.', no_sales_sub: 'Gaa Ebe Ire Ahịa idekọ ahịa gị nke mbụ.',
+      great: 'Ọ dị mma!', sales_made: 'Ị nwetara', sales_today: 'na ahịa taa.',
+      low_stock: 'ihe na-afocha:', restock: 'Weeta ihe n\'oge.',
+      overdue: 'ụgwọ gachara oge', need_att: 'chọọ nlelee gị. Ngụkọta:',
+      today_str: 'Taa', tomorrow_str: 'Echi',
+      loss_warn: 'Na-arụ ọrụ na ọnwụ ọnwa a.', loss_sub: 'Ego a na-eji karịrị ahịa site na',
+      loss_review: 'Lelee ego a na-eji gị.',
+      all_clear: '🎉 Ihe niile dị mma! Enweghị ọdịmma ugbu a. Cọntinue ọrụ ọma!'
+    }
+  };
+
+  function applyReturningLang(lang, firstName, formatCurrency) {
+    const txt = returningText[lang] || returningText['en'];
+    const greetEl = document.getElementById('greeting-text');
+    if (greetEl && firstName) {
+      greetEl.innerHTML = `${txt.greeting} <span style="color:var(--gold)">${firstName}</span>!`;
+    }
+    document.getElementById('label-sales').textContent  = txt.sales;
+    document.getElementById('label-profit').textContent = txt.profit;
+    document.getElementById('label-debts').textContent  = txt.debts;
+    document.getElementById('alerts-title').textContent = txt.alerts;
+    document.getElementById('btn-dashboard').textContent = txt.dashboard;
+    document.getElementById('btn-reports').textContent   = txt.reports;
+    document.getElementById('link-sales').textContent    = txt.rec_sales;
+    document.getElementById('link-expenses').textContent = txt.log_exp;
+    document.getElementById('link-support').textContent  = txt.support;
+    return txt;
+  }
 
   const now      = new Date();
   const today    = now.toISOString().split('T')[0];
@@ -180,15 +206,6 @@
   document.getElementById('today-date').textContent =
     now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-  /* ══════════════════════════════════════════
-     STOCK STATUS HELPER — same rule as inventory,
-     purchases and dashboard pages.
-
-     qty === 0 → untracked / service.  NO alert.
-     qty < 0  → negative (sold untracked). NO alert.
-     qty > 0 AND qty <= threshold → genuinely LOW. ALERT.
-     qty > threshold → OK.
-  ══════════════════════════════════════════ */
   function stockStatus(item) {
     const qty = Number(item.quantity);
     if (qty === 0) return 'untracked';
@@ -205,87 +222,50 @@
     const user = await requireAuth();
     if (!user) return;
 
-    // Load profile
     const { data: profile } = await _supabase
       .from('profiles')
-      .select('full_name, business_name')
+      .select('full_name, business_name, preferred_language')
       .eq('id', user.id)
       .single();
 
+    let firstName = 'Friend';
     if (profile) {
-      const firstName = profile.full_name
-        ? profile.full_name.trim().split(' ')[0] : 'Friend';
-      document.getElementById('user-firstname').textContent = firstName;
-      document.getElementById('user-bizname').textContent   = profile.business_name || 'your business';
+      firstName = profile.full_name ? profile.full_name.trim().split(' ')[0] : 'Friend';
+      document.getElementById('user-bizname').textContent = profile.business_name || 'your business';
       document.title = `Welcome Back, ${firstName} — GrowthIve Monitor`;
+
+      // Sync language from Supabase
+      const profileLang = profile.preferred_language || 'en';
+      const localLang   = localStorage.getItem('growthive_lang') || 'en';
+      if (profileLang !== localLang) {
+        localStorage.setItem('growthive_lang', profileLang);
+      }
     }
+
+    const lang = localStorage.getItem('growthive_lang') || 'en';
+    const txt  = applyReturningLang(lang, firstName, formatCurrency);
 
     // Fetch all data in parallel
     const [
-      { data: txnsToday },
-      { data: txnsMonth },
-      { data: salesMonth },   // legacy manual entries — kept so old data isn't lost
-      { data: expMonth },
-      { data: debts },
-      { data: inventory },
-      { data: reminders }
+      { data: txnsToday }, { data: txnsMonth }, { data: salesMonth },
+      { data: expMonth }, { data: debts }, { data: inventory }, { data: reminders }
     ] = await Promise.all([
-      // Today's sales — from POS (includes goods + services + untracked)
-      _supabase.from('purchase_transactions')
-        .select('total_amount')
-        .eq('user_id', user.id)
-        .eq('date', today),
-
-      // This month's POS sales
-      _supabase.from('purchase_transactions')
-        .select('total_amount')
-        .eq('user_id', user.id)
-        .gte('date', startOfMonth),
-
-      // Legacy manual daily sales entries — included so existing clients
-      // don't lose historical monthly revenue data
-      _supabase.from('sales')
-        .select('total_amount')
-        .eq('user_id', user.id)
-        .gte('date', startOfMonth),
-
-      _supabase.from('expenses')
-        .select('amount')
-        .eq('user_id', user.id)
-        .gte('date', startOfMonth),
-
-      _supabase.from('debts')
-        .select('amount,type,person_name,due_date')
-        .eq('user_id', user.id)
-        .eq('status', 'unpaid'),
-
-      // Load inventory — ONLY non-deleted items
-      _supabase.from('inventory')
-        .select('item_name,quantity,low_stock_threshold')
-        .eq('user_id', user.id)
-        .is('deleted_at', null),
-
-      _supabase.from('reminders')
-        .select('title,reminder_date')
-        .eq('user_id', user.id)
-        .gte('reminder_date', today)
-        .lte('reminder_date', tomorrowStr)
-        .order('reminder_date')
+      _supabase.from('purchase_transactions').select('total_amount').eq('user_id', user.id).eq('date', today),
+      _supabase.from('purchase_transactions').select('total_amount').eq('user_id', user.id).gte('date', startOfMonth),
+      _supabase.from('sales').select('total_amount').eq('user_id', user.id).gte('date', startOfMonth),
+      _supabase.from('expenses').select('amount').eq('user_id', user.id).gte('date', startOfMonth),
+      _supabase.from('debts').select('amount,type,person_name,due_date').eq('user_id', user.id).eq('status', 'unpaid'),
+      _supabase.from('inventory').select('item_name,quantity,low_stock_threshold').eq('user_id', user.id).is('deleted_at', null),
+      _supabase.from('reminders').select('title,reminder_date').eq('user_id', user.id).gte('reminder_date', today).lte('reminder_date', tomorrowStr).order('reminder_date')
     ]);
 
-    // ── Stats ──
-    const totalSalesToday = (txnsToday  || []).reduce((s,r) => s + Number(r.total_amount||0), 0);
-
-    // Monthly revenue = POS transactions + any legacy manual entries (no double count risk
-    // since manual sales table and purchase_transactions are separate tables)
+    const totalSalesToday  = (txnsToday  || []).reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalPOSMonth    = (txnsMonth  || []).reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalManualMonth = (salesMonth || []).reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalSalesMonth  = totalPOSMonth + totalManualMonth;
-
     const totalExp  = (expMonth || []).reduce((s,r) => s + Number(r.amount||0), 0);
     const profit    = totalSalesMonth - totalExp;
-    const totalDebt = (debts || []).filter(r => r.type === 'i_owe')
-                        .reduce((s,r) => s + Number(r.amount||0), 0);
+    const totalDebt = (debts || []).filter(r => r.type === 'i_owe').reduce((s,r) => s + Number(r.amount||0), 0);
 
     document.getElementById('stat-sales').textContent = formatCurrency(totalSalesToday);
     const profEl = document.getElementById('stat-profit');
@@ -293,65 +273,45 @@
     profEl.className   = 's-value ' + (profit >= 0 ? 'success' : 'danger');
     document.getElementById('stat-debts').textContent = formatCurrency(totalDebt);
 
-    // ── Notifications ──
+    // Build notifications in user's language
     const notifications = [];
 
-    // Today's sales status
     if (totalSalesToday === 0) {
-      notifications.push({
-        type: 'info', icon: '💰',
-        text: '<strong>No sales recorded today.</strong> Head to the Sales Point to record your first sale.'
-      });
+      notifications.push({ type:'info', icon:'💰',
+        text: `<strong>${txt.no_sales}</strong> ${txt.no_sales_sub}` });
     } else {
-      notifications.push({
-        type: 'success', icon: '✅',
-        text: `<strong>Great!</strong> You've made ${formatCurrency(totalSalesToday)} in sales today.`
-      });
+      notifications.push({ type:'success', icon:'✅',
+        text: `<strong>${txt.great}</strong> ${txt.sales_made} ${formatCurrency(totalSalesToday)} ${txt.sales_today}` });
     }
 
-    // ── LOW STOCK — FIX ──
-    // Only flag items where qty > 0 AND below threshold.
-    // qty === 0 (services/untracked) and qty < 0 (negative/sold) are excluded.
     const lowStockItems = (inventory || []).filter(i => stockStatus(i) === 'low');
     if (lowStockItems.length > 0) {
-      notifications.push({
-        type: 'warning', icon: '⚠️',
-        text: `<strong>${lowStockItems.length} item(s) running low:</strong> ${lowStockItems.map(i => i.item_name).join(', ')}. Restock soon.`
-      });
+      notifications.push({ type:'warning', icon:'⚠️',
+        text: `<strong>${lowStockItems.length} ${txt.low_stock}</strong> ${lowStockItems.map(i=>i.item_name).join(', ')}. ${txt.restock}` });
     }
 
-    // Overdue debts
     const overdueDebts = (debts || []).filter(r => r.type === 'i_owe' && r.due_date && r.due_date < today);
     if (overdueDebts.length > 0) {
-      notifications.push({
-        type: 'warning', icon: '🤝',
-        text: `<strong>${overdueDebts.length} overdue debt(s)</strong> need your attention. Total: ${formatCurrency(overdueDebts.reduce((s,r) => s + Number(r.amount||0), 0))}.`
-      });
+      notifications.push({ type:'warning', icon:'🤝',
+        text: `<strong>${overdueDebts.length} ${txt.overdue}</strong> ${txt.need_att} ${formatCurrency(overdueDebts.reduce((s,r)=>s+Number(r.amount||0),0))}.` });
     }
 
-    // Reminders today or tomorrow
     if (reminders && reminders.length > 0) {
       reminders.forEach(r => {
         const isToday = r.reminder_date === today;
-        notifications.push({
-          type: 'info', icon: '📅',
-          text: `<strong>${isToday ? 'Today' : 'Tomorrow'}:</strong> ${r.title}`
-        });
+        notifications.push({ type:'info', icon:'📅',
+          text: `<strong>${isToday ? txt.today_str : txt.tomorrow_str}:</strong> ${r.title}` });
       });
     }
 
-    // Monthly loss warning
     if (profit < 0 && totalSalesMonth > 0) {
-      notifications.push({
-        type: 'warning', icon: '📉',
-        text: `<strong>Running at a loss this month.</strong> Expenses exceed sales by ${formatCurrency(Math.abs(profit))}. Review your expenses.`
-      });
+      notifications.push({ type:'warning', icon:'📉',
+        text: `<strong>${txt.loss_warn}</strong> ${txt.loss_sub} ${formatCurrency(Math.abs(profit))}. ${txt.loss_review}` });
     }
 
-    // Render
     const el = document.getElementById('notif-list');
     if (notifications.length === 0) {
-      el.innerHTML = '<div class="no-notifs">🎉 All clear! No alerts at the moment. Keep up the great work!</div>';
+      el.innerHTML = `<div class="no-notifs">${txt.all_clear}</div>`;
     } else {
       el.innerHTML = notifications.map(n => `
         <div class="notif-item ${n.type}">

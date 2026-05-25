@@ -26,33 +26,36 @@ async function loadUserHeader() {
 
   const profile = await getProfile(user.id);
 
-  // ── Update navbar display name and avatar ──
+  // Update navbar display name and avatar
   const nameEl   = document.getElementById('user-display-name');
   const avatarEl = document.getElementById('user-avatar');
   if (nameEl && profile) nameEl.textContent = profile.business_name || profile.full_name || 'User';
   if (avatarEl && profile && profile.avatar_url) avatarEl.src = profile.avatar_url;
 
-  // ── Load and apply user's saved language from Supabase ──
+  // Sync language from Supabase — but DO NOT reload if we are on login/welcome/returning
+  // to avoid breaking the routing and redirect flow
+  const currentPage = window.location.pathname.split('/').pop();
+  const skipReloadPages = ['login.html', 'welcome.html', 'returning.html', 'register.html', ''];
+  
   if (profile && profile.preferred_language) {
-    const savedLang    = profile.preferred_language;
-    const currentLang  = localStorage.getItem('growthive_lang') || 'en';
+    const savedLang   = profile.preferred_language;
+    const currentLang = localStorage.getItem('growthive_lang') || 'en';
 
-    // Sync localStorage with what Supabase has
     if (savedLang !== currentLang) {
       localStorage.setItem('growthive_lang', savedLang);
-      // Reload to apply the correct language across the page
-      window.location.reload();
+      // Only reload on main app pages — never on auth/routing pages
+      if (!skipReloadPages.includes(currentPage)) {
+        window.location.reload();
+      }
     }
   }
 }
 
 async function logout() {
-  // Save current language before clearing storage
-  // so it still lives in Supabase and comes back on next login
+  // Preserve language preference across logout
   const lang = localStorage.getItem('growthive_lang') || 'en';
   await _supabase.auth.signOut();
   localStorage.clear();
-  // Restore language so it applies on login page too
   localStorage.setItem('growthive_lang', lang);
   window.location.href = 'login.html';
 }

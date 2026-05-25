@@ -936,3 +936,153 @@ async function setLang(code) {
     });
   }
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+   GEMINI AUTO-TRANSLATION FALLBACK
+   For any word/phrase not in the dictionary, this calls the
+   Supabase Edge Function which uses Gemini to translate it.
+   Results are cached in localStorage forever — API called once only.
+═══════════════════════════════════════════════════════════════ */
+
+const EDGE_FN_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co/functions/v1/translate';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdWhwd2l5emV2dWh6Y2Rzam1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDA3NzcsImV4cCI6MjA5NDA3Njc3N30.YVIC1qcywVycAEOIQeg0WfDyFzFnqfRPP-WMbcM2QC4';
+
+// Words/phrases that must NEVER be translated
+const PROTECTED_PHRASES = [
+  'GrowthIve Monitor', 'GrowthIve', 'Monitor',
+  'Supabase', 'GitHub', 'POS', 'CSV', 'PDF', 'FAQ',
+  '₦', 'EN', 'HA', 'YO', 'IG'
+];
+
+// Cache key prefix in localStorage
+const CACHE_PREFIX = 'growthive_tx_';
+
+// Get cached translation
+function getCachedTranslation(text, lang) {
+  try {
+    const key = CACHE_PREFIX + lang + '_' + btoa(unescape(encodeURIComponent(text))).substring(0, 40);
+    const cached = localStorage.getItem(key);
+    return cached || null;
+  } catch(e) { return null; }
+}
+
+// Save translation to cache
+function setCachedTranslation(text, lang, translated) {
+  try {
+    const key = CACHE_PREFIX + lang + '_' + btoa(unescape(encodeURIComponent(text))).substring(0, 40);
+    localStorage.setItem(key, translated);
+  } catch(e) {}
+}
+
+// Check if text should be protected from translation
+function isProtected(text) {
+  if (!text || text.trim().length < 2) return true;
+  if (/^[\d\s₦.,\-+%:\/]+$/.test(text)) return true; // numbers/symbols only
+  if (/^[A-Z]{2,4}$/.test(text.trim())) return true; // short caps like POS, CSV
+  for (const phrase of PROTECTED_PHRASES) {
+    if (text.includes(phrase)) return true;
+  }
+  return false;
+}
+
+// Translate a single text via Gemini Edge Function
+async function geminiTranslate(text, lang) {
+  if (!text || !text.trim() || isProtected(text)) return null;
+  if (lang === 'en') return text;
+
+  // Check cache first
+  const cached = getCachedTranslation(text, lang);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(EDGE_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ text: text.trim() })
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const translated = data[lang];
+
+    if (translated && translated !== text) {
+      // Cache for all three languages at once
+      if (data.ha) setCachedTranslation(text, 'ha', data.ha);
+      if (data.yo) setCachedTranslation(text, 'yo', data.yo);
+      if (data.ig) setCachedTranslation(text, 'ig', data.ig);
+      return translated;
+    }
+    return null;
+  } catch(e) {
+    console.warn('Gemini translation failed:', e);
+    return null;
+  }
+}
+
+// Scan page for untranslated English text and translate via Gemini
+async function geminiTranslatePage() {
+  const lang = getLang();
+  if (lang === 'en') return;
+
+  // Collect all visible text nodes not yet translated
+  const textNodesToTranslate = [];
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        const tag = parent.tagName;
+        // Skip scripts, styles, inputs
+        if (['SCRIPT','STYLE','NOSCRIPT','INPUT','TEXTAREA'].includes(tag)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        const text = node.textContent.trim();
+        // Only process non-empty English-looking text
+        if (!text || text.length < 2) return NodeFilter.FILTER_REJECT;
+        if (isProtected(text)) return NodeFilter.FILTER_REJECT;
+        // Only translate if it looks like English (has common English letters)
+        if (!/^[a-zA-Z\s\-\/&'".,:!?→←₦()0-9%+]+$/.test(text)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  while (walker.nextNode()) {
+    textNodesToTranslate.push(walker.currentNode);
+  }
+
+  // Translate each node (check cache first, API if not cached)
+  for (const node of textNodesToTranslate) {
+    const original = node.textContent.trim();
+    const translated = await geminiTranslate(original, lang);
+    if (translated && translated !== original) {
+      node.textContent = node.textContent.replace(original, translated);
+    }
+  }
+
+  // Also translate placeholder attributes
+  document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(async el => {
+    const ph = el.placeholder.trim();
+    if (!ph || isProtected(ph)) return;
+    if (!/^[a-zA-Z\s\-\/&'".,:!?→]+$/.test(ph)) return;
+    const translated = await geminiTranslate(ph, lang);
+    if (translated) el.placeholder = translated;
+  });
+}
+
+// Run Gemini translation after dictionary translation
+// Delay slightly to let page fully render first
+const _origAutoTranslate = autoTranslatePage;
+autoTranslatePage = function() {
+  _origAutoTranslate();
+  // Then run Gemini for anything the dictionary missed
+  setTimeout(() => geminiTranslatePage(), 800);
+};

@@ -24,7 +24,10 @@
   .form-panel { display: none; }
   .form-panel.active { display: block; }
 
-  .source-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+  .source-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 4px;
+  }
   .source-total {
     padding: 10px 14px; background: var(--dark3);
     border-radius: var(--radius-sm); border: 1px solid var(--gold-border);
@@ -40,7 +43,8 @@
   .closing-box {
     padding: 12px 14px; background: var(--dark3);
     border-radius: var(--radius-sm); border: 1px solid var(--gold-border);
-    display: flex; justify-content: space-between; align-items: center; margin-top: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 4px;
   }
   .closing-formula {
     font-size: 0.72rem; color: var(--muted); margin-top: 6px;
@@ -62,13 +66,17 @@
   .auto-badge {
     display: inline-flex; align-items: center; gap: 4px;
     background: rgba(91,155,213,0.12); border: 1px solid rgba(91,155,213,0.3);
-    border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; color: var(--info);
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 0.7rem; color: var(--info);
   }
   .manual-badge {
     display: inline-flex; align-items: center; gap: 4px;
     background: rgba(201,168,76,0.1); border: 1px solid var(--gold-border);
-    border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; color: var(--gold);
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 0.7rem; color: var(--gold);
   }
+
+  /* Delete confirm */
   .delete-confirm-input {
     font-size: 1rem; font-weight: 700; letter-spacing: 0.12em;
     text-align: center; border: 2px solid var(--danger) !important;
@@ -83,6 +91,8 @@
     border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;
     font-size: 0.85rem; color: var(--white2); line-height: 1.7;
   }
+
+  /* Print styles */
   @media print {
     body * { visibility: hidden !important; }
     #print-receipt, #print-receipt * { visibility: visible !important; }
@@ -97,7 +107,8 @@
   #print-receipt {
     display: none; position: fixed; top: 0; left: 0;
     width: 100%; height: 100%; background: #fff; color: #111;
-    z-index: 9999; padding: 48px; font-family: 'Segoe UI', Georgia, serif; overflow-y: auto;
+    z-index: 9999; padding: 48px;
+    font-family: 'Segoe UI', Georgia, serif; overflow-y: auto;
   }
   #print-receipt .pr-header {
     border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px;
@@ -123,6 +134,8 @@
     border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer;
     font-size: 0.85rem; z-index: 10000;
   }
+
+  /* Edit history modal */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.7); z-index: 1000;
@@ -134,7 +147,10 @@
     border-radius: var(--radius); padding: 28px; max-width: 500px;
     width: 100%; max-height: 80vh; overflow-y: auto;
   }
-  .edit-history-row { padding: 10px 0; border-bottom: 1px solid var(--dark4); font-size: 0.82rem; }
+  .edit-history-row {
+    padding: 10px 0; border-bottom: 1px solid var(--dark4);
+    font-size: 0.82rem;
+  }
   .edit-history-row:last-child { border-bottom: none; }
 </style>
 </head>
@@ -144,7 +160,7 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="page-title">Daily Sales</div>
-    <div class="page-subtitle">Record daily sales. POS entries from Purchases page auto-sync here.</div>
+    <div class="page-subtitle">Record your daily sales. POS entries from Purchases page auto-sync here.</div>
 
     <div class="grid-2">
       <!-- Entry Form -->
@@ -157,6 +173,7 @@
         </div>
 
         <div id="form-msg"></div>
+
         <div id="existing-badge" style="display:none;"></div>
 
         <div class="form-group">
@@ -214,6 +231,7 @@
             <span style="font-size:0.82rem;color:var(--muted);">Total Sales (Auto)</span>
             <span style="font-weight:700;color:var(--gold);font-family:var(--font-display);font-size:1.1rem;" id="p-auto-total">₦0.00</span>
           </div>
+
           <div class="section-label">💰 Cash Float Tracker</div>
           <div class="float-row">
             <div class="form-group">
@@ -229,10 +247,13 @@
             <span style="font-size:0.82rem;color:var(--muted);">Closing Cash Balance</span>
             <span style="font-weight:700;font-family:var(--font-display);font-size:1.1rem;" id="p-closing">₦0.00</span>
           </div>
-          <div class="closing-formula" id="p-formula">Formula: Opening Balance + Cash Sales − Cash Paid Out = Closing Cash</div>
+          <div class="closing-formula" id="p-formula">
+            Formula: Opening Balance + Cash Sales − Cash Paid Out = Closing Cash
+          </div>
+
           <div class="form-group" style="margin-top:16px;">
             <label>Notes (optional)</label>
-            <textarea id="p-notes" placeholder="e.g. Busy market day…"></textarea>
+            <textarea id="p-notes" placeholder="e.g. Busy market day, wine restock needed…"></textarea>
           </div>
           <button class="btn btn-gold btn-full" onclick="saveSale('premium')" style="margin-top:8px;">Save Premium Record →</button>
         </div>
@@ -264,7 +285,7 @@
           </div>
         </div>
         <div style="margin-top:14px;padding:10px 14px;background:var(--dark3);border-radius:var(--radius-sm);font-size:0.78rem;color:var(--muted);border-left:3px solid var(--gold-border);">
-          💡 Cash/Transfer/POS breakdown shows when <strong style="color:var(--white2);">Premium Record</strong> or <strong style="color:var(--info);">Purchases/POS</strong> is used.
+          💡 Cash/Transfer/POS breakdown only shows when <strong style="color:var(--white2);">Premium Sales Record</strong> or <strong style="color:var(--info);">Purchases/POS page</strong> is used.
         </div>
       </div>
     </div>
@@ -317,7 +338,7 @@
     <div class="delete-warning-box">
       <strong style="color:var(--danger);">⚠️ You are about to delete this sale record:</strong><br>
       <span id="delete-sale-info" style="color:var(--white);font-weight:600;"></span><br><br>
-      This action is <strong>permanently logged</strong>. The record cannot be recovered.
+      This action is <strong>permanently logged</strong>. The record cannot be recovered after deletion.
       If you need to correct a figure, use the <strong>update</strong> feature instead.
     </div>
     <div class="form-group">
@@ -339,6 +360,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/lang.js"></script>
 <script src="js/app.js"></script>
 <script>
 let currentUser;
@@ -463,11 +485,12 @@ async function loadSales() {
     </thead>
     <tbody>
       ${(data||[]).map(r => {
-        const pos      = Number(r.pos_amount||0);
-        const closing  = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
+        const pos     = Number(r.pos_amount||0);
+        const closing = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
         const recorded = new Date(r.created_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
         const isAutoSync = r.source === 'pos';
         const hasEdits   = r.updated_at && r.updated_at !== r.created_at;
+
         return `<tr>
           <td>${formatDate(r.date)}</td>
           <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
@@ -492,8 +515,7 @@ async function loadSales() {
               ? `<button class="btn btn-sm" style="background:var(--dark3);color:var(--info);border:1px solid var(--gold-border);"
                   onclick="viewEditHistory('${r.id}')">📋</button>`
               : ''}
-            <button class="btn btn-danger btn-sm"
-              onclick="openDeleteModal('${r.id}','${formatDate(r.date)}','${formatCurrency(r.total_amount)}')">Delete</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${r.id}','${formatDate(r.date)}','${formatCurrency(r.total_amount)}')">Delete</button>
           </td>
         </tr>`;
       }).join('')}
@@ -515,18 +537,18 @@ async function saveSale(type) {
       total_quantity: parseInt(document.getElementById('s-qty').value) || null,
       notes: document.getElementById('s-notes').value.trim() };
   } else {
-    const cash     = parseFloat(document.getElementById('p-cash').value)     || 0;
+    const cash = parseFloat(document.getElementById('p-cash').value) || 0;
     const transfer = parseFloat(document.getElementById('p-transfer').value) || 0;
-    const pos1     = parseFloat(document.getElementById('p-pos1').value)     || 0;
-    const pos2     = parseFloat(document.getElementById('p-pos2').value)     || 0;
-    const pos3     = parseFloat(document.getElementById('p-pos3').value)     || 0;
-    const total    = cash + transfer + pos1 + pos2 + pos3;
+    const pos1 = parseFloat(document.getElementById('p-pos1').value) || 0;
+    const pos2 = parseFloat(document.getElementById('p-pos2').value) || 0;
+    const pos3 = parseFloat(document.getElementById('p-pos3').value) || 0;
+    const total = cash + transfer + pos1 + pos2 + pos3;
     if (total <= 0) { msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter at least one amount.</div>'; return; }
     payload = { ...payload, total_amount: total, cash_amount: cash, transfer_amount: transfer,
       pos_amount: pos1+pos2+pos3,
       opening_balance: parseFloat(document.getElementById('p-opening').value) || 0,
-      cash_paid_out:   parseFloat(document.getElementById('p-cashout').value) || 0,
-      total_quantity:  parseInt(document.getElementById('p-qty').value) || null,
+      cash_paid_out: parseFloat(document.getElementById('p-cashout').value) || 0,
+      total_quantity: parseInt(document.getElementById('p-qty').value) || null,
       notes: document.getElementById('p-notes').value.trim() };
   }
 
@@ -537,13 +559,14 @@ async function saveSale(type) {
 
   let error;
   if (existing) {
+    // Log audit trail before updating
     await _supabase.from('sales_edits').insert({
       sale_id: existing.id, user_id: currentUser.id, edited_at: new Date().toISOString(),
       old_total: existing.total_amount, new_total: payload.total_amount,
-      old_cash: existing.cash_amount,   new_cash: payload.cash_amount,
+      old_cash: existing.cash_amount, new_cash: payload.cash_amount,
       old_transfer: existing.transfer_amount, new_transfer: payload.transfer_amount,
-      old_pos: existing.pos_amount,     new_pos: payload.pos_amount,
-      old_notes: existing.notes,        new_notes: payload.notes
+      old_pos: existing.pos_amount, new_pos: payload.pos_amount,
+      old_notes: existing.notes, new_notes: payload.notes
     }).catch(e => console.warn('Audit log failed:', e));
 
     ({ error } = await _supabase.from('sales').update(payload).eq('id', existing.id));
@@ -574,7 +597,7 @@ async function saveSale(type) {
   setTimeout(() => msg.innerHTML = '', 6000);
 }
 
-/* ── DELETE FLOW ── */
+// ── DELETE FLOW WITH CONFIRMATION ──
 function openDeleteModal(id, dateStr, amountStr) {
   document.getElementById('delete-pending-id').value = id;
   document.getElementById('delete-sale-info').textContent = `${dateStr} — ${amountStr}`;
@@ -587,10 +610,10 @@ function openDeleteModal(id, dateStr, amountStr) {
 }
 
 function checkDeleteConfirm() {
-  const val     = document.getElementById('delete-confirm-input').value.trim().toUpperCase();
-  const btn     = document.getElementById('confirm-delete-btn');
+  const val = document.getElementById('delete-confirm-input').value.trim().toUpperCase();
+  const btn = document.getElementById('confirm-delete-btn');
   const isValid = val === 'DELETE';
-  btn.disabled      = !isValid;
+  btn.disabled = !isValid;
   btn.style.opacity = isValid ? '1' : '0.4';
   btn.style.cursor  = isValid ? 'pointer' : 'not-allowed';
   document.getElementById('delete-confirm-input').style.borderColor =
@@ -602,13 +625,17 @@ async function confirmDelete() {
   const msg = document.getElementById('delete-modal-msg');
   msg.innerHTML = '<div class="alert alert-gold">Deleting…</div>';
 
+  // Log deletion to sales_edits before deleting
   await _supabase.from('sales_edits').insert({
     sale_id: id, user_id: currentUser.id, edited_at: new Date().toISOString(),
+    old_total: null, new_total: null,
     old_notes: 'RECORD DELETED', new_notes: 'RECORD DELETED'
   }).catch(e => console.warn('Delete log failed:', e));
 
+  await _supabase.from('sales_edits').delete().eq('sale_id', id);
   const { error } = await _supabase.from('sales').delete().eq('id', id);
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+
   closeDeleteModal();
   loadSales();
 }
@@ -618,7 +645,7 @@ function closeDeleteModal() {
   document.getElementById('delete-confirm-input').value = '';
 }
 
-/* ── EDIT HISTORY ── */
+// ── EDIT HISTORY ──
 async function viewEditHistory(saleId) {
   document.getElementById('edit-modal').classList.add('show');
   document.getElementById('edit-history-body').innerHTML = '<div class="spinner"></div>';
@@ -644,7 +671,7 @@ async function viewEditHistory(saleId) {
         </div>
       </div>`;
     }
-    const totalDiff = Number(e.new_total||0) - Number(e.old_total||0);
+    const totalDiff = Number(e.new_total) - Number(e.old_total);
     return `<div class="edit-history-row">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-weight:600;color:var(--white2);">Edit #${data.length - idx}</span>
@@ -681,7 +708,7 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('show');
 }
 
-/* ── PRINT ── */
+// ── PRINT ──
 async function printReceipt(record) {
   let bizName = 'My Business';
   try {

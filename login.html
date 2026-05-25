@@ -93,11 +93,13 @@
       '<div class="alert alert-danger">⚠️ Your confirmation link has expired. Please <a href="register.html" style="color:var(--gold);">register again</a> or contact support.</div>';
   }
 
-  // If already logged in → returning
-  (async () => {
-    const { data: { user } } = await _supabase.auth.getUser();
-    if (user) window.location.href = 'returning.html';
-  })();
+  // If already logged in → returning (skip if processing email confirmation)
+  if (!hash.includes('access_token')) {
+    (async () => {
+      const { data: { user } } = await _supabase.auth.getUser();
+      if (user) window.location.href = 'returning.html';
+    })();
+  }
 
   async function doLogin() {
     const email    = document.getElementById('email').value.trim();

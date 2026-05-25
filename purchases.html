@@ -162,6 +162,13 @@
     font-size: 0.72rem; color: var(--success);
     margin-top: 8px;
   }
+  .sync-badge-error {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(224,85,85,0.12); border: 1px solid rgba(224,85,85,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.72rem; color: var(--danger);
+    margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -249,9 +256,7 @@
             🗑️ Clear Cart
           </button>
 
-          <div id="sync-status" style="display:none;margin-top:10px;text-align:center;">
-            <span class="sync-badge">✅ Synced to Daily Sales</span>
-          </div>
+          <div id="sync-status" style="display:none;margin-top:10px;text-align:center;"></div>
         </div>
 
         <!-- Today's quick stats -->
@@ -325,7 +330,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/lang.js"></script> <script src="js/app.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
 <script>
 let currentUser;
 let allInventory      = [];
@@ -573,66 +579,92 @@ function selectPay(el, method) {
 }
 
 /* ══════════════════════════════════════════
-   AUTO-SYNC TO DAILY SALES
-   After every checkout, upsert today's total
-   into the sales table with source='pos'.
-   This is the KEY function that fixes double counting.
-   Dashboard reads from sales table only.
-   No more combining two tables.
+   AUTO-SYNC TO DAILY SALES — BULLETPROOF VERSION
+   After every checkout, recalculate today's full total
+   from ALL purchase_transactions and upsert into sales table.
+   Retries once on failure. Surfaces errors clearly.
+   This is what keeps Monthly Revenue accurate on dashboard.
 ══════════════════════════════════════════ */
-async function syncToSalesTable(today, total, payMethod) {
-  try {
-    // Get all of today's POS transactions to calculate accurate totals
-    const { data: todayTxns } = await _supabase
+async function syncToSalesTable(today) {
+  const syncEl = document.getElementById('sync-status');
+
+  const doSync = async () => {
+    // Always recalculate from ALL of today's transactions — never just add the last one
+    // This means even if 30 purchases are made, the running total is always accurate
+    const { data: todayTxns, error: fetchErr } = await _supabase
       .from('purchase_transactions')
       .select('total_amount, payment_method')
       .eq('user_id', currentUser.id)
       .eq('date', today);
 
+    if (fetchErr) throw new Error(`Fetch failed: ${fetchErr.message}`);
+
     const totalSales    = (todayTxns||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalCash     = (todayTxns||[]).filter(r => r.payment_method === 'cash').reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalTransfer = (todayTxns||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
     const totalPOS      = (todayTxns||[]).filter(r => r.payment_method === 'pos').reduce((s,r) => s + Number(r.total_amount||0), 0);
+    const txnCount      = (todayTxns||[]).length;
 
-    // Check if a sales entry exists for today
-    const { data: existing } = await _supabase
+    // Check if a sales entry already exists for today
+    const { data: existing, error: checkErr } = await _supabase
       .from('sales')
       .select('id, source')
       .eq('user_id', currentUser.id)
       .eq('date', today)
       .maybeSingle();
 
+    if (checkErr) throw new Error(`Check failed: ${checkErr.message}`);
+
     const payload = {
-      user_id:          currentUser.id,
-      date:             today,
-      total_amount:     totalSales,
-      cash_amount:      totalCash,
-      transfer_amount:  totalTransfer,
-      pos_amount:       totalPOS,
-      source:           'pos',
-      updated_at:       new Date().toISOString(),
-      notes:            `Auto-synced from ${(todayTxns||[]).length} POS transaction(s)`
+      user_id:         currentUser.id,
+      date:            today,
+      total_amount:    totalSales,
+      cash_amount:     totalCash,
+      transfer_amount: totalTransfer,
+      pos_amount:      totalPOS,
+      source:          'pos',
+      updated_at:      new Date().toISOString(),
+      notes:           `Auto-synced from ${txnCount} POS transaction${txnCount !== 1 ? 's' : ''}`
     };
 
     if (existing) {
-      // Only auto-update if the existing record was also from POS
-      // Don't overwrite a manual entry the owner typed themselves
+      // Only update if it was a POS-sourced entry or null — never overwrite a manual entry
       if (existing.source === 'pos' || existing.source === null) {
-        await _supabase.from('sales').update(payload).eq('id', existing.id);
+        const { error: updateErr } = await _supabase
+          .from('sales').update(payload).eq('id', existing.id);
+        if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
       }
-      // If source is 'manual', leave it alone — owner manually entered it
+      // If source === 'manual', the owner typed it themselves — leave it alone
     } else {
-      // No entry for today — create one
-      await _supabase.from('sales').insert(payload);
+      // No entry for today yet — create one
+      const { error: insertErr } = await _supabase
+        .from('sales').insert(payload);
+      if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
     }
+  };
 
-    // Show sync badge
-    const syncEl = document.getElementById('sync-status');
+  try {
+    // First attempt
+    await doSync();
     syncEl.style.display = 'block';
+    syncEl.innerHTML = '<span class="sync-badge">✅ Synced to Daily Sales</span>';
     setTimeout(() => syncEl.style.display = 'none', 4000);
-
-  } catch(e) {
-    console.warn('Sales sync failed:', e);
+  } catch (err) {
+    console.warn('Sync attempt 1 failed, retrying…', err);
+    // Retry once after a short delay
+    await new Promise(r => setTimeout(r, 1500));
+    try {
+      await doSync();
+      syncEl.style.display = 'block';
+      syncEl.innerHTML = '<span class="sync-badge">✅ Synced to Daily Sales</span>';
+      setTimeout(() => syncEl.style.display = 'none', 4000);
+    } catch (retryErr) {
+      console.error('Sync failed after retry:', retryErr);
+      // Show error badge but don't block the UI — dashboard has fallback via purchase_transactions
+      syncEl.style.display = 'block';
+      syncEl.innerHTML = '<span class="sync-badge-error">⚠️ Sync delayed — dashboard will still update</span>';
+      setTimeout(() => syncEl.style.display = 'none', 6000);
+    }
   }
 }
 
@@ -699,8 +731,9 @@ async function checkout() {
     } catch(e) { console.warn('Audit log write failed:', e); }
   }
 
-  // 3. AUTO-SYNC to sales table (this is the fix for double counting)
-  await syncToSalesTable(today, total, selectedPayment);
+  // 3. AUTO-SYNC to sales table — bulletproof, runs after every single purchase
+  // This is what keeps Monthly Revenue on dashboard always accurate
+  await syncToSalesTable(today);
 
   // 4. Show receipt
   lastReceipt = { items, total, customerName, notes, payMethod: selectedPayment };

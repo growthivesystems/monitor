@@ -923,6 +923,8 @@ async function setLang(code) {
       isTranslating = true;
       autoTranslatePage();
       isTranslating = false;
+      // Also run Gemini for any words the dictionary missed
+      setTimeout(() => geminiTranslatePage(), 600);
     }, 400);
   });
 
@@ -1078,11 +1080,5 @@ async function geminiTranslatePage() {
   });
 }
 
-// Run Gemini translation after dictionary translation
-// Delay slightly to let page fully render first
-const _origAutoTranslate = autoTranslatePage;
-autoTranslatePage = function() {
-  _origAutoTranslate();
-  // Then run Gemini for anything the dictionary missed
-  setTimeout(() => geminiTranslatePage(), 800);
-};
+// Gemini runs automatically after dictionary translation via MutationObserver
+// and is also triggered by initPage() in app.js

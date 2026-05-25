@@ -6,59 +6,39 @@
 <title>Settings — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  .settings-section {
-    margin-bottom: 28px;
-  }
+  .settings-section { margin-bottom: 28px; }
   .settings-section-title {
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-    padding-bottom: 8px;
+    font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px; padding-bottom: 8px;
     border-bottom: 1px solid var(--gold-border);
   }
   .settings-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.07);
-    gap: 16px;
-    flex-wrap: wrap;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid rgba(201,168,76,0.07);
+    gap: 16px; flex-wrap: wrap;
   }
   .settings-row:last-child { border-bottom: none; }
   .settings-row-label { font-size: 0.9rem; color: var(--white2); font-weight: 500; }
   .settings-row-desc { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
   .toggle-wrap { display: flex; align-items: center; gap: 10px; }
-  .toggle {
-    position: relative; width: 44px; height: 24px; cursor: pointer;
-  }
+  .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-slider {
-    position: absolute; inset: 0;
-    background: var(--dark4); border-radius: 24px;
-    transition: var(--transition);
+    position: absolute; inset: 0; background: var(--dark4);
+    border-radius: 24px; transition: var(--transition);
   }
   .toggle-slider:before {
-    content: ''; position: absolute;
-    width: 18px; height: 18px; left: 3px; bottom: 3px;
-    background: var(--muted); border-radius: 50%;
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; bottom: 3px; background: var(--muted); border-radius: 50%;
     transition: var(--transition);
   }
   .toggle input:checked + .toggle-slider { background: var(--gold); }
-  .toggle input:checked + .toggle-slider:before {
-    transform: translateX(20px); background: var(--dark);
-  }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(20px); background: var(--dark); }
   .danger-zone {
-    border: 1px solid rgba(224,85,85,0.25);
-    border-radius: var(--radius);
-    padding: 20px;
-    background: rgba(224,85,85,0.04);
+    border: 1px solid rgba(224,85,85,0.25); border-radius: var(--radius);
+    padding: 20px; background: rgba(224,85,85,0.04);
   }
-  .avatar-wrap {
-    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
-  }
+  .avatar-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
   .avatar-circle {
     width: 64px; height: 64px; border-radius: 50%;
     background: var(--dark3); border: 2px solid var(--gold-border);
@@ -69,25 +49,36 @@
   .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
   .pw-wrap { position: relative; }
   .pw-toggle {
-    position: absolute; right: 12px; top: 50%;
-    transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--muted); font-size: 1rem; padding: 0;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; padding: 0;
   }
   .pw-wrap input { padding-right: 40px; }
-  .tab-bar {
-    display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap;
-  }
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
   .stab {
     padding: 8px 18px; border-radius: 20px; cursor: pointer;
-    font-size: 0.84rem; font-weight: 500;
-    border: 1px solid var(--gold-border);
-    background: transparent; color: var(--muted);
-    transition: var(--transition); font-family: var(--font-body);
+    font-size: 0.84rem; font-weight: 500; border: 1px solid var(--gold-border);
+    background: transparent; color: var(--muted); transition: var(--transition);
+    font-family: var(--font-body);
   }
   .stab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 600; }
   .stab-panel { display: none; }
   .stab-panel.active { display: block; }
+
+  /* ── Language picker in settings ── */
+  .lang-picker-settings {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .lang-opt-btn {
+    padding: 8px 16px; border-radius: 20px; cursor: pointer;
+    font-size: 0.82rem; font-weight: 500; border: 1px solid var(--gold-border);
+    background: transparent; color: var(--muted); transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+  .lang-opt-btn:hover { border-color: var(--gold); color: var(--white2); }
+  .lang-opt-btn.active {
+    background: var(--gold); color: var(--dark);
+    border-color: var(--gold); font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -98,7 +89,6 @@
     <div class="page-title">Settings</div>
     <div class="page-subtitle">Manage your account, security and preferences.</div>
 
-    <!-- Global message -->
     <div id="global-msg"></div>
 
     <!-- Tabs -->
@@ -109,11 +99,10 @@
       <button class="stab" onclick="showTab('danger', this)">⚠️ Danger Zone</button>
     </div>
 
-    <!-- ═══════════════════════════════════════ PROFILE ═══ -->
+    <!-- ═══════ PROFILE ═══ -->
     <div class="stab-panel active" id="tab-profile">
       <div class="card">
         <div class="settings-section-title">Your Profile</div>
-
         <div class="avatar-wrap">
           <div class="avatar-circle" id="avatar-display">?</div>
           <div>
@@ -121,9 +110,7 @@
             <div style="font-size:0.8rem;color:var(--muted);" id="profile-email-display"></div>
           </div>
         </div>
-
         <div id="profile-msg"></div>
-
         <div class="form-group">
           <label>Full Name</label>
           <input type="text" id="p-fullname" placeholder="Your full name">
@@ -135,23 +122,20 @@
         <div class="form-group">
           <label>Email Address</label>
           <input type="email" id="p-email" placeholder="you@example.com" disabled
-            style="opacity:0.5;cursor:not-allowed;" title="Email cannot be changed here">
+            style="opacity:0.5;cursor:not-allowed;">
           <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">
             Email changes are managed via Supabase authentication.
           </div>
         </div>
-
         <button class="btn btn-gold" onclick="saveProfile()">Save Profile →</button>
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ SECURITY ═══ -->
+    <!-- ═══════ SECURITY ═══ -->
     <div class="stab-panel" id="tab-security">
       <div class="card">
         <div class="settings-section-title">Change Password</div>
         <div id="pw-msg"></div>
-
-        <!-- Reset password via email (works even if not logged in) -->
         <div id="reset-form-section">
           <div class="form-group">
             <label>New Password</label>
@@ -169,7 +153,6 @@
           </div>
           <button class="btn btn-gold" onclick="updatePassword()">Update Password →</button>
         </div>
-
         <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
           <div class="settings-section-title">Send Reset Link</div>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
@@ -179,7 +162,6 @@
           <div id="reset-email-msg" style="margin-top:10px;"></div>
         </div>
       </div>
-
       <div class="card" style="margin-top:0;">
         <div class="settings-section-title">Active Sessions</div>
         <div class="settings-row">
@@ -195,7 +177,7 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ PREFERENCES ═══ -->
+    <!-- ═══════ PREFERENCES ═══ -->
     <div class="stab-panel" id="tab-preferences">
       <div class="card">
         <div class="settings-section-title">Display</div>
@@ -223,6 +205,21 @@
             <option value="£">£ Pound</option>
             <option value="GH₵">GH₵ Cedi</option>
           </select>
+        </div>
+
+        <!-- ── LANGUAGE PREFERENCE ── -->
+        <div class="settings-row" style="align-items:flex-start;">
+          <div>
+            <div class="settings-row-label">🌐 Language</div>
+            <div class="settings-row-desc">Choose your preferred language for the entire app</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;" id="lang-saved-msg"></div>
+          </div>
+          <div class="lang-picker-settings" id="lang-picker-settings">
+            <button class="lang-opt-btn" data-lang="en" onclick="changeLangSetting('en')">🇬🇧 English</button>
+            <button class="lang-opt-btn" data-lang="ha" onclick="changeLangSetting('ha')">🇳🇬 Hausa</button>
+            <button class="lang-opt-btn" data-lang="yo" onclick="changeLangSetting('yo')">🇳🇬 Yoruba</button>
+            <button class="lang-opt-btn" data-lang="ig" onclick="changeLangSetting('ig')">🇳🇬 Igbo</button>
+          </div>
         </div>
 
         <div class="settings-row">
@@ -260,14 +257,13 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ DANGER ZONE ═══ -->
+    <!-- ═══════ DANGER ZONE ═══ -->
     <div class="stab-panel" id="tab-danger">
       <div class="card">
         <div class="settings-section-title" style="color:var(--danger);">⚠️ Danger Zone</div>
         <p style="font-size:0.88rem;color:var(--muted);margin-bottom:20px;">
           These actions are permanent and cannot be undone. Please proceed with extreme caution.
         </p>
-
         <div class="danger-zone" style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
             <div>
@@ -280,7 +276,6 @@
             <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
           </div>
         </div>
-
         <div class="danger-zone">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
             <div>
@@ -293,11 +288,8 @@
             <button class="btn btn-danger" onclick="deleteAccount()">💀 Delete Account</button>
           </div>
         </div>
-
         <div id="danger-msg" style="margin-top:14px;"></div>
       </div>
-
-      <!-- Sign Out -->
       <div class="card" style="margin-top:0;">
         <div class="settings-section-title">Session</div>
         <div class="settings-row">
@@ -316,7 +308,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ── INLINE SUPABASE INIT (fallback if supabase.js not loaded yet) ──
   const SUPA_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co';
   const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdWhwd2l5emV2dWh6Y2Rzam1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDA3NzcsImV4cCI6MjA5NDA3Njc3N30.YVIC1qcywVycAEOIQeg0WfDyFzFnqfRPP-WMbcM2QC4';
 </script>
@@ -327,23 +318,18 @@
 <script>
 let currentUser;
 
-// ── HANDLE PASSWORD RESET FROM EMAIL LINK ──
+// Handle password reset from email link
 (async () => {
   const hash = window.location.hash;
-
-  // If coming from reset email link
   if (hash.includes('access_token') || hash.includes('type=recovery')) {
-    // Supabase automatically sets the session from the hash
     const { data: { session } } = await _supabase.auth.getSession();
     if (session) {
       document.getElementById('global-msg').innerHTML =
         '<div class="alert alert-success">🔑 Password reset link verified! Please set your new password below.</div>';
-      // Auto-switch to security tab
       showTab('security', document.querySelectorAll('.stab')[1]);
       window.history.replaceState(null, '', window.location.pathname);
     }
   }
-
   if (hash.includes('error=access_denied') || hash.includes('otp_expired')) {
     document.getElementById('global-msg').innerHTML =
       '<div class="alert alert-danger">⚠️ Your reset link has expired. Please request a new one from the <a href="login.html" style="color:var(--gold);">login page</a>.</div>';
@@ -352,7 +338,7 @@ let currentUser;
   }
 })();
 
-// ── INIT PAGE ──
+// Init
 (async () => {
   currentUser = await requireAuth();
   if (!currentUser) return;
@@ -360,9 +346,10 @@ let currentUser;
   loadProfile();
   loadPrefs();
   loadSessionInfo();
+  highlightCurrentLang();
 })();
 
-// ── TABS ──
+// Tabs
 function showTab(name, btn) {
   document.querySelectorAll('.stab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
@@ -370,7 +357,7 @@ function showTab(name, btn) {
   if (btn) btn.classList.add('active');
 }
 
-// ── LOAD PROFILE ──
+// Load Profile
 async function loadProfile() {
   const { data } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).single();
   if (data) {
@@ -379,15 +366,12 @@ async function loadProfile() {
     document.getElementById('profile-name-display').textContent = data.full_name || 'No name set';
     document.getElementById('profile-email-display').textContent = currentUser.email || '';
     document.getElementById('p-email').value = currentUser.email || '';
-    // Avatar initial
     const av = document.getElementById('avatar-display');
-    if (data.full_name) {
-      av.textContent = data.full_name.charAt(0).toUpperCase();
-    }
+    if (data.full_name) av.textContent = data.full_name.charAt(0).toUpperCase();
   }
 }
 
-// ── SAVE PROFILE ──
+// Save Profile
 async function saveProfile() {
   const full_name = document.getElementById('p-fullname').value.trim();
   const business_name = document.getElementById('p-bizname').value.trim();
@@ -404,7 +388,7 @@ async function saveProfile() {
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
-// ── UPDATE PASSWORD ──
+// Update Password
 async function updatePassword() {
   const newPw = document.getElementById('new-pw').value;
   const confirmPw = document.getElementById('confirm-pw').value;
@@ -418,16 +402,13 @@ async function updatePassword() {
   msg.innerHTML = '<div class="alert alert-gold">Updating…</div>';
   const { error } = await _supabase.auth.updateUser({ password: newPw });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">✅ Password updated! Please sign in again.</div>';
+  msg.innerHTML = '<div class="alert alert-success">✅ Password updated! Signing you out…</div>';
   document.getElementById('new-pw').value = '';
   document.getElementById('confirm-pw').value = '';
-  setTimeout(async () => {
-    await _supabase.auth.signOut();
-    window.location.href = 'login.html';
-  }, 2000);
+  setTimeout(async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; }, 2000);
 }
 
-// ── SEND RESET EMAIL ──
+// Send Reset Email
 async function sendResetEmail() {
   const msg = document.getElementById('reset-email-msg');
   msg.innerHTML = '<div class="alert alert-gold">Sending…</div>';
@@ -438,7 +419,7 @@ async function sendResetEmail() {
   msg.innerHTML = '<div class="alert alert-success">✅ Reset email sent to ' + currentUser.email + '</div>';
 }
 
-// ── SESSION INFO ──
+// Session Info
 async function loadSessionInfo() {
   const { data: { session } } = await _supabase.auth.getSession();
   const el = document.getElementById('session-info');
@@ -450,33 +431,29 @@ async function loadSessionInfo() {
   }
 }
 
-// ── SIGN OUT ALL ──
+// Sign Out All
 async function signOutAll() {
   if (!confirm('Sign out from all devices?')) return;
   await _supabase.auth.signOut({ scope: 'global' });
   window.location.href = 'login.html';
 }
 
-// ── SIGN OUT ──
+// Sign Out
 async function doSignOut() {
   await _supabase.auth.signOut();
   window.location.href = 'login.html';
 }
 
-// ── PREFERENCES ──
+// Load Preferences
 function loadPrefs() {
   const theme = localStorage.getItem('theme');
   document.getElementById('toggle-theme').checked = theme === 'light';
-
   const currency = localStorage.getItem('currency') || '₦';
   document.getElementById('currency-select').value = currency;
-
   const threshold = localStorage.getItem('stockThreshold') || '5';
   document.getElementById('stock-threshold').value = threshold;
-
   const stockAlert = localStorage.getItem('stockAlert') !== 'false';
   document.getElementById('toggle-stock-alert').checked = stockAlert;
-
   const debtAlert = localStorage.getItem('debtAlert') !== 'false';
   document.getElementById('toggle-debt-alert').checked = debtAlert;
 }
@@ -493,14 +470,12 @@ function toggleTheme() {
 }
 
 function saveCurrency() {
-  const val = document.getElementById('currency-select').value;
-  localStorage.setItem('currency', val);
+  localStorage.setItem('currency', document.getElementById('currency-select').value);
   showGlobalMsg('✅ Currency preference saved.');
 }
 
 function saveThreshold() {
-  const val = document.getElementById('stock-threshold').value;
-  localStorage.setItem('stockThreshold', val);
+  localStorage.setItem('stockThreshold', document.getElementById('stock-threshold').value);
   showGlobalMsg('✅ Stock threshold saved.');
 }
 
@@ -509,46 +484,35 @@ function savePref(key, val) {
   showGlobalMsg('✅ Preference saved.');
 }
 
-// ── CLEAR ALL DATA ──
-async function clearAllData() {
-  if (!confirm('This will permanently delete ALL your sales, expenses, debts, inventory and reminders. Your account stays. Continue?')) return;
-  if (!confirm('Are you absolutely sure? This CANNOT be undone.')) return;
-  const msg = document.getElementById('danger-msg');
-  msg.innerHTML = '<div class="alert alert-gold">Clearing all data…</div>';
-  const uid = currentUser.id;
-  await Promise.all([
-    _supabase.from('sales').delete().eq('user_id', uid),
-    _supabase.from('expenses').delete().eq('user_id', uid),
-    _supabase.from('debts').delete().eq('user_id', uid),
-    _supabase.from('inventory').delete().eq('user_id', uid),
-    _supabase.from('reminders').delete().eq('user_id', uid),
-  ]);
-  msg.innerHTML = '<div class="alert alert-success">✅ All data cleared successfully.</div>';
+// ── LANGUAGE PREFERENCE ──
+function highlightCurrentLang() {
+  const current = localStorage.getItem('growthive_lang') || 'en';
+  document.querySelectorAll('.lang-opt-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === current);
+  });
 }
 
-// ── DELETE ACCOUNT ──
-async function deleteAccount() {
-  if (!confirm('This will PERMANENTLY delete your account and all data. This cannot be undone. Continue?')) return;
-  const typed = prompt('Type DELETE to confirm:');
-  if (typed !== 'DELETE') { alert('Cancelled — you did not type DELETE.'); return; }
-  const msg = document.getElementById('danger-msg');
-  msg.innerHTML = '<div class="alert alert-gold">Deleting account…</div>';
-  const uid = currentUser.id;
-  // Clear all data first
-  await Promise.all([
-    _supabase.from('sales').delete().eq('user_id', uid),
-    _supabase.from('expenses').delete().eq('user_id', uid),
-    _supabase.from('debts').delete().eq('user_id', uid),
-    _supabase.from('inventory').delete().eq('user_id', uid),
-    _supabase.from('reminders').delete().eq('user_id', uid),
-    _supabase.from('profiles').delete().eq('id', uid),
-  ]);
-  await _supabase.auth.signOut();
-  alert('Your account has been deleted. Goodbye.');
-  window.location.href = 'index.html';
+async function changeLangSetting(code) {
+  // Update button highlight immediately
+  document.querySelectorAll('.lang-opt-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === code);
+  });
+
+  // Save to localStorage
+  localStorage.setItem('growthive_lang', code);
+
+  // Save to Supabase
+  try {
+    await _supabase.from('profiles').update({ preferred_language: code }).eq('id', currentUser.id);
+  } catch(e) { console.warn('Could not save language:', e); }
+
+  // Show confirmation then reload
+  const names = { en: 'English', ha: 'Hausa', yo: 'Yoruba', ig: 'Igbo' };
+  document.getElementById('lang-saved-msg').textContent = `✅ Language changed to ${names[code]}. Reloading…`;
+  setTimeout(() => location.reload(), 1000);
 }
 
-// ── HELPERS ──
+// Helpers
 function togglePw(inputId, eyeId) {
   const input = document.getElementById(inputId);
   const eye = document.getElementById(eyeId);
@@ -562,7 +526,6 @@ function showGlobalMsg(text) {
   setTimeout(() => el.innerHTML = '', 3000);
 }
 
-// Theme on load
 const saved = localStorage.getItem('theme');
 if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
 </script>

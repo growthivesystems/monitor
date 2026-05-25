@@ -119,7 +119,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/lang.js"></script> <script src="js/app.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
 <script>
 
 function stockStatus(item) {
@@ -145,6 +146,7 @@ function stockStatus(item) {
   const [
     { data: txnsToday },
     { data: salesMonth },
+    { data: posMonth },
     { data: expMonth },
     { data: debts },
     { data: inv },
@@ -158,11 +160,17 @@ function stockStatus(item) {
       .eq('user_id', user.id)
       .eq('date', today),
 
-    // Monthly revenue — from sales table ONLY (single source of truth)
-    // This includes both manual entries AND auto-synced POS entries
-    // because purchases.html now upserts into sales table after checkout
+    // Monthly revenue from sales table (manual entries + auto-synced POS entries)
     _supabase.from('sales')
-      .select('total_amount, cash_amount, transfer_amount, pos_amount')
+      .select('total_amount, cash_amount, transfer_amount, pos_amount, date')
+      .eq('user_id', user.id)
+      .gte('date', startOfMonth),
+
+    // ── FIX: Also fetch all POS transactions this month ──
+    // This is the safety net so every purchase always counts in Monthly Revenue
+    // even if the sales table sync hasn't run yet or had an issue
+    _supabase.from('purchase_transactions')
+      .select('total_amount, payment_method, date')
       .eq('user_id', user.id)
       .gte('date', startOfMonth),
 
@@ -215,10 +223,33 @@ function stockStatus(item) {
   document.getElementById('kpi-transfer').textContent   = formatCurrency(todayTransfer);
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
 
-  // ── ROW 2: Monthly revenue from sales table ONLY ──
-  // No double counting — purchases.html auto-syncs into sales table
-  const totalMonthSales = (salesMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const entryCount      = (salesMonth||[]).length;
+  // ── ROW 2: Monthly Revenue — FIXED ──
+  // Strategy: use sales table as primary source (covers manual + synced POS entries).
+  // Then check purchase_transactions for any dates this month that are NOT yet
+  // represented in the sales table (sync gap safety net).
+  // This means all 30 purchases in a day always count — no matter what.
+
+  // Get unique dates already covered in sales table this month
+  const salesDates = new Set((salesMonth||[]).map(r => r.date));
+
+  // Find POS transaction dates this month that have NO matching sales entry yet
+  const unsyncedPOSDates = new Set(
+    (posMonth||[]).map(r => r.date).filter(d => !salesDates.has(d))
+  );
+
+  // Sum from sales table (the main records)
+  const salesTableTotal = (salesMonth||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+
+  // Sum from unsynced POS transactions (the safety net)
+  const unsyncedPOSTotal = (posMonth||[])
+    .filter(r => unsyncedPOSDates.has(r.date))
+    .reduce((s,r) => s + Number(r.total_amount||0), 0);
+
+  // Combined monthly revenue — no double counting, no missing data
+  const totalMonthSales = salesTableTotal + unsyncedPOSTotal;
+
+  // Entry count: sales entries + days with unsynced POS (for display)
+  const entryCount = (salesMonth||[]).length + unsyncedPOSDates.size;
 
   document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
   document.getElementById('kpi-month-meta').textContent  = `${entryCount} entr${entryCount !== 1 ? 'ies' : 'y'} this month`;

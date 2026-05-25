@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -29,24 +29,16 @@
 
 <div class="auth-wrap">
   <div class="auth-card">
-
-    <!-- LOGO -->
     <div class="auth-logo">GrowthIve <span>Monitor</span></div>
     <div class="auth-tagline">Powered by GrowthIve Systems</div>
-
-    <!-- ORNAMENT -->
     <div style="width:50px;height:1px;background:var(--gold-border);margin:16px auto 24px;"></div>
-
-    <!-- MESSAGE BOX -->
     <div id="msg"></div>
 
-    <!-- EMAIL -->
     <div class="form-group">
       <label>Email Address</label>
       <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
     </div>
 
-    <!-- PASSWORD -->
     <div class="form-group">
       <label>Password</label>
       <div class="pw-wrap">
@@ -55,41 +47,29 @@
       </div>
     </div>
 
-    <!-- FORGOT PASSWORD -->
     <div style="text-align:right;margin-top:-10px;margin-bottom:18px;">
       <button class="forgot-link" onclick="forgotPassword()">Forgot Password?</button>
     </div>
 
-    <!-- LOGIN BUTTON -->
-    <button class="btn btn-gold btn-full" onclick="doLogin()" id="login-btn">
-      Sign In →
-    </button>
+    <button class="btn btn-gold btn-full" onclick="doLogin()" id="login-btn">Sign In →</button>
 
     <div class="divider">or</div>
 
-    <!-- REGISTER LINK -->
     <p style="text-align:center;font-size:0.88rem;color:var(--muted);">
       Don't have an account?
       <a href="register.html" style="color:var(--gold);font-weight:600;">Create one free</a>
     </p>
-
-    <!-- BACK HOME -->
     <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:14px;">
       <a href="index.html" style="color:var(--muted);text-decoration:none;">← Back to Home</a>
     </p>
-
-    <!-- SUPPORT -->
     <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:8px;">
       Need help? <a href="contact.html" style="color:var(--gold);">Contact Support</a>
     </p>
-
-    <!-- POWERED BY -->
     <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
       <span style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">
         Powered by GrowthIve Systems
       </span>
     </div>
-
   </div>
 </div>
 
@@ -97,12 +77,11 @@
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script>
-
-  // ── THEME ──
+  // Apply theme immediately
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
 
-  // ── HANDLE EMAIL CONFIRMATION REDIRECT ──
+  // Handle email confirmation redirect
   const hash = window.location.hash;
   if (hash.includes('access_token')) {
     document.getElementById('msg').innerHTML =
@@ -114,13 +93,12 @@
       '<div class="alert alert-danger">⚠️ Your confirmation link has expired. Please <a href="register.html" style="color:var(--gold);">register again</a> or contact support.</div>';
   }
 
-  // ── IF ALREADY LOGGED IN → RETURNING ──
+  // If already logged in → returning
   (async () => {
     const { data: { user } } = await _supabase.auth.getUser();
     if (user) window.location.href = 'returning.html';
   })();
 
-  // ── LOGIN ──
   async function doLogin() {
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -128,7 +106,6 @@
     const btn      = document.getElementById('login-btn');
 
     msg.innerHTML = '';
-
     if (!email || !password) {
       msg.innerHTML = '<div class="alert alert-danger">⚠️ Please fill in both fields.</div>';
       return;
@@ -138,7 +115,7 @@
     btn.textContent = 'Signing in…';
     msg.innerHTML = '<div class="alert alert-gold">⏳ Please wait…</div>';
 
-    const { error } = await _supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
 
     btn.disabled = false;
     btn.textContent = 'Sign In →';
@@ -157,61 +134,59 @@
 
     msg.innerHTML = '<div class="alert alert-success">✅ Login successful! Redirecting…</div>';
 
-    // ── FIRST TIME vs RETURNING ──
+    // ── Load user language from Supabase BEFORE redirecting ──
+    // This ensures the chosen language is in localStorage when welcome/returning page loads
+    try {
+      const userId = data.user?.id;
+      if (userId) {
+        const { data: profile } = await _supabase
+          .from('profiles')
+          .select('preferred_language')
+          .eq('id', userId)
+          .single();
+        if (profile?.preferred_language) {
+          localStorage.setItem('growthive_lang', profile.preferred_language);
+        }
+      }
+    } catch(e) { /* silent — localStorage lang stays as fallback */ }
+
+    // ── Route: first time → welcome.html, returning → returning.html ──
     setTimeout(() => {
       if (localStorage.getItem('growthive_new_user') === 'true') {
-        // First time — go to onboarding welcome
         localStorage.removeItem('growthive_new_user');
         window.location.href = 'welcome.html';
       } else {
-        // Returning user — go to smart welcome back
         window.location.href = 'returning.html';
       }
     }, 800);
   }
 
-  // ── FORGOT PASSWORD ──
   async function forgotPassword() {
     const email = document.getElementById('email').value.trim();
     const msg   = document.getElementById('msg');
-
     if (!email) {
       msg.innerHTML = '<div class="alert alert-danger">⚠️ Please enter your email address above first.</div>';
       return;
     }
-
     msg.innerHTML = '<div class="alert alert-gold">⏳ Sending reset email…</div>';
-
     const { error } = await _supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://growthivesystems.github.io/monitor/settings.html'
     });
-
     if (error) {
       msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
       return;
     }
-
     msg.innerHTML = '<div class="alert alert-success">✅ Password reset email sent! Check your inbox.</div>';
   }
 
-  // ── SHOW / HIDE PASSWORD ──
   function togglePw() {
     const input = document.getElementById('password');
     const eye   = document.getElementById('pw-eye');
-    if (input.type === 'password') {
-      input.type = 'text';
-      eye.textContent = '🙈';
-    } else {
-      input.type = 'password';
-      eye.textContent = '👁';
-    }
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    eye.textContent = input.type === 'password' ? '👁' : '🙈';
   }
 
-  // ── ENTER KEY ──
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 </script>
 </body>
 </html>

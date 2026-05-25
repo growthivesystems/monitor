@@ -947,7 +947,7 @@ async function setLang(code) {
 ═══════════════════════════════════════════════════════════════ */
 
 const EDGE_FN_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co/functions/v1/translate';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdWhwd2l5emV2dWh6Y2Rzam1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDA3NzcsImV4cCI6MjA5NDA3Njc3N30.YVIC1qcywVycAEOIQeg0WfDyFzFnqfRPP-WMbcM2QC4';
+// SUPABASE_ANON_KEY loaded from supabase.js
 
 // Words/phrases that must NEVER be translated
 const PROTECTED_PHRASES = [
@@ -1001,7 +1001,7 @@ async function geminiTranslate(text, lang) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : ''}`
       },
       body: JSON.stringify({ text: text.trim() })
     });

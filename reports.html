@@ -36,9 +36,9 @@
     <!-- KPIs -->
     <div class="grid-4" id="report-kpis">
       <div class="card">
-        <div class="card-title">POS Revenue</div>
+        <div class="card-title">Total Revenue</div>
         <div class="card-value gold" id="r-pos-sales">₦0.00</div>
-        <div class="card-meta">From purchase transactions</div>
+        <div class="card-meta">Combined sales (all sources)</div>
       </div>
       <div class="card">
         <div class="card-title">Confirmed Sales</div>
@@ -53,7 +53,7 @@
       <div class="card">
         <div class="card-title">Net Profit / Loss</div>
         <div class="card-value" id="r-profit">₦0.00</div>
-        <div class="card-meta">Confirmed sales − expenses</div>
+        <div class="card-meta">Total revenue − expenses</div>
       </div>
     </div>
 
@@ -84,13 +84,13 @@
     <!-- Charts -->
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">POS Revenue vs Expenses</div>
-        <div class="source-note">📊 Revenue = purchase_transactions · Expenses = expenses table</div>
+        <div class="card-title">Total Revenue vs Expenses</div>
+        <div class="source-note">📊 Revenue = combined sales + POS · Expenses = expenses table</div>
         <canvas id="chart-bar"></canvas>
       </div>
       <div class="card">
         <div class="card-title">Profit / Loss Trend</div>
-        <div class="source-note">📊 Based on confirmed daily sales records</div>
+        <div class="source-note">📊 Based on combined revenue minus expenses</div>
         <canvas id="chart-line"></canvas>
       </div>
     </div>
@@ -159,12 +159,11 @@ function getDateRange() {
 async function loadReport() {
   const { start, end } = getDateRange();
 
-  // ── Fetch all three sources ──
   const [
-    { data: transactions },   // live POS sales
-    { data: confirmedSales }, // manual daily records
-    { data: expenses },       // expenses
-    { data: debts }           // debts
+    { data: transactions },
+    { data: confirmedSales },
+    { data: expenses },
+    { data: debts }
   ] = await Promise.all([
     _supabase.from('purchase_transactions')
       .select('*').eq('user_id', currentUser.id)
@@ -186,19 +185,27 @@ async function loadReport() {
     expenses:       expenses       || []
   };
 
-  // ── KPI Totals ──
-  const totalPOSSales   = reportData.transactions.reduce((s,r)   => s + Number(r.total_amount||0), 0);
-  const totalConfirmed  = reportData.confirmedSales.reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const totalExp        = reportData.expenses.reduce((s,r)       => s + Number(r.amount||0), 0);
-  const profit          = totalConfirmed - totalExp; // profit from confirmed records
-  const totalDebt       = (debts||[]).reduce((s,r)               => s + Number(r.amount||0), 0);
+  // ── COMBINED REVENUE (safety net) ──
+  // Sales table is primary. For any day with POS transactions but NO sales table entry,
+  // add those POS totals directly — same logic as dashboard and sales page.
+  const salesDates      = new Set(reportData.confirmedSales.map(r => r.date));
+  const salesTableTotal = reportData.confirmedSales.reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedPOSRows = reportData.transactions.filter(r => !salesDates.has(r.date));
+  const unsyncedPOSDates= new Set(unsyncedPOSRows.map(r => r.date));
+  const unsyncedTotal   = unsyncedPOSRows.reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalRevenue    = salesTableTotal + unsyncedTotal; // the real combined total
+
+  const totalConfirmed  = salesTableTotal; // manual daily records only
+  const totalExp        = reportData.expenses.reduce((s,r) => s + Number(r.amount||0), 0);
+  const profit          = totalRevenue - totalExp; // profit from real combined revenue
+  const totalDebt       = (debts||[]).reduce((s,r) => s + Number(r.amount||0), 0);
 
   // Payment breakdown from POS transactions
   const totalCash     = reportData.transactions.filter(r => r.payment_method === 'cash').reduce((s,r)     => s + Number(r.total_amount||0), 0);
   const totalTransfer = reportData.transactions.filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
   const totalPOSCard  = reportData.transactions.filter(r => r.payment_method === 'pos').reduce((s,r)      => s + Number(r.total_amount||0), 0);
 
-  document.getElementById('r-pos-sales').textContent       = formatCurrency(totalPOSSales);
+  document.getElementById('r-pos-sales').textContent       = formatCurrency(totalRevenue);
   document.getElementById('r-confirmed-sales').textContent = formatCurrency(totalConfirmed);
   document.getElementById('r-expenses').textContent        = formatCurrency(totalExp);
   document.getElementById('r-cash').textContent            = formatCurrency(totalCash);
@@ -210,11 +217,10 @@ async function loadReport() {
   pEl.textContent = formatCurrency(profit);
   pEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
 
-  // ── Build chart labels & data ──
+  // ── BUILD CHART LABELS ──
   const labels = [];
-  const posByLabel      = {}; // POS revenue per period
-  const confirmedByLabel= {}; // confirmed sales per period
-  const expByLabel      = {}; // expenses per period
+  const revenueByLabel = {};
+  const expByLabel     = {};
 
   if (currentPeriod === 'weekly') {
     for (let i = 6; i >= 0; i--) {
@@ -222,15 +228,16 @@ async function loadReport() {
       const key   = d.toISOString().split('T')[0];
       const label = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric' });
       labels.push(label);
-      posByLabel[key]       = 0;
-      confirmedByLabel[key] = 0;
-      expByLabel[key]       = 0;
+      revenueByLabel[key] = 0;
+      expByLabel[key]     = 0;
     }
-    reportData.transactions.forEach(r => {
-      if (posByLabel[r.date] !== undefined) posByLabel[r.date] += Number(r.total_amount||0);
-    });
+    // Add confirmed sales to revenue chart
     reportData.confirmedSales.forEach(r => {
-      if (confirmedByLabel[r.date] !== undefined) confirmedByLabel[r.date] += Number(r.total_amount||0);
+      if (revenueByLabel[r.date] !== undefined) revenueByLabel[r.date] += Number(r.total_amount||0);
+    });
+    // Add unsynced POS days to revenue chart
+    reportData.transactions.filter(r => unsyncedPOSDates.has(r.date)).forEach(r => {
+      if (revenueByLabel[r.date] !== undefined) revenueByLabel[r.date] += Number(r.total_amount||0);
     });
     reportData.expenses.forEach(r => {
       if (expByLabel[r.date] !== undefined) expByLabel[r.date] += Number(r.amount||0);
@@ -241,17 +248,18 @@ async function loadReport() {
       const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       labels.push(d.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }));
-      posByLabel[key]       = 0;
-      confirmedByLabel[key] = 0;
-      expByLabel[key]       = 0;
+      revenueByLabel[key] = 0;
+      expByLabel[key]     = 0;
     }
-    reportData.transactions.forEach(r => {
-      const k = r.date.substring(0,7);
-      if (posByLabel[k] !== undefined) posByLabel[k] += Number(r.total_amount||0);
-    });
+    // Add confirmed sales to revenue chart
     reportData.confirmedSales.forEach(r => {
       const k = r.date.substring(0,7);
-      if (confirmedByLabel[k] !== undefined) confirmedByLabel[k] += Number(r.total_amount||0);
+      if (revenueByLabel[k] !== undefined) revenueByLabel[k] += Number(r.total_amount||0);
+    });
+    // Add unsynced POS days to revenue chart
+    reportData.transactions.filter(r => unsyncedPOSDates.has(r.date)).forEach(r => {
+      const k = r.date.substring(0,7);
+      if (revenueByLabel[k] !== undefined) revenueByLabel[k] += Number(r.total_amount||0);
     });
     reportData.expenses.forEach(r => {
       const k = r.date.substring(0,7);
@@ -259,10 +267,9 @@ async function loadReport() {
     });
   }
 
-  const posVals       = Object.values(posByLabel);
-  const confirmedVals = Object.values(confirmedByLabel);
-  const eVals         = Object.values(expByLabel);
-  const pVals         = confirmedVals.map((s,i) => s - eVals[i]); // profit from confirmed
+  const rVals = Object.values(revenueByLabel);
+  const eVals = Object.values(expByLabel);
+  const pVals = rVals.map((s,i) => s - eVals[i]);
 
   const chartDefaults = {
     responsive: true,
@@ -273,29 +280,26 @@ async function loadReport() {
     }
   };
 
-  // Bar chart — POS revenue vs expenses
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('chart-bar'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'POS Revenue',       data: posVals,  backgroundColor:'rgba(76,175,125,0.6)',  borderColor:'var(--success)', borderWidth:1 },
-        { label: 'Confirmed Sales',   data: confirmedVals, backgroundColor:'rgba(100,160,220,0.5)', borderColor:'var(--info)', borderWidth:1 },
-        { label: 'Expenses',          data: eVals,    backgroundColor:'rgba(224,85,85,0.6)',   borderColor:'var(--danger)',  borderWidth:1 }
+        { label: 'Total Revenue', data: rVals, backgroundColor:'rgba(76,175,125,0.6)',  borderColor:'var(--success)', borderWidth:1 },
+        { label: 'Expenses',      data: eVals, backgroundColor:'rgba(224,85,85,0.6)',   borderColor:'var(--danger)',  borderWidth:1 }
       ]
     },
     options: chartDefaults
   });
 
-  // Line chart — profit/loss trend from confirmed records
   if (lineChart) lineChart.destroy();
   lineChart = new Chart(document.getElementById('chart-line'), {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'Profit/Loss (Confirmed)',
+        label: 'Profit/Loss',
         data: pVals,
         borderColor:'#c9a84c',
         backgroundColor:'rgba(201,168,76,0.08)',
@@ -306,8 +310,7 @@ async function loadReport() {
     options: chartDefaults
   });
 
-  // ── Detailed Breakdown Table ──
-  // Merge all three sources with type labels
+  // ── DETAILED TABLE ──
   const el       = document.getElementById('report-table');
   const combined = [
     ...reportData.transactions.map(r => ({

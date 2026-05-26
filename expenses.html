@@ -91,11 +91,22 @@ async function loadExpenses() {
   const start = `${yr}-${mo}-01`;
   const end = new Date(yr, mo, 0).toISOString().split('T')[0];
 
-  const { data: exps } = await _supabase.from('expenses').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false });
-  const { data: sales } = await _supabase.from('sales').select('total_amount').eq('user_id', currentUser.id).gte('date', start).lte('date', end);
+  const [{ data: exps }, { data: sales }, { data: posMonth }] = await Promise.all([
+    _supabase.from('expenses').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false }),
+    _supabase.from('sales').select('total_amount, date').eq('user_id', currentUser.id).gte('date', start).lte('date', end),
+    _supabase.from('purchase_transactions').select('total_amount, date').eq('user_id', currentUser.id).gte('date', start).lte('date', end)
+  ]);
 
   const totalExp = (exps || []).reduce((s, r) => s + Number(r.amount), 0);
-  const totalSales = (sales || []).reduce((s, r) => s + Number(r.total_amount), 0);
+
+  // Combined revenue: sales table + any POS days not yet in sales table (safety net)
+  const salesDates    = new Set((sales||[]).map(r => r.date));
+  const salesTotal    = (sales||[]).reduce((s, r) => s + Number(r.total_amount||0), 0);
+  const unsyncedTotal = (posMonth||[])
+    .filter(r => !salesDates.has(r.date))
+    .reduce((s, r) => s + Number(r.total_amount||0), 0);
+  const totalSales = salesTotal + unsyncedTotal;
+
   const profit = totalSales - totalExp;
 
   document.getElementById('month-total').textContent = formatCurrency(totalExp);

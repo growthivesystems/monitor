@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -131,10 +131,9 @@ async function calcScore() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const today        = now.toISOString().split('T')[0];
 
-  // ── Fetch all data sources ──
   const [
-    { data: transactions },   // live POS sales — source of truth for revenue
-    { data: confirmedSales }, // manual daily records — used for consistency check
+    { data: transactions },
+    { data: confirmedSales },
     { data: expenses },
     { data: debts },
     { data: inventory },
@@ -163,75 +162,76 @@ async function calcScore() {
       .eq('user_id', currentUser.id)
   ]);
 
-  // ── Revenue from POS transactions (source of truth) ──
-  const totalPOSSales   = (transactions||[]).reduce((s,r)   => s + Number(r.total_amount||0), 0);
+  // ── COMBINED REVENUE (safety net — same logic as dashboard) ──
+  const salesDates      = new Set((confirmedSales||[]).map(r => r.date));
+  const salesTableTotal = (confirmedSales||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedTotal   = (transactions||[])
+    .filter(r => !salesDates.has(r.date))
+    .reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalRevenue    = salesTableTotal + unsyncedTotal; // real combined total
 
-  // ── Confirmed monthly sales (manual records) ──
-  const totalConfirmed  = (confirmedSales||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalConfirmed  = salesTableTotal;
+  const totalPOSSales   = (transactions||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalExp        = (expenses||[]).reduce((s,r) => s + Number(r.amount||0), 0);
+  const profit          = totalRevenue - totalExp;
+  const profitMargin    = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
 
-  // ── Use confirmed sales for profit (owner-verified figure) ──
-  const totalExp        = (expenses||[]).reduce((s,r)       => s + Number(r.amount||0), 0);
-  const profit          = totalConfirmed - totalExp;
-  const profitMargin    = totalConfirmed > 0 ? (profit / totalConfirmed) * 100 : 0;
+  // Sales activity
+  const posSalesDays  = new Set((transactions||[]).map(r => r.date)).size;
+  const posTxnCount   = (transactions||[]).length;
+  const confirmedDays = new Set((confirmedSales||[]).map(r => r.date)).size;
 
-  // ── Sales activity: count distinct days from POS transactions ──
-  const posSalesDays    = new Set((transactions||[]).map(r => r.date)).size;
-  const posTxnCount     = (transactions||[]).length;
+  // Payment breakdown
+  const cashTotal     = (transactions||[]).filter(r => r.payment_method === 'cash').reduce((s,r)     => s + Number(r.total_amount||0), 0);
+  const transferTotal = (transactions||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const posTotal      = (transactions||[]).filter(r => r.payment_method === 'pos').reduce((s,r)      => s + Number(r.total_amount||0), 0);
 
-  // ── Confirmed record days ──
-  const confirmedDays   = new Set((confirmedSales||[]).map(r => r.date)).size;
-
-  // ── Payment method breakdown ──
-  const cashTotal       = (transactions||[]).filter(r => r.payment_method === 'cash').reduce((s,r)     => s + Number(r.total_amount||0), 0);
-  const transferTotal   = (transactions||[]).filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const posTotal        = (transactions||[]).filter(r => r.payment_method === 'pos').reduce((s,r)      => s + Number(r.total_amount||0), 0);
-
-  // ── Debt & inventory ──
-  const unpaidDebts     = (debts||[]).filter(r => r.status === 'unpaid' && r.type === 'i_owe').reduce((s,r) => s + Number(r.amount||0), 0);
-  const lowStockCount   = (inventory||[]).filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
-  const outOfStock      = (inventory||[]).filter(i => Number(i.quantity) <= 0).length;
-  const totalInvItems   = (inventory||[]).length;
-  const hasReminders    = (reminders||[]).length > 0;
-  const expCount        = (expenses||[]).length;
+  // Debt & inventory
+  const unpaidDebts   = (debts||[]).filter(r => r.status === 'unpaid' && r.type === 'i_owe').reduce((s,r) => s + Number(r.amount||0), 0);
+  const lowStockCount = (inventory||[]).filter(i => Number(i.quantity) <= Number(i.low_stock_threshold||5)).length;
+  const outOfStock    = (inventory||[]).filter(i => Number(i.quantity) <= 0).length;
+  const totalInvItems = (inventory||[]).length;
+  const hasReminders  = (reminders||[]).length > 0;
+  const expCount      = (expenses||[]).length;
 
   // ══════════════════════════════════════════
   // SCORING METRICS (total = 100)
   // ══════════════════════════════════════════
 
-  // 1. Sales Activity (20pts) — POS transaction days this month
+  // 1. Sales Activity (20pts)
   let salesScore = 0;
-  if (posSalesDays >= 20)     salesScore = 20;
+  if (posSalesDays >= 20)      salesScore = 20;
   else if (posSalesDays >= 10) salesScore = 15;
   else if (posSalesDays >= 5)  salesScore = 10;
   else if (posSalesDays >= 1)  salesScore = 5;
 
-  // 2. Profitability (25pts) — based on confirmed sales vs expenses
+  // 2. Profitability (25pts) — now uses real combined revenue
   let profitScore = 0;
   if (profitMargin >= 30)      profitScore = 25;
   else if (profitMargin >= 15) profitScore = 20;
   else if (profitMargin >= 5)  profitScore = 12;
   else if (profit > 0)         profitScore = 8;
-  else if (totalConfirmed === 0 && totalPOSSales > 0) profitScore = 4; // has POS but no confirmed record yet
+  else if (totalRevenue > 0 && totalConfirmed === 0) profitScore = 4;
 
   // 3. Expense Tracking (20pts)
   let expScore = 0;
-  if (expCount >= 10)      expScore = 20;
-  else if (expCount >= 5)  expScore = 15;
-  else if (expCount >= 1)  expScore = 8;
+  if (expCount >= 10)     expScore = 20;
+  else if (expCount >= 5) expScore = 15;
+  else if (expCount >= 1) expScore = 8;
 
   // 4. Debt Health (20pts)
   let debtScore = 20;
-  if (unpaidDebts > totalConfirmed * 0.5)      debtScore = 5;
-  else if (unpaidDebts > totalConfirmed * 0.2) debtScore = 10;
-  else if (unpaidDebts > 0)                    debtScore = 15;
+  if (unpaidDebts > totalRevenue * 0.5)      debtScore = 5;
+  else if (unpaidDebts > totalRevenue * 0.2) debtScore = 10;
+  else if (unpaidDebts > 0)                  debtScore = 15;
 
   // 5. Stock Management (10pts)
   let stockScore = 0;
-  if (totalInvItems === 0)        stockScore = 3;
-  else if (outOfStock > 0)        stockScore = 2;
-  else if (lowStockCount === 0)   stockScore = 10;
-  else if (lowStockCount <= 2)    stockScore = 6;
-  else                            stockScore = 3;
+  if (totalInvItems === 0)      stockScore = 3;
+  else if (outOfStock > 0)      stockScore = 2;
+  else if (lowStockCount === 0) stockScore = 10;
+  else if (lowStockCount <= 2)  stockScore = 6;
+  else                          stockScore = 3;
 
   // 6. Planning / Reminders (5pts)
   let planScore = hasReminders ? 5 : 0;
@@ -278,8 +278,8 @@ async function calcScore() {
     <p class="score-desc">${gradeDesc}</p>
     <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
       <div style="text-align:center;">
-        <div style="font-size:1.2rem;font-weight:700;color:var(--gold);">${formatCurrency(totalPOSSales)}</div>
-        <div style="font-size:0.75rem;color:var(--muted);">POS Revenue</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--gold);">${formatCurrency(totalRevenue)}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Total Revenue</div>
       </div>
       <div style="text-align:center;">
         <div style="font-size:1.2rem;font-weight:700;color:var(--info);">${formatCurrency(totalConfirmed)}</div>
@@ -316,7 +316,7 @@ async function calcScore() {
     },
     {
       icon:'📈', name:'Profitability',
-      desc:`${profitMargin.toFixed(1)}% margin · Confirmed: ${formatCurrency(totalConfirmed)} − Exp: ${formatCurrency(totalExp)}`,
+      desc:`${profitMargin.toFixed(1)}% margin · Revenue: ${formatCurrency(totalRevenue)} − Exp: ${formatCurrency(totalExp)}`,
       score:profitScore, max:25, color:'var(--gold)'
     },
     {
@@ -411,7 +411,7 @@ async function calcScore() {
     tips.push({ type:'danger', text:`📌 You have ${formatCurrency(totalPOSSales)} in POS revenue but no confirmed daily records in Daily Sales. Add your end-of-day records there for accurate profit tracking.` });
   }
 
-  if (profitMargin < 10 && totalConfirmed > 0) {
+  if (profitMargin < 10 && totalRevenue > 0) {
     tips.push({ type:'danger', text:'⚠️ Your profit margin is below 10%. Review your expenses — look for costs you can reduce or eliminate.' });
   } else if (profitMargin >= 30) {
     tips.push({ type:'success', text:'✅ Strong profit margin above 30%. Your business is generating good returns.' });

@@ -202,6 +202,17 @@ const TRANSLATIONS = {
     today:'Today',this_week:'This Week',
     person:'Person',date_col:'Date',amount_col:'Amount',type_col:'Type',
     due_date_col:'Due Date',status_col:'Status',
+    no_pos_today:'No POS transactions today yet.',
+    go_to_sales_point:'Go to Sales Point →',
+    all_stock_healthy:'All tracked stock levels are healthy.',
+    entries_this_month:'entries this month',
+    revenue_expenses_short:'Revenue − expenses',
+    record_todays_sales:"Record Today's Sales",
+    this_month_summary:'This Month Summary',
+    cash_transfer_pos_note:'Cash/Transfer/POS breakdown only shows when',
+    premium_sales_record_link:'Premium Sales Record',
+    or_purchases_page:'or Purchases/POS page',
+    is_used:'is used.',
   },
 
   ha: {
@@ -572,6 +583,13 @@ const TRANSLATIONS = {
     today:'Òní',this_week:'Ọṣẹ Yìí',
     person:'Eniyan',date_col:'Ọjọ',amount_col:'Iye Owó',
     type_col:'Iru',due_date_col:'Ọjọ Isanpada',status_col:'Ipo',
+    no_pos_today:'Ko si àwọn iṣowo POS lónìí.',
+    go_to_sales_point:'Lọ si Ibi Tita →',
+    all_stock_healthy:'Gbogbo awọn ipele ọja dára.',
+    entries_this_month:'awọn igbasilẹ oṣù yìí',
+    revenue_expenses_short:'Owo − inawo',
+    record_todays_sales:'Gbasilẹ Tita Òní',
+    this_month_summary:'Akopọ Oṣù Yìí',
   },
 
   ig: {
@@ -755,6 +773,13 @@ const TRANSLATIONS = {
     today:'Taa',this_week:'Izu A',
     person:'Onye',date_col:'Ụbọchị',amount_col:'Ọnụọgụ Ego',
     type_col:'Ụdị',due_date_col:'Ụbọchị Nkwụghachi',status_col:'Ọnọdụ',
+    no_pos_today:'Enweghị azụmaahịa POS taa.',
+    go_to_sales_point:'Gaa Ebe Ire Ahịa →',
+    all_stock_healthy:'Ngwongwo niile dị mma.',
+    entries_this_month:'ndekọ ọnwa a',
+    revenue_expenses_short:'Ego − ego a na-eji',
+    record_todays_sales:'Debanye Ahịa Taa',
+    this_month_summary:'Nchoputa Ọnwa A',
   }
 };
 
@@ -796,6 +821,8 @@ function autoTranslatePage() {
   for (const key of Object.keys(en)) {
     if (en[key] && target[key] && en[key] !== target[key]) {
       textMap[en[key].trim()] = target[key];
+      // Also add uppercase version for CSS text-transform:uppercase elements
+      textMap[en[key].trim().toUpperCase()] = target[key];
     }
   }
 
@@ -841,8 +868,10 @@ function translateNode(node, textMap) {
 
   if (node.nodeType === Node.TEXT_NODE) {
     const original = node.textContent.trim();
-    if (original && textMap[original]) {
-      node.textContent = node.textContent.replace(original, textMap[original]);
+    // Match exact case first, then try uppercase version (for CSS text-transform)
+    const translated = textMap[original] || textMap[original.toUpperCase()] || textMap[original.toLowerCase()];
+    if (original && translated) {
+      node.textContent = node.textContent.replace(original, translated);
     }
     return;
   }

@@ -541,10 +541,14 @@ function renderCart() {
     const subtotal = price * qty;
     total += subtotal;
 
+    // ── FIX: removed oninput from untracked qty input ──
+    // oninput fired on every keystroke including Backspace, which caused the cart
+    // item to be deleted the moment the field was cleared mid-typing.
+    // onchange and onblur only fire when the user finishes editing — safe to commit.
     const qtyControl = isUntracked
       ? `<input type="number" class="untracked-qty-input" value="${qty}" min="1"
             onchange="setUntrackedQty('${id}', this.value)"
-            oninput="setUntrackedQty('${id}', this.value)">`
+            onblur="setUntrackedQty('${id}', this.value)">`
       : `<div class="cart-qty-ctrl">
           <button class="qty-btn" onclick="changeQty('${id}',-1)">−</button>
           <span class="cart-qty">${qty}</span>

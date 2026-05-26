@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -79,6 +79,14 @@
     background: var(--gold); color: var(--dark);
     border-color: var(--gold); font-weight: 700;
   }
+
+  /* ── Scheduled action status box ── */
+  .scheduled-status {
+    margin-top: 12px; padding: 12px 16px; border-radius: var(--radius);
+    background: rgba(201,168,76,0.08); border: 1px solid var(--gold-border);
+    font-size: 0.82rem; color: var(--white2);
+  }
+  .scheduled-status strong { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -134,9 +142,22 @@
     <!-- ═══════ SECURITY ═══ -->
     <div class="stab-panel" id="tab-security">
       <div class="card">
-        <div class="settings-section-title">Change Password</div>
+        <div class="settings-section-title">Password Security</div>
         <div id="pw-msg"></div>
-        <div id="reset-form-section">
+        <!-- ── Password changes are email-only for security ── -->
+        <div style="padding:16px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius);margin-bottom:20px;">
+          <div style="font-size:0.88rem;color:var(--white2);font-weight:500;margin-bottom:6px;">🔒 Secure Password Reset</div>
+          <p style="font-size:0.84rem;color:var(--muted);margin:0;">
+            For your security, password changes are only allowed through a verified email link. Click below and we'll send a secure reset link to your inbox.
+          </p>
+        </div>
+        <button class="btn btn-gold" onclick="sendResetEmail()">📧 Send Password Reset Link →</button>
+        <div id="reset-email-msg" style="margin-top:10px;"></div>
+
+        <!-- ── Password fields: hidden by default, shown ONLY when user arrives via email reset link ── -->
+        <div id="reset-form-section" style="display:none;margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
+          <div class="settings-section-title">Set New Password</div>
+          <div id="pw-msg"></div>
           <div class="form-group">
             <label>New Password</label>
             <div class="pw-wrap">
@@ -152,14 +173,6 @@
             </div>
           </div>
           <button class="btn btn-gold" onclick="updatePassword()">Update Password →</button>
-        </div>
-        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--gold-border);">
-          <div class="settings-section-title">Send Reset Link</div>
-          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
-            Prefer to reset via email? We'll send a secure link to your inbox.
-          </p>
-          <button class="btn btn-outline" onclick="sendResetEmail()">📧 Send Reset Email</button>
-          <div id="reset-email-msg" style="margin-top:10px;"></div>
         </div>
       </div>
       <div class="card" style="margin-top:0;">
@@ -264,30 +277,37 @@
         <p style="font-size:0.88rem;color:var(--muted);margin-bottom:20px;">
           These actions are permanent and cannot be undone. Please proceed with extreme caution.
         </p>
+
+        <!-- Clear All Data -->
         <div class="danger-zone" style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
             <div>
               <div style="font-weight:600;color:var(--white2);margin-bottom:4px;">Clear All Data</div>
               <div style="font-size:0.82rem;color:var(--muted);">
-                Permanently delete all your sales, expenses, debts, inventory and reminders.<br>
-                Your account and profile will remain.
+                Schedules deletion of all your sales, expenses, debts, inventory and reminders.<br>
+                You have <strong style="color:var(--gold);">7 days</strong> to cancel before data is permanently removed. Your account and profile will remain.
               </div>
             </div>
-            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+            <button class="btn btn-danger" id="clear-data-btn" onclick="clearAllData()">🗑️ Schedule Data Clear</button>
           </div>
+          <div id="clear-data-status"></div>
         </div>
+
+        <!-- Delete Account -->
         <div class="danger-zone">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
             <div>
               <div style="font-weight:600;color:var(--danger);margin-bottom:4px;">Delete Account</div>
               <div style="font-size:0.82rem;color:var(--muted);">
-                Permanently delete your account and all associated data.<br>
-                This cannot be recovered.
+                Schedules permanent deletion of your account and all associated data.<br>
+                You have <strong style="color:var(--gold);">30 days</strong> to cancel before the account is permanently removed.
               </div>
             </div>
-            <button class="btn btn-danger" onclick="deleteAccount()">💀 Delete Account</button>
+            <button class="btn btn-danger" id="delete-account-btn" onclick="deleteAccount()">💀 Schedule Deletion</button>
           </div>
+          <div id="delete-account-status"></div>
         </div>
+
         <div id="danger-msg" style="margin-top:14px;"></div>
       </div>
       <div class="card" style="margin-top:0;">
@@ -326,6 +346,8 @@ let currentUser;
     if (session) {
       document.getElementById('global-msg').innerHTML =
         '<div class="alert alert-success">🔑 Password reset link verified! Please set your new password below.</div>';
+      // Reveal the hidden password fields — user arrived via verified email link
+      document.getElementById('reset-form-section').style.display = 'block';
       showTab('security', document.querySelectorAll('.stab')[1]);
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -347,6 +369,7 @@ let currentUser;
   loadPrefs();
   loadSessionInfo();
   highlightCurrentLang();
+  loadDangerZoneStatus();
 })();
 
 // Tabs
@@ -357,7 +380,7 @@ function showTab(name, btn) {
   if (btn) btn.classList.add('active');
 }
 
-// Load Profile
+// Load Profile — also loads preferred_currency from Supabase
 async function loadProfile() {
   const { data } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).single();
   if (data) {
@@ -368,6 +391,11 @@ async function loadProfile() {
     document.getElementById('p-email').value = currentUser.email || '';
     const av = document.getElementById('avatar-display');
     if (data.full_name) av.textContent = data.full_name.charAt(0).toUpperCase();
+    // ── Sync currency from Supabase → localStorage ──
+    if (data.preferred_currency) {
+      localStorage.setItem('currency', data.preferred_currency);
+      document.getElementById('currency-select').value = data.preferred_currency;
+    }
   }
 }
 
@@ -388,27 +416,7 @@ async function saveProfile() {
   setTimeout(() => msg.innerHTML = '', 3000);
 }
 
-// Update Password
-async function updatePassword() {
-  const newPw = document.getElementById('new-pw').value;
-  const confirmPw = document.getElementById('confirm-pw').value;
-  const msg = document.getElementById('pw-msg');
-  if (!newPw || newPw.length < 6) {
-    msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
-  }
-  if (newPw !== confirmPw) {
-    msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
-  }
-  msg.innerHTML = '<div class="alert alert-gold">Updating…</div>';
-  const { error } = await _supabase.auth.updateUser({ password: newPw });
-  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">✅ Password updated! Signing you out…</div>';
-  document.getElementById('new-pw').value = '';
-  document.getElementById('confirm-pw').value = '';
-  setTimeout(async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; }, 2000);
-}
-
-// Send Reset Email
+// Send Reset Email — the ONLY way to change password
 async function sendResetEmail() {
   const msg = document.getElementById('reset-email-msg');
   msg.innerHTML = '<div class="alert alert-gold">Sending…</div>';
@@ -416,7 +424,7 @@ async function sendResetEmail() {
     redirectTo: 'https://growthivesystems.github.io/monitor/settings.html'
   });
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
-  msg.innerHTML = '<div class="alert alert-success">✅ Reset email sent to ' + currentUser.email + '</div>';
+  msg.innerHTML = '<div class="alert alert-success">✅ Reset email sent to ' + currentUser.email + '. Check your inbox and follow the link to set a new password.</div>';
 }
 
 // Session Info
@@ -469,8 +477,13 @@ function toggleTheme() {
   }
 }
 
-function saveCurrency() {
-  localStorage.setItem('currency', document.getElementById('currency-select').value);
+// Save Currency — saves to BOTH localStorage AND Supabase
+async function saveCurrency() {
+  const val = document.getElementById('currency-select').value;
+  localStorage.setItem('currency', val);
+  try {
+    await _supabase.from('profiles').update({ preferred_currency: val }).eq('id', currentUser.id);
+  } catch(e) { console.warn('Could not save currency to Supabase:', e); }
   showGlobalMsg('✅ Currency preference saved.');
 }
 
@@ -493,26 +506,126 @@ function highlightCurrentLang() {
 }
 
 async function changeLangSetting(code) {
-  // Update button highlight immediately
   document.querySelectorAll('.lang-opt-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === code);
   });
-
-  // Save to localStorage
   localStorage.setItem('growthive_lang', code);
-
-  // Save to Supabase
   try {
     await _supabase.from('profiles').update({ preferred_language: code }).eq('id', currentUser.id);
   } catch(e) { console.warn('Could not save language:', e); }
-
-  // Show confirmation then reload
   const names = { en: 'English', ha: 'Hausa', yo: 'Yoruba', ig: 'Igbo' };
   document.getElementById('lang-saved-msg').textContent = `✅ Language changed to ${names[code]}. Reloading…`;
   setTimeout(() => location.reload(), 1000);
 }
 
-// Helpers
+// ── DANGER ZONE — SCHEDULED ACTIONS ──
+
+// Load current scheduled status from Supabase on page load
+async function loadDangerZoneStatus() {
+  const { data } = await _supabase.from('profiles').select('clear_data_scheduled_at, deletion_scheduled_at').eq('id', currentUser.id).single();
+  if (!data) return;
+
+  // Clear Data status
+  if (data.clear_data_scheduled_at) {
+    const clearDate = new Date(data.clear_data_scheduled_at);
+    const clearEl = document.getElementById('clear-data-status');
+    clearEl.innerHTML = `<div class="scheduled-status">
+      ⏳ Data clear scheduled for <strong>${clearDate.toLocaleDateString('en-GB')}</strong>.
+      All your data will be permanently deleted on this date unless cancelled.<br>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="cancelClearData()">↩️ Cancel — Keep My Data</button>
+    </div>`;
+    document.getElementById('clear-data-btn').textContent = '🗑️ Already Scheduled';
+    document.getElementById('clear-data-btn').disabled = true;
+  }
+
+  // Account Deletion status
+  if (data.deletion_scheduled_at) {
+    const delDate = new Date(data.deletion_scheduled_at);
+    const delEl = document.getElementById('delete-account-status');
+    delEl.innerHTML = `<div class="scheduled-status">
+      ⏳ Account deletion scheduled for <strong>${delDate.toLocaleDateString('en-GB')}</strong>.
+      Your account will be permanently deleted on this date unless cancelled.<br>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="cancelDeleteAccount()">↩️ Cancel — Keep My Account</button>
+    </div>`;
+    document.getElementById('delete-account-btn').textContent = '💀 Already Scheduled';
+    document.getElementById('delete-account-btn').disabled = true;
+  }
+}
+
+// Schedule data clear in 7 days
+async function clearAllData() {
+  if (!confirm('This will schedule deletion of ALL your sales, expenses, debts, inventory and reminders in 7 days. You can cancel within that time. Continue?')) return;
+  const msg = document.getElementById('danger-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Scheduling…</div>';
+  const clearDate = new Date();
+  clearDate.setDate(clearDate.getDate() + 7);
+  const { error } = await _supabase.from('profiles').update({ clear_data_scheduled_at: clearDate.toISOString() }).eq('id', currentUser.id);
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">✅ Data clear scheduled for ' + clearDate.toLocaleDateString('en-GB') + '. You can cancel this within 7 days.</div>';
+  loadDangerZoneStatus();
+}
+
+// Cancel scheduled data clear
+async function cancelClearData() {
+  if (!confirm('Cancel the scheduled data clear? Your data will be kept.')) return;
+  const { error } = await _supabase.from('profiles').update({ clear_data_scheduled_at: null }).eq('id', currentUser.id);
+  if (error) { showGlobalMsg('❌ Could not cancel. Please try again.'); return; }
+  showGlobalMsg('✅ Data clear cancelled. Your data is safe.');
+  document.getElementById('clear-data-status').innerHTML = '';
+  document.getElementById('clear-data-btn').textContent = '🗑️ Schedule Data Clear';
+  document.getElementById('clear-data-btn').disabled = false;
+}
+
+// Schedule account deletion in 30 days
+async function deleteAccount() {
+  if (!confirm('This will schedule permanent deletion of your account in 30 days. You can cancel within that time. Continue?')) return;
+  const typed = prompt('For security, type DELETE to confirm:');
+  if (typed !== 'DELETE') { alert('Cancelled — you did not type DELETE.'); return; }
+  const msg = document.getElementById('danger-msg');
+  msg.innerHTML = '<div class="alert alert-gold">Scheduling…</div>';
+  const delDate = new Date();
+  delDate.setDate(delDate.getDate() + 30);
+  const { error } = await _supabase.from('profiles').update({ deletion_scheduled_at: delDate.toISOString() }).eq('id', currentUser.id);
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">✅ Account deletion scheduled for ' + delDate.toLocaleDateString('en-GB') + '. You can cancel within 30 days.</div>';
+  loadDangerZoneStatus();
+}
+
+// Cancel scheduled account deletion
+async function cancelDeleteAccount() {
+  if (!confirm('Cancel the scheduled account deletion? Your account will be kept.')) return;
+  const { error } = await _supabase.from('profiles').update({ deletion_scheduled_at: null }).eq('id', currentUser.id);
+  if (error) { showGlobalMsg('❌ Could not cancel. Please try again.'); return; }
+  showGlobalMsg('✅ Account deletion cancelled. Your account is safe.');
+  document.getElementById('delete-account-status').innerHTML = '';
+  document.getElementById('delete-account-btn').textContent = '💀 Schedule Deletion';
+  document.getElementById('delete-account-btn').disabled = false;
+}
+
+// Update Password — only callable after arriving via email reset link
+async function updatePassword() {
+  const newPw = document.getElementById('new-pw').value;
+  const confirmPw = document.getElementById('confirm-pw').value;
+  const msg = document.getElementById('pw-msg');
+  if (!newPw || newPw.length < 6) {
+    msg.innerHTML = '<div class="alert alert-danger">⚠️ Password must be at least 6 characters.</div>'; return;
+  }
+  if (newPw !== confirmPw) {
+    msg.innerHTML = '<div class="alert alert-danger">❌ Passwords do not match.</div>'; return;
+  }
+  msg.innerHTML = '<div class="alert alert-gold">Updating…</div>';
+  const { error } = await _supabase.auth.updateUser({ password: newPw });
+  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+  msg.innerHTML = '<div class="alert alert-success">✅ Password updated! Signing you out…</div>';
+  document.getElementById('new-pw').value = '';
+  document.getElementById('confirm-pw').value = '';
+  setTimeout(async () => {
+    await _supabase.auth.signOut();
+    window.location.href = 'login.html';
+  }, 2000);
+}
+
+// Toggle password visibility
 function togglePw(inputId, eyeId) {
   const input = document.getElementById(inputId);
   const eye = document.getElementById(eyeId);
@@ -520,10 +633,11 @@ function togglePw(inputId, eyeId) {
   eye.textContent = input.type === 'password' ? '👁' : '🙈';
 }
 
+// Helpers
 function showGlobalMsg(text) {
   const el = document.getElementById('global-msg');
   el.innerHTML = `<div class="alert alert-success">${text}</div>`;
-  setTimeout(() => el.innerHTML = '', 3000);
+  setTimeout(() => el.innerHTML = '', 4000);
 }
 
 const saved = localStorage.getItem('theme');

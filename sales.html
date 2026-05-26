@@ -452,60 +452,38 @@ async function loadSales() {
   const start = `${yr}-${mo}-01`;
   const end   = new Date(yr, mo, 0).toISOString().split('T')[0];
 
-  // ── PRIMARY: fetch sales table entries for this month ──
-  const { data } = await _supabase
-    .from('sales').select('*')
-    .eq('user_id', currentUser.id)
-    .gte('date', start).lte('date', end)
-    .order('date', { ascending: false });
+  const [{ data }, { data: posMonth }] = await Promise.all([
+    _supabase.from('sales').select('*')
+      .eq('user_id', currentUser.id)
+      .gte('date', start).lte('date', end)
+      .order('date', { ascending: false }),
+    _supabase.from('purchase_transactions')
+      .select('total_amount, payment_method, date')
+      .eq('user_id', currentUser.id)
+      .gte('date', start).lte('date', end)
+  ]);
 
-  // ── FIX: SAFETY NET — also fetch purchase_transactions for this month ──
-  // This mirrors the exact same logic the dashboard uses so monthly totals
-  // always match the dashboard, even if a sync was delayed or missed.
-  const { data: posData } = await _supabase
-    .from('purchase_transactions')
-    .select('total_amount, cash_amount, transfer_amount, pos_amount, date')
-    .eq('user_id', currentUser.id)
-    .gte('date', start).lte('date', end);
+  // Sales table totals
+  const salesDates    = new Set((data||[]).map(r => r.date));
+  const totalSales    = (data||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalCash     = (data||[]).reduce((s,r) => s + Number(r.cash_amount||0), 0);
+  const totalTransfer = (data||[]).reduce((s,r) => s + Number(r.transfer_amount||0), 0);
+  const totalPOS      = (data||[]).reduce((s,r) => s + Number(r.pos_amount||0), 0);
 
-  // Get the set of dates already covered in the sales table
-  const salesDates = new Set((data||[]).map(r => r.date));
+  // Safety net: add any POS transactions for dates not yet in sales table
+  const unsyncedDates = new Set((posMonth||[]).map(r => r.date).filter(d => !salesDates.has(d)));
+  const unsyncedRows  = (posMonth||[]).filter(r => unsyncedDates.has(r.date));
+  const unsyncedTotal    = unsyncedRows.reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedCash     = unsyncedRows.filter(r => r.payment_method === 'cash').reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedTransfer = unsyncedRows.filter(r => r.payment_method === 'transfer').reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedPOS      = unsyncedRows.filter(r => r.payment_method === 'pos').reduce((s,r) => s + Number(r.total_amount||0), 0);
 
-  // Find any dates that exist in purchase_transactions but NOT yet in sales table
-  // (sync gap — these are transactions that haven't been synced yet)
-  const unsyncedPOSDates = new Set(
-    (posData||[]).map(r => r.date).filter(d => !salesDates.has(d))
-  );
+  document.getElementById('month-total').textContent    = formatCurrency(totalSales + unsyncedTotal);
+  document.getElementById('month-cash').textContent     = formatCurrency(totalCash + unsyncedCash);
+  document.getElementById('month-transfer').textContent = formatCurrency(totalTransfer + unsyncedTransfer);
+  document.getElementById('month-pos').textContent      = formatCurrency(totalPOS + unsyncedPOS);
+  document.getElementById('month-count').textContent    = (data||[]).length + unsyncedDates.size;
 
-  // Sum from the sales table (the main, official records)
-  const salesTableTotal    = (data||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const salesTableCash     = (data||[]).reduce((s,r) => s + Number(r.cash_amount||0), 0);
-  const salesTableTransfer = (data||[]).reduce((s,r) => s + Number(r.transfer_amount||0), 0);
-  const salesTablePOS      = (data||[]).reduce((s,r) => s + Number(r.pos_amount||0), 0);
-
-  // Sum from unsynced POS dates only (the safety net — no double counting)
-  const unsyncedTotal    = (posData||[]).filter(r => unsyncedPOSDates.has(r.date)).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const unsyncedCash     = (posData||[]).filter(r => unsyncedPOSDates.has(r.date)).reduce((s,r) => s + Number(r.cash_amount||0), 0);
-  const unsyncedTransfer = (posData||[]).filter(r => unsyncedPOSDates.has(r.date)).reduce((s,r) => s + Number(r.transfer_amount||0), 0);
-  const unsyncedPOS      = (posData||[]).filter(r => unsyncedPOSDates.has(r.date)).reduce((s,r) => s + Number(r.pos_amount||0), 0);
-
-  // Combined totals — sales table + any unsynced POS days — exactly as dashboard does it
-  const totalSales    = salesTableTotal    + unsyncedTotal;
-  const totalCash     = salesTableCash     + unsyncedCash;
-  const totalTransfer = salesTableTransfer + unsyncedTransfer;
-  const totalPOS      = salesTablePOS      + unsyncedPOS;
-
-  // Entry count: sales table rows + number of unsynced POS days
-  const entryCount = (data||[]).length + unsyncedPOSDates.size;
-
-  document.getElementById('month-total').textContent    = formatCurrency(totalSales);
-  document.getElementById('month-cash').textContent     = formatCurrency(totalCash);
-  document.getElementById('month-transfer').textContent = formatCurrency(totalTransfer);
-  document.getElementById('month-pos').textContent      = formatCurrency(totalPOS);
-  document.getElementById('month-count').textContent    = entryCount;
-
-  // The history table still shows only the official sales table rows as before
-  // (unsynced POS days will appear once they sync — table is not affected)
   const el = document.getElementById('sales-table');
   if (!data || data.length === 0) {
     el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No sales recorded for this period.</p></div>';

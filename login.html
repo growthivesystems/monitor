@@ -136,21 +136,27 @@
 
     msg.innerHTML = '<div class="alert alert-success">✅ Login successful! Redirecting…</div>';
 
-    // ── Load user language from Supabase BEFORE redirecting ──
-    // This ensures the chosen language is in localStorage when welcome/returning page loads
+    // ── Load user language AND currency from Supabase BEFORE redirecting ──
+    // This ensures preferences are in localStorage when the next page loads
     try {
       const userId = data.user?.id;
       if (userId) {
         const { data: profile } = await _supabase
           .from('profiles')
-          .select('preferred_language')
+          .select('preferred_language, preferred_currency')
           .eq('id', userId)
           .single();
         if (profile?.preferred_language) {
           localStorage.setItem('growthive_lang', profile.preferred_language);
         }
+        if (profile?.preferred_currency) {
+          localStorage.setItem('currency', profile.preferred_currency);
+        }
+        if (profile?.preferred_currency) {
+          localStorage.setItem('currency', profile.preferred_currency);
+        }
       }
-    } catch(e) { /* silent — localStorage lang stays as fallback */ }
+    } catch(e) { /* silent — localStorage values stay as fallback */ }
 
     // ── Route: first time → welcome.html, returning → returning.html ──
     setTimeout(() => {

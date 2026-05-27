@@ -215,7 +215,8 @@
   }
 
   function formatCurrency(amount) {
-    return '₦' + Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+    const sym = localStorage.getItem('currency') || '₦';
+    return sym + Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 });
   }
 
   (async () => {
@@ -224,7 +225,7 @@
 
     const { data: profile } = await _supabase
       .from('profiles')
-      .select('full_name, business_name, preferred_language')
+      .select('full_name, business_name, preferred_language, preferred_currency')
       .eq('id', user.id)
       .single();
 
@@ -239,6 +240,10 @@
       const localLang   = localStorage.getItem('growthive_lang') || 'en';
       if (profileLang !== localLang) {
         localStorage.setItem('growthive_lang', profileLang);
+      }
+      // Sync currency from Supabase → localStorage
+      if (profile.preferred_currency) {
+        localStorage.setItem('currency', profile.preferred_currency);
       }
     }
 

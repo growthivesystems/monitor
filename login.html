@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="/monitor/manifest.json">
-<meta name="theme-color" content="#C9A84C">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GrowthIve">
-<link rel="apple-touch-icon" href="/monitor/icons/icon-192.png">
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/monitor/sw.js');}</script>
 <title>Login — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
@@ -89,6 +81,14 @@
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
 
+  // ── Show end-of-day session message if redirected after auto-logout ──
+  const sessionMsg = localStorage.getItem('growthive_session_msg');
+  if (sessionMsg) {
+    document.getElementById('msg').innerHTML =
+      `<div class="alert alert-gold">🌅 ${sessionMsg}</div>`;
+    localStorage.removeItem('growthive_session_msg');
+  }
+
   // Handle email confirmation redirect
   const hash = window.location.hash;
   if (hash.includes('access_token')) {
@@ -101,11 +101,19 @@
       '<div class="alert alert-danger">⚠️ Your confirmation link has expired. Please <a href="register.html" style="color:var(--gold);">register again</a> or contact support.</div>';
   }
 
-  // If already logged in → returning (skip if processing email confirmation)
+  // If already logged in AND logged in today → returning
+  // If logged in but from a previous day → stay on login (end-of-day security)
   if (!hash.includes('access_token')) {
     (async () => {
       const { data: { user } } = await _supabase.auth.getUser();
-      if (user) window.location.href = 'returning.html';
+      if (user) {
+        const loginDate = localStorage.getItem('growthive_login_date');
+        const today     = new Date().toISOString().split('T')[0];
+        if (loginDate === today) {
+          window.location.href = 'returning.html';
+        }
+        // If loginDate missing or from yesterday — stay on login page
+      }
     })();
   }
 
@@ -165,6 +173,9 @@
         }
       }
     } catch(e) { /* silent — localStorage values stay as fallback */ }
+
+    // ── Save today's date — used for end-of-day session check ──
+    localStorage.setItem('growthive_login_date', new Date().toISOString().split('T')[0]);
 
     // ── Route: first time → welcome.html, returning → returning.html ──
     setTimeout(() => {

@@ -169,6 +169,22 @@
     font-size: 0.72rem; color: var(--danger);
     margin-top: 8px;
   }
+
+  /* ── Image Receipt canvas target (off-screen) ── */
+  .img-receipt-canvas {
+    position: fixed; left: -9999px; top: 0; width: 380px;
+    background: #ffffff; color: #111111;
+    padding: 36px; font-family: 'Segoe UI', Arial, sans-serif;
+    border-radius: 12px; z-index: -1; line-height: 1.5;
+  }
+  .irc-logo { font-size: 1rem; font-weight: 800; color: #C9A84C; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .irc-biz  { font-size: 1.3rem; font-weight: 700; color: #111; margin-bottom: 2px; }
+  .irc-meta { font-size: 0.75rem; color: #777; margin-bottom: 16px; }
+  .irc-divider { border: none; border-top: 2px dashed #C9A84C; margin: 14px 0; }
+  .irc-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+  .irc-total { display: flex; justify-content: space-between; padding: 12px 0 0; font-size: 1.05rem; font-weight: 800; color: #111; border-top: 2px solid #111; margin-top: 8px; }
+  .irc-pay { font-size: 0.78rem; color: #555; margin-top: 10px; }
+  .irc-footer { margin-top: 20px; font-size: 0.7rem; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 12px; }
 </style>
 </head>
 <body>
@@ -302,6 +318,8 @@
     <div style="text-align:center;margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
       <button class="btn btn-gold" onclick="closeReceipt()">✅ Done</button>
       <button class="btn btn-outline btn-sm" onclick="openPrintReceipt()">🖨️ Print</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadReceiptImage()">📥 Save Image</button>
+      <button class="btn btn-outline btn-sm" style="background:rgba(37,211,102,0.12);border-color:rgba(37,211,102,0.5);color:#25d366;" onclick="shareReceiptWhatsApp()">📲 WhatsApp</button>
     </div>
     <div style="text-align:center;margin-top:16px;font-size:0.7rem;color:var(--muted);">
       Thank you for your business!<br>Powered by GrowthIve Monitor
@@ -327,7 +345,20 @@
   <div class="pr-footer">Printed from GrowthIve Monitor &nbsp;|&nbsp; <span id="pr-footer-date"></span></div>
 </div>
 
+<!-- ── Image Receipt (off-screen, captured by html2canvas) ── -->
+<div class="img-receipt-canvas" id="img-receipt-canvas">
+  <div class="irc-logo">GrowthIve Monitor</div>
+  <div class="irc-biz" id="irc-biz-name">Business Name</div>
+  <div class="irc-meta" id="irc-meta"></div>
+  <hr class="irc-divider">
+  <div id="irc-lines"></div>
+  <div class="irc-total"><span>TOTAL</span><span id="irc-total"></span></div>
+  <div class="irc-pay" id="irc-pay"></div>
+  <div class="irc-footer">Thank you for your business!<br>Powered by GrowthIve Monitor</div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/lang.js"></script>
@@ -340,11 +371,17 @@ let cart              = {};
 let currentCat        = 'all';
 let selectedPayment   = 'cash';
 let lastReceipt       = null;
+let cachedBizName     = null;
 
 (async () => {
   currentUser = await requireAuth();
   if (!currentUser) return;
   await initPage('purchases');
+  // Cache business name for receipt
+  try {
+    const { data: profile } = await _supabase.from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
+    if (profile?.business_name) cachedBizName = profile.business_name;
+  } catch(e) {}
   loadInventory();
   loadTodayStats();
   loadRecentTxns();
@@ -412,7 +449,7 @@ function filterItems() {
 
 function renderCatalogue() {
   const el       = document.getElementById('catalogue-grid');
-  const currency = '₦';
+  const currency = localStorage.getItem('currency') || '₦';
 
   if (filteredInventory.length === 0) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items match your search.</p></div>`;
@@ -518,7 +555,7 @@ function removeFromCart(itemId) {
 
 function renderCart() {
   const keys        = Object.keys(cart);
-  const currency    = '₦';
+  const currency    = localStorage.getItem('currency') || '₦';
   const cartEmpty   = document.getElementById('cart-empty');
   const cartContent = document.getElementById('cart-content');
   const checkoutBtn = document.getElementById('checkout-btn');
@@ -541,10 +578,6 @@ function renderCart() {
     const subtotal = price * qty;
     total += subtotal;
 
-    // ── FIX: removed oninput from untracked qty input ──
-    // oninput fired on every keystroke including Backspace, which caused the cart
-    // item to be deleted the moment the field was cleared mid-typing.
-    // onchange and onblur only fire when the user finishes editing — safe to commit.
     const qtyControl = isUntracked
       ? `<input type="number" class="untracked-qty-input" value="${qty}" min="1"
             onchange="setUntrackedQty('${id}', this.value)"
@@ -584,17 +617,11 @@ function selectPay(el, method) {
 
 /* ══════════════════════════════════════════
    AUTO-SYNC TO DAILY SALES — BULLETPROOF VERSION
-   After every checkout, recalculate today's full total
-   from ALL purchase_transactions and upsert into sales table.
-   Retries once on failure. Surfaces errors clearly.
-   This is what keeps Monthly Revenue accurate on dashboard.
 ══════════════════════════════════════════ */
 async function syncToSalesTable(today) {
   const syncEl = document.getElementById('sync-status');
 
   const doSync = async () => {
-    // Always recalculate from ALL of today's transactions — never just add the last one
-    // This means even if 30 purchases are made, the running total is always accurate
     const { data: todayTxns, error: fetchErr } = await _supabase
       .from('purchase_transactions')
       .select('total_amount, payment_method')
@@ -609,7 +636,6 @@ async function syncToSalesTable(today) {
     const totalPOS      = (todayTxns||[]).filter(r => r.payment_method === 'pos').reduce((s,r) => s + Number(r.total_amount||0), 0);
     const txnCount      = (todayTxns||[]).length;
 
-    // Check if a sales entry already exists for today
     const { data: existing, error: checkErr } = await _supabase
       .from('sales')
       .select('id, source')
@@ -632,15 +658,12 @@ async function syncToSalesTable(today) {
     };
 
     if (existing) {
-      // Only update if it was a POS-sourced entry or null — never overwrite a manual entry
       if (existing.source === 'pos' || existing.source === null) {
         const { error: updateErr } = await _supabase
           .from('sales').update(payload).eq('id', existing.id);
         if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
       }
-      // If source === 'manual', the owner typed it themselves — leave it alone
     } else {
-      // No entry for today yet — create one
       const { error: insertErr } = await _supabase
         .from('sales').insert(payload);
       if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
@@ -648,14 +671,12 @@ async function syncToSalesTable(today) {
   };
 
   try {
-    // First attempt
     await doSync();
     syncEl.style.display = 'block';
     syncEl.innerHTML = '<span class="sync-badge">✅ Synced to Daily Sales</span>';
     setTimeout(() => syncEl.style.display = 'none', 4000);
   } catch (err) {
     console.warn('Sync attempt 1 failed, retrying…', err);
-    // Retry once after a short delay
     await new Promise(r => setTimeout(r, 1500));
     try {
       await doSync();
@@ -664,7 +685,6 @@ async function syncToSalesTable(today) {
       setTimeout(() => syncEl.style.display = 'none', 4000);
     } catch (retryErr) {
       console.error('Sync failed after retry:', retryErr);
-      // Show error badge but don't block the UI — dashboard has fallback via purchase_transactions
       syncEl.style.display = 'block';
       syncEl.innerHTML = '<span class="sync-badge-error">⚠️ Sync delayed — dashboard will still update</span>';
       setTimeout(() => syncEl.style.display = 'none', 6000);
@@ -681,7 +701,7 @@ async function checkout() {
   btn.disabled    = true;
   btn.textContent = '⏳ Processing…';
 
-  const currency = '₦';
+  const currency = localStorage.getItem('currency') || '₦';
   let   total    = 0;
   const items    = keys.map(id => {
     const { item, qty, isUntracked } = cart[id];
@@ -735,8 +755,7 @@ async function checkout() {
     } catch(e) { console.warn('Audit log write failed:', e); }
   }
 
-  // 3. AUTO-SYNC to sales table — bulletproof, runs after every single purchase
-  // This is what keeps Monthly Revenue on dashboard always accurate
+  // 3. AUTO-SYNC to sales table
   await syncToSalesTable(today);
 
   // 4. Show receipt
@@ -756,9 +775,11 @@ async function checkout() {
   btn.textContent = '✅ Complete Sale →';
 }
 
-/* ── RECEIPT ── */
+/* ── RECEIPT MODAL ── */
 function showReceiptModal(items, total, currency) {
   const now = new Date();
+  const bizName = cachedBizName || 'My Business';
+  document.getElementById('receipt-biz').textContent           = bizName;
   document.getElementById('receipt-date').textContent          = now.toLocaleString('en-GB');
   document.getElementById('receipt-total-display').textContent = `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
   document.getElementById('receipt-pay-method').textContent    = `Payment: ${selectedPayment.toUpperCase()}`;
@@ -773,16 +794,12 @@ function showReceiptModal(items, total, currency) {
 
 function closeReceipt() { document.getElementById('receipt-modal').classList.remove('show'); }
 
+/* ── PRINT RECEIPT ── */
 async function openPrintReceipt() {
   if (!lastReceipt) return;
   closeReceipt();
-  let bizName = 'My Business';
-  try {
-    const { data: profile } = await _supabase.from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle();
-    if (profile?.business_name) bizName = profile.business_name;
-  } catch(e) {}
-
-  const currency = '₦';
+  const bizName  = cachedBizName || 'My Business';
+  const currency = localStorage.getItem('currency') || '₦';
   const now      = new Date();
   const { items, total, customerName, notes, payMethod } = lastReceipt;
 
@@ -818,10 +835,104 @@ function closePrintReceipt() {
   document.getElementById('print-receipt-area').style.display = 'none';
 }
 
+/* ── IMAGE RECEIPT — build the off-screen card ── */
+function buildImageReceiptCard() {
+  if (!lastReceipt) return;
+  const { items, total, customerName, payMethod } = lastReceipt;
+  const currency = localStorage.getItem('currency') || '₦';
+  const bizName  = cachedBizName || 'My Business';
+  const now      = new Date();
+
+  document.getElementById('irc-biz-name').textContent = bizName;
+  document.getElementById('irc-meta').textContent =
+    `${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · ${now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('irc-lines').innerHTML = items.map(({ name, qty, subtotal }) =>
+    `<div class="irc-row">
+      <span>${name} × ${qty}</span>
+      <span>${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}</span>
+    </div>`
+  ).join('');
+  document.getElementById('irc-total').textContent =
+    `${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}`;
+  document.getElementById('irc-pay').textContent =
+    `Payment: ${payMethod.toUpperCase()}${customerName ? ' · ' + customerName : ''}`;
+}
+
+/* ── DOWNLOAD RECEIPT AS IMAGE ── */
+async function downloadReceiptImage() {
+  if (!lastReceipt) return;
+  buildImageReceiptCard();
+  const el = document.getElementById('img-receipt-canvas');
+  // Temporarily bring on-screen for capture
+  el.style.left = '-9999px';
+  el.style.top  = '0';
+  try {
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const link   = document.createElement('a');
+    link.download = `receipt-${new Date().toISOString().split('T')[0]}.png`;
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('Could not generate image. Please use Print instead.');
+    console.error('html2canvas error:', e);
+  }
+}
+
+/* ── SHARE RECEIPT VIA WHATSAPP ── */
+async function shareReceiptWhatsApp() {
+  if (!lastReceipt) return;
+  const { items, total, customerName, payMethod } = lastReceipt;
+  const currency = localStorage.getItem('currency') || '₦';
+  const bizName  = cachedBizName || 'My Business';
+  const now      = new Date();
+
+  // Try image share first (mobile) — falls back to text
+  buildImageReceiptCard();
+  const el = document.getElementById('img-receipt-canvas');
+  try {
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'receipt.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // Mobile — share image directly
+        await navigator.share({ files: [file], title: `Receipt from ${bizName}` });
+      } else {
+        // Desktop — open WhatsApp with text receipt
+        shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now);
+      }
+    }, 'image/png');
+  } catch(e) {
+    // Fallback to text
+    shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now);
+  }
+}
+
+function shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now) {
+  const lines = items.map(({ name, qty, subtotal }) =>
+    `  ${name} × ${qty}  →  ${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}`
+  ).join('
+');
+  const text = [
+    `🧾 *Receipt from ${bizName}*`,
+    `📅 ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · ${now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`,
+    ``,
+    lines,
+    ``,
+    `💰 *TOTAL: ${currency}${total.toLocaleString('en-NG',{minimumFractionDigits:2})}*`,
+    `💳 Payment: ${payMethod.toUpperCase()}`,
+    customerName ? `👤 Customer: ${customerName}` : '',
+    ``,
+    `_Powered by GrowthIve Monitor_`
+  ].filter(Boolean).join('
+');
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
 /* ── TODAY'S STATS ── */
 async function loadTodayStats() {
   const today    = new Date().toISOString().split('T')[0];
-  const currency = '₦';
+  const currency = localStorage.getItem('currency') || '₦';
   const { data } = await _supabase
     .from('purchase_transactions')
     .select('total_amount')
@@ -835,7 +946,7 @@ async function loadTodayStats() {
 
 /* ── RECENT TRANSACTIONS ── */
 async function loadRecentTxns() {
-  const currency = '₦';
+  const currency = localStorage.getItem('currency') || '₦';
   const { data } = await _supabase
     .from('purchase_transactions')
     .select('*')

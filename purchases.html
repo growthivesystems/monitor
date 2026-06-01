@@ -910,8 +910,7 @@ async function shareReceiptWhatsApp() {
 function shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now) {
   const lines = items.map(({ name, qty, subtotal }) =>
     `  ${name} × ${qty}  →  ${currency}${subtotal.toLocaleString('en-NG',{minimumFractionDigits:2})}`
-  ).join('
-');
+  ).join('\n');
   const text = [
     `🧾 *Receipt from ${bizName}*`,
     `📅 ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · ${now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`,
@@ -923,8 +922,7 @@ function shareReceiptAsText(items, total, currency, bizName, customerName, payMe
     customerName ? `👤 Customer: ${customerName}` : '',
     ``,
     `_Powered by GrowthIve Monitor_`
-  ].filter(Boolean).join('
-');
+  ].filter(Boolean).join('\n');
 
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }

@@ -2,7 +2,7 @@
   "name": "GrowthIve Monitor",
   "short_name": "GrowthIve",
   "description": "Your all-in-one digital business record management system. Track sales, expenses, inventory and grow smarter.",
-  "start_url": "/monitor/dashboard.html",
+  "start_url": "/monitor/returning.html",
   "scope": "/monitor/",
   "display": "standalone",
   "orientation": "portrait-primary",

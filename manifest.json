@@ -1,0 +1,50 @@
+{
+  "name": "GrowthIve Monitor",
+  "short_name": "GrowthIve",
+  "description": "Your all-in-one digital business record management system. Track sales, expenses, inventory and grow smarter.",
+  "start_url": "/monitor/dashboard.html",
+  "scope": "/monitor/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f0f",
+  "theme_color": "#C9A84C",
+  "lang": "en",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/monitor/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/monitor/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily Sales",
+      "short_name": "Sales",
+      "description": "Record today's sales",
+      "url": "/monitor/sales.html",
+      "icons": [{ "src": "/monitor/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sales Point",
+      "short_name": "POS",
+      "description": "Open the sales point",
+      "url": "/monitor/purchases.html",
+      "icons": [{ "src": "/monitor/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Expenses",
+      "short_name": "Expenses",
+      "description": "Log an expense",
+      "url": "/monitor/expenses.html",
+      "icons": [{ "src": "/monitor/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

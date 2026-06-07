@@ -1,4 +1,5 @@
-  // ═══════════════════════════════════════════════════════════════
+ 
+// ═══════════════════════════════════════════════════════════════
 // GrowthIve Monitor — Complete Language System v3
 // Supports: English (en), Hausa (ha), Yoruba (yo), Igbo (ig)
 // Full page translation — no HTML edits needed.
@@ -221,14 +222,12 @@ const TRANSLATIONS = {
     reports:'Rahotanni',health_score:'Maki na Kasuwanci',calendar:'Kalandar',
     settings:'Saituna',support:'Taimako',sign_out:'Fita',
     main_menu:'Babban Menu',analytics:'Nazari',account:'Asusun',
-
     login:'Shiga',register:'Yi Rajista',email:'Adireshin Imel',
     password:'Kalmar Sirri',full_name:'Cikakken Suna',
     business_name:'Sunan Kasuwanci',login_btn:'Shiga →',
     register_btn:'Ƙirƙiri Asusun →',no_account:'Ba ka da asusun?',
     have_account:'Kana da asusun?',forgot_pw:'Manta Kalmar Sirri?',
     sign_up:'Yi Rajista',sign_in:'Shiga',
-
     dashboard_title:'Allon Kallo',dashboard_sub:'Duba halin kasuwancinka a taƙaice.',
     sales_title:'Tallace Yau',sales_sub:'Yi rikodin tallacenka na yau.',
     expenses_title:'Manajan Kashe-kudi',expenses_sub:'Rubuta duk kuɗin da ka kashewa.',
@@ -241,7 +240,6 @@ const TRANSLATIONS = {
     settings_title:'Saituna',settings_sub:'Sarrafa asusunka da amincinsa.',
     contact_title:'Tuntuɓi da Tallafi',contact_sub:'Muna nan don taimaka maka.',
     faq_title:'Tambayoyi da Ake Yawan Yi',
-
     todays_sales:'Tallace na Yau',cash_sales_today:'Tallace da Tsabar Kudi Yau',
     transfer_sales_today:'Tallace ta Canjin Kudi Yau',pos_sales_today:'Tallace ta POS Yau',
     monthly_revenue:'Kuɗin Wata',total_expenses:'Jimlar Kashe-kudi',
@@ -255,7 +253,6 @@ const TRANSLATIONS = {
     view_pos:'Duba POS →',manage:'Sarrafa',full_report:'Cikakken Rahoto',
     calculating:'Ana ƙididdiga…',healthy_business:'🟢 Kasuwanci Mai Lafiya',
     needs_attention:'🟡 Yana Buƙatar Kulawa',critical:'🔴 Muhimmi — Duba Yanzu',
-
     add_stock_item:'Ƙara Kaya',item_name:'Sunan Kaya',quantity:'Adadi',
     unit_price:'Farashi na Kowane',low_stock_alert:'Iyakar Faɗakarwa',
     add_to_stock:'Ƙara zuwa Jerin Kaya →',stock_summary:'Taƙaitaccen Kaya',
@@ -274,18 +271,12 @@ const TRANSLATIONS = {
     only_tracked:'— yana aiki ne kawai lokacin da adadi > 0',
     full_audit:'🔒 Cikakken Tarihin Ayyuka na Aiki',
     audit_desc:'Kowane ƙari, gyara, goge da dawowa an rubuta su daga baya.',
-    type_delete:'Rubuta DELETE don tabbatarwa:',
-    type_delete_ph:'Rubuta DELETE a nan…',
-    yes_delete:'🗑️ Eh, Share Kaya',
-    secure_verify:'🔒 Bukatar Tabbatarwa Mai Aminci',
-    send_verify:'📧 Aika Haɗin Tabbatarwa',
-    identity_verified:'✅ An tabbatar da asalinku. Yanzu zaku iya gyarawa.',
-    update_stock:'Sabunta Kaya →',
-    import_title:'📥 Shigo da Kaya daga Fayil',
+    type_delete:'Rubuta DELETE don tabbatarwa:',type_delete_ph:'Rubuta DELETE a nan…',
+    yes_delete:'🗑️ Eh, Share Kaya',secure_verify:'🔒 Bukatar Tabbatarwa Mai Aminci',
+    send_verify:'📧 Aika Haɗin Tabbatarwa',identity_verified:'✅ An tabbatar da asalinku. Yanzu zaku iya gyarawa.',
+    update_stock:'Sabunta Kaya →',import_title:'📥 Shigo da Kaya daga Fayil',
     click_browse:'Danna don bincika',drag_drop:'ko ja da saka fayilin ku anan',
-    download_template:'📄 Zazzage Samfurin CSV',
-    import_btn:'✅ Shigo da Kayayyaki →',diff_file:'← Wani Fayil',
-
+    download_template:'📄 Zazzage Samfurin CSV',import_btn:'✅ Shigo da Kayayyaki →',diff_file:'← Wani Fayil',
     record_sales:'Yi Rikodin Tallacen Yau',simple_record:'Sauƙaƙen Rikodin Tallace',
     premium_record:'⭐ Cikakken Rikodin Tallace',total_sales_amount:'Jimlar Kuɗin Tallace (₦)',
     qty_sold:'Adadin da aka Sayar (zaɓi)',notes:'Bayani (zaɓi)',
@@ -298,13 +289,11 @@ const TRANSLATIONS = {
     transfer_sales:'Tallace ta Canjin Kudi',pos_sales:'Tallace ta POS',
     entries:'Rikodan',save_sale_btn:'Ajiye Rikodin Tallace →',
     update_record:'Akwai rikodin wannan rana — ajiyewa zai sabunta shi.',
-
     add_expense:'Ƙara Kashe-kudi',description:'Bayanin',amount:'Adadin Kudi (₦)',
     date:'Kwanan Wata',save_expense:'Ajiye Kashe-kudi →',
     monthly_summary_exp:'Taƙaitaccen Wata',expense_history:'Tarihin Kashe-kudi',
     net_profit_loss:'Riba ko Asara',sales_minus_expenses:'Tallace minus Kashe-kudi',
     no_expenses:'Babu kashe-kudi da aka rubuta a wannan lokaci.',
-
     add_debt:'Ƙara Bashi',person_name:'Sunan Mutum ko Kasuwanci',
     debt_type:'Nau\'i',due_date:'Ranar Biyan (zaɓi)',
     owed_to_me:'Suna bin ni (Kuɗin Rance)',i_owe:'Ina bin su (Bashi)',
@@ -314,7 +303,6 @@ const TRANSLATIONS = {
     paid_settled:'An Biya / An Kawo Karshe',mark_paid:'✓ An Biya',
     owed_to_me_sub:'Wasu suna bin ka',i_owe_sub:'Kana bin wasu',
     net_position_sub:'Bayan duk bashi',person_ph:'misali Ade Bakery, Musa Mai Kaya…',
-
     item_catalogue:'Jerin Kayayyaki',current_order:'Odar Yanzu',
     complete_sale:'✅ Kammala Tallace →',clear_cart:'🗑️ Share Kwandon',
     customer_name:'Sunan Abokin Ciniki (zaɓi)',payment_method:'Hanyar Biyan Kudi',
@@ -325,7 +313,6 @@ const TRANSLATIONS = {
     walk_in:'Abokin ciniki mai ziyara…',add_notes:'Ƙarin bayani…',
     tracked_stock:'Kaya da aka bibiyi',service_untracked:'Aiki / Ba a Bibiyi',
     out_stock_tracked:'Babu Kaya (an bibiyi)',last_20:'Ƙarshen ma\'amaloli 20 na POS',
-
     monthly:'Na Wata',weekly:'Na Mako',quarterly:'Na Kwata',
     pos_revenue:'Kuɗin POS',confirmed_sales:'Tallace da aka Tabbatar',
     pos_card_sales:'Tallace ta Katin POS',outstanding_debt:'Bashi da Ba a Biya',
@@ -336,7 +323,6 @@ const TRANSLATIONS = {
     pos_card_payments:'POS: biyan katin',unpaid_balances_r:'Basussuka da ba a biya',
     export_csv_btn:'📊 Fitar CSV',print_pdf:'🖨️ Buga / Ajiye PDF',
     shows_pos:'Yana nuna ma\'amalolin POS, rikodan yau da kullum, da kashe-kudi tare.',
-
     add_reminder:'➕ Ƙara Tunatarwa',reminder_title:'Take',reminder_date:'Kwanan Wata',
     reminder_type:'Nau\'i',reminder_note:'Bayani (zaɓi)',
     save_reminder:'Ajiye Tunatarwa →',upcoming:'🔔 Tunatarwa masu Zuwa',
@@ -344,18 +330,14 @@ const TRANSLATIONS = {
     restock:'📦 Sayen Kayayyaki',meeting:'🤝 Taro',
     general_reminder:'🔔 Tunatarwa ta Gaba ɗaya',other:'📌 Wanin',
     no_upcoming:'Babu tunatarwa masu zuwa.',events_on:'Abubuwan da suka faru a',
-    add_one:'+ Ƙara ɗaya',title_ph:'misali Biya mai kaya, Sayi sukari…',
-    note_ph:'Ƙarin bayani…',
-
+    add_one:'+ Ƙara ɗaya',title_ph:'misali Biya mai kaya, Sayi sukari…',note_ph:'Ƙarin bayani…',
     score_breakdown:'📊 Rarraben Maki',business_radar:'🕸️ Radar na Kasuwanci',
     recommendations:'💡 Shawarwari',out_of_100:'daga cikin 100',
     how_each:'Yadda kowane yanki ke ba da gudummawa ga jimlar makin ka.',
     score_based:'Ana ƙididdiga maki bisa bayanan wannan wata.',
     keep_recording:'Ci gaba da rubuta tallace da kashe-kudi don samun maki madaidaici.',
     record_pos:'🛒 Yi Rikodin Tallacen POS',add_daily:'➕ Ƙara Rikodin Yau',
-    add_expenses:'➕ Ƙara Kashe-kudi',update_stock_btn:'📦 Sabunta Kaya',
-    manage_debts:'🤝 Sarrafa Bashi',
-
+    add_expenses:'➕ Ƙara Kashe-kudi',update_stock_btn:'📦 Sabunta Kaya',manage_debts:'🤝 Sarrafa Bashi',
     your_profile:'Bayananku',profile:'👤 Bayanan Kai',security:'🔒 Tsaro',
     preferences:'⚙️ Zaɓuɓɓuka',notifications:'🔔 Sanarwa',
     danger_zone:'⚠️ Yankin Hadari',save_profile:'Ajiye Bayanan Kai →',
@@ -379,7 +361,6 @@ const TRANSLATIONS = {
     sign_out_desc:'Fita daga asusunka a wannan na\'ura',
     email_cannot:'Canjin imel ana sarrafa shi ta hanyar tabbatarwar Supabase.',
     profile_tab:'Bayananku',send_reset_link:'Aika Haɗin Sake Saita',
-
     email_support:'Tallafi ta Imel',website:'Shafin Yanar Gizo',documentation:'Takardun Taimako',
     send_message:'Aika Saƙo',your_name:'Sunanka',subject:'Batun',message:'Saƙo',
     send_btn:'Aika Saƙo →',for_account:'Don matsalolin asusun ko biyan kudi',
@@ -390,7 +371,6 @@ const TRANSLATIONS = {
     billing_q:'Tambayar Biyan Kudi',feature_req:'Buƙatar Aiki',
     bug_report:'Rahoto kan Kuskure',general_enquiry:'Tambaya ta Gaba ɗaya',
     describe:'Bayyana matsalarku ko tambayarku…',back_home:'← Koma Gida',
-
     loading:'Ana lodawa…',saving:'Ana ajiyewa…',success:'An yi nasara!',
     error:'Kuskure',cancel:'Soke',confirm:'Tabbatar',back:'Koma Baya',
     close:'Rufe',yes:'Eh',no:'A\'a',update:'Sabunta',search:'Nemo',
@@ -399,6 +379,13 @@ const TRANSLATIONS = {
     today:'Yau',this_week:'Wannan Mako',
     person:'Mutum',date_col:'Kwanan Wata',amount_col:'Adadin Kudi',
     type_col:'Nau\'i',due_date_col:'Ranar Biyan',status_col:'Matsayi',
+    no_pos_today:'Babu ma\'amalolin POS yau.',
+    go_to_sales_point:'Je wurin sayayya →',
+    all_stock_healthy:'Dukkan kayayyaki suna da lafiya.',
+    entries_this_month:'rikodan wannan wata',
+    revenue_expenses_short:'Kuɗin shiga − kashe-kudi',
+    record_todays_sales:'Yi Rikodin Tallacen Yau',
+    this_month_summary:'Taƙaitaccen Wannan Wata',
   },
 
   yo: {
@@ -407,14 +394,12 @@ const TRANSLATIONS = {
     reports:'Ijabọ',health_score:'Àmì Ilera Iṣowo',calendar:'Kalẹnda',
     settings:'Ètò',support:'Iranlọwọ',sign_out:'Jade',
     main_menu:'Akojọ Àkọkọ',analytics:'Itupalẹ',account:'Àkáùntì',
-
     login:'Wọle',register:'Forukọsilẹ',email:'Àdírẹ́sì Ìmẹ́lì',
     password:'Ọrọ Aṣina',full_name:'Orúkọ Ni Kikun',
     business_name:'Orúkọ Iṣowo',login_btn:'Wọle →',
     register_btn:'Ṣẹda Àkáùntì →',no_account:'Ṣé o ní àkáùntì?',
     have_account:'O ti ní àkáùntì tẹlẹ?',forgot_pw:'Gbagbe Ọrọ Aṣina?',
     sign_up:'Forukọsilẹ',sign_in:'Wọle',
-
     dashboard_title:'Dasibodu',dashboard_sub:'Ìwòye iṣowo rẹ ni ìpẹkún.',
     sales_title:'Tita Ojoojumọ',sales_sub:'Gbasilẹ tita ojoojumọ rẹ.',
     expenses_title:'Atẹle Inawo',expenses_sub:'Kọ gbogbo inawo iṣowo rẹ silẹ.',
@@ -427,7 +412,6 @@ const TRANSLATIONS = {
     settings_title:'Ètò',settings_sub:'Ṣakoso àkáùntì rẹ àti aabo rẹ.',
     contact_title:'Kàn sí àti Atilẹyin',contact_sub:'A wà níbí láti ràn ọ lọwọ.',
     faq_title:'Awọn Ibeere Tí a Máa Ṅ Béèrè',
-
     todays_sales:'Tita Òní',cash_sales_today:'Tita Owo Ni Ọwọ Òní',
     transfer_sales_today:'Tita Gbigbe Owó Òní',pos_sales_today:'Tita POS Òní',
     monthly_revenue:'Owo Oṣù',total_expenses:'Apao Inawo',
@@ -441,7 +425,6 @@ const TRANSLATIONS = {
     view_pos:'Wo POS →',manage:'Ṣakoso',full_report:'Ijabọ Kikun',
     calculating:'Ń ṣiṣiro…',healthy_business:'🟢 Iṣowo Ilera',
     needs_attention:'🟡 Nilo Akiyesi',critical:'🔴 Pàtàkì — Ṣayẹwo Bayi',
-
     add_stock_item:'Fikun Ohun Elo',item_name:'Orúkọ Ohun Elo',quantity:'Iye',
     unit_price:'Idiyele Fun Ọkan',low_stock_alert:'Iye Itaniji Ọja Kekere',
     add_to_stock:'Fikun si Àkójọ Ọja →',stock_summary:'Akopọ Ọja',
@@ -461,15 +444,11 @@ const TRANSLATIONS = {
     full_audit:'🔒 Ìtàn Àwọn Ìṣe Ni Kikun Ń Ṣiṣẹ',
     audit_desc:'Gbogbo ìfikún, ìṣatunkọ, píparẹ àti ìmúpadàbọ̀ ni a ṣe àkọsílẹ̀ rẹ.',
     type_delete:'Tẹ DELETE lati jẹrisi:',type_delete_ph:'Tẹ DELETE níbí…',
-    yes_delete:'🗑️ Bẹẹni, Paarẹ Ohun Elo',
-    secure_verify:'🔒 Ìmọ̀ Tí A Nilo',send_verify:'📧 Fi Ìjẹ́rìísí Ranṣẹ',
-    identity_verified:'✅ A ti jẹrisi ẹni rẹ. O le ṣatunkọ bayi.',
-    update_stock:'Ṣe Imudojuiwọn Ọja →',
-    import_title:'📥 Gbe Ọja Wọle Lati Faili',
+    yes_delete:'🗑️ Bẹẹni, Paarẹ Ohun Elo',secure_verify:'🔒 Ìmọ̀ Tí A Nilo',
+    send_verify:'📧 Fi Ìjẹ́rìísí Ranṣẹ',identity_verified:'✅ A ti jẹrisi ẹni rẹ. O le ṣatunkọ bayi.',
+    update_stock:'Ṣe Imudojuiwọn Ọja →',import_title:'📥 Gbe Ọja Wọle Lati Faili',
     click_browse:'Tẹ lati wa',drag_drop:'tabi fa faili rẹ wá síbí',
-    download_template:'📄 Gbe Awoṣe CSV Sile',
-    import_btn:'✅ Gbe Awọn Ohun Elo Wọle →',diff_file:'← Faili Miran',
-
+    download_template:'📄 Gbe Awoṣe CSV Sile',import_btn:'✅ Gbe Awọn Ohun Elo Wọle →',diff_file:'← Faili Miran',
     record_sales:'Gbasilẹ Tita Òní',simple_record:'Igbasilẹ Tita Rọrun',
     premium_record:'⭐ Igbasilẹ Tita Pipe',total_sales_amount:'Apao Iye Tita (₦)',
     qty_sold:'Apao Iye Tí a Tà (aṣayan)',notes:'Àkọsílẹ (aṣayan)',
@@ -482,13 +461,11 @@ const TRANSLATIONS = {
     transfer_sales:'Tita Gbigbe Owó',pos_sales:'Tita POS',
     entries:'Awọn Igbasilẹ',save_sale_btn:'Fi Igbasilẹ Tita Pamọ →',
     update_record:'Igbasilẹ wà fún ọjọ yìí — fipamọ yoo ṣe imudojuiwọn rẹ.',
-
     add_expense:'Fikun Inawo',description:'Apejuwe',amount:'Iye Owó (₦)',
     date:'Ọjọ',save_expense:'Fi Inawo Pamọ →',
     monthly_summary_exp:'Akopọ Oṣù',expense_history:'Ìtàn Inawo',
     net_profit_loss:'Ere Gidi tabi Àdánù',sales_minus_expenses:'Tita kúrò nínú Inawo',
     no_expenses:'Ko si inawo tí a gbasilẹ fún àkókò yìí.',
-
     add_debt:'Fikun Gbèsè',person_name:'Orúkọ Eniyan tabi Iṣowo',
     debt_type:'Iru',due_date:'Ọjọ Isanpada (aṣayan)',
     owed_to_me:'Wọn jẹ mi (Kirẹditi)',i_owe:'Mo jẹ wọn (Débiti)',
@@ -498,7 +475,6 @@ const TRANSLATIONS = {
     paid_settled:'Ti Sanwo / Ti Parí',mark_paid:'✓ Sanwo',
     owed_to_me_sub:'Awọn miran jẹ ọ',i_owe_sub:'O jẹ awọn miran',
     net_position_sub:'Lẹhin gbogbo gbèsè',person_ph:'fun apẹẹrẹ Ade Bakery, Musa…',
-
     item_catalogue:'Katalogi Ohun Elo',current_order:'Aṣẹ Lọwọlọwọ',
     complete_sale:'✅ Pari Tita →',clear_cart:'🗑️ Ṣofo Agbọn',
     customer_name:'Orúkọ Onibara (aṣayan)',payment_method:'Ọna Isanwo',
@@ -509,7 +485,6 @@ const TRANSLATIONS = {
     walk_in:'Onibara tó wọlé…',add_notes:'Àlàyé àfikún…',
     tracked_stock:'Ọja Tí A Tọpa',service_untracked:'Iṣẹ / Ti A Ko Tọpa',
     out_stock_tracked:'Parí Ní Ọja (tí a tọpa)',last_20:'Ìkẹyìn Iṣowo POS 20',
-
     monthly:'Oṣùkooṣù',weekly:'Ọṣẹkooṣẹ',quarterly:'Ìdamẹrin',
     pos_revenue:'Owo POS',confirmed_sales:'Tita Tí a Jẹrisi',
     pos_card_sales:'Tita Kaadi POS',outstanding_debt:'Gbèsè Ti A Ko Sanwo',
@@ -520,7 +495,6 @@ const TRANSLATIONS = {
     pos_card_payments:'POS: isanwo kaadi',unpaid_balances_r:'Awọn iye tí a ko sanwo',
     export_csv_btn:'📊 Gbe CSV Jade',print_pdf:'🖨️ Tẹ / Fi Pamọ PDF',
     shows_pos:'Ń fihàn àwọn iṣowo POS, igbasilẹ ojoojumọ, àti inawo papọ̀.',
-
     add_reminder:'➕ Fikun Ìránpàdé',reminder_title:'Àkọlé',reminder_date:'Ọjọ',
     reminder_type:'Iru',reminder_note:'Àkọsílẹ (aṣayan)',
     save_reminder:'Fi Ìránpàdé Pamọ →',upcoming:'🔔 Awọn Ìránpàdé Tí Ó Ń bọ̀',
@@ -529,16 +503,13 @@ const TRANSLATIONS = {
     general_reminder:'🔔 Ìránpàdé Gbogbogbo',other:'📌 Miran',
     no_upcoming:'Ko si àwọn ìránpàdé tí ó ń bọ̀.',events_on:'Awọn ìṣẹlẹ lọjọ',
     add_one:'+ Fi ọkan kun',title_ph:'fun apẹẹrẹ San olupese, Ra suga…',note_ph:'Àlàyé àfikún…',
-
     score_breakdown:'📊 Ìlọsiwaju Àmì',business_radar:'🕸️ Rada Iṣowo',
     recommendations:'💡 Awọn Imọran',out_of_100:'ninu 100',
     how_each:'Bí ẹ̀ka kọ̀ọ̀kan ṣe ń ṣe àfikún sí àmì àpapọ̀ rẹ.',
     score_based:'Àmì náà jẹ ìṣiro lórí àwọn data oṣù yìí.',
     keep_recording:'Máa ṣe igbasilẹ tita àti inawo déédéé fún àmì gẹ́gẹ́.',
     record_pos:'🛒 Gbasilẹ Tita POS',add_daily:'➕ Fi Igbasilẹ Ojoojumọ Kun',
-    add_expenses:'➕ Fi Inawo Kun',update_stock_btn:'📦 Ṣe Imudojuiwọn Ọja',
-    manage_debts:'🤝 Ṣakoso Gbèsè',
-
+    add_expenses:'➕ Fi Inawo Kun',update_stock_btn:'📦 Ṣe Imudojuiwọn Ọja',manage_debts:'🤝 Ṣakoso Gbèsè',
     your_profile:'Profaili Rẹ',profile:'👤 Profaili',security:'🔒 Aabo',
     preferences:'⚙️ Awọn Aṣayan',notifications:'🔔 Awọn Iwifunni',
     danger_zone:'⚠️ Agbegbe Ewu',save_profile:'Fi Profaili Pamọ →',
@@ -562,7 +533,6 @@ const TRANSLATIONS = {
     sign_out_desc:'Jáde kúrò nínú àkáùntì rẹ ní ẹrọ yìí',
     email_cannot:'Àwọn ìyípadà ìmẹ́lì ni a ṣakoso nipasẹ àwọn ìjẹ́rìísí Supabase.',
     profile_tab:'Profaili Rẹ',send_reset_link:'Fi Ìjápọ̀ Atunṣeto Ranṣẹ',
-
     email_support:'Atilẹyin Ìmẹ́lì',website:'Oju Opo Wẹẹbu',documentation:'Iwe Itọsọna',
     send_message:'Fi Ifiranṣẹ Ranṣẹ',your_name:'Orúkọ Rẹ',subject:'Koko Ọrọ',
     message:'Ifiranṣẹ',send_btn:'Fi Ifiranṣẹ Ranṣẹ →',
@@ -574,7 +544,6 @@ const TRANSLATIONS = {
     billing_q:'Ìbéèrè Isanwo',feature_req:'Ìbéèrè Ẹyẹ',
     bug_report:'Ijabọ Àṣìṣe',general_enquiry:'Ìbéèrè Gbogbogbo',
     describe:'Ṣapejuwe ìṣòro tabi ìbéèrè rẹ…',back_home:'← Padà si Ilé',
-
     loading:'Ń gbẹ…',saving:'Ń fipamọ…',success:'Aṣeyọri!',
     error:'Àṣìṣe',cancel:'Fagilé',confirm:'Jẹrisi',back:'Padà',
     close:'Sunmọ',yes:'Bẹẹni',no:'Bẹẹkọ',update:'Ṣe Imudojuiwọn',search:'Wa',
@@ -598,14 +567,12 @@ const TRANSLATIONS = {
     reports:'Akụkọ',health_score:'Àmà Ahụike Azụmaahịa',calendar:'Kalenda',
     settings:'Ntọala',support:'Enyemaka',sign_out:'Pụọ',
     main_menu:'Isi Menyu',analytics:'Nyocha',account:'Akaụntụ',
-
     login:'Banye',register:'Debanye Aha',email:'Adreesị Ozi-Ele',
     password:'Okwuntughe',full_name:'Aha Zuru Oke',
     business_name:'Aha Azụmaahịa',login_btn:'Banye →',
     register_btn:'Mepụta Akaụntụ →',no_account:'Ị nweghị akaụntụ?',
     have_account:'Ị nwere akaụntụ?',forgot_pw:'Chefuo Okwuntughe?',
     sign_up:'Debanye Aha',sign_in:'Banye',
-
     dashboard_title:'Deshbọọdụ',dashboard_sub:'Nchoputa azụmaahịa gị n\'oge nto.',
     sales_title:'Ahịa Kwa Ụbọchị',sales_sub:'Debanye ahịa kwa ụbọchị rị.',
     expenses_title:'Onye Ntọala Ego A Na-eji',expenses_sub:'Dee ego niile i na-eji maka azụmaahịa.',
@@ -618,7 +585,6 @@ const TRANSLATIONS = {
     settings_title:'Ntọala',settings_sub:'Jikwaa akaụntụ rị na nchedo ya.',
     contact_title:'Kpọtụrụ na Enyemaka',contact_sub:'Anyị dị ebe a iji nyere gị aka.',
     faq_title:'Ajụjụ A Na-ajụkarị',
-
     todays_sales:'Ahịa Taa',cash_sales_today:'Ahịa Ego Aka Taa',
     transfer_sales_today:'Ahịa Nnyefe Ego Taa',pos_sales_today:'Ahịa POS Taa',
     monthly_revenue:'Ego Ọnwa',total_expenses:'Ngụkọta Ego A Na-eji',
@@ -632,7 +598,6 @@ const TRANSLATIONS = {
     view_pos:'Lee POS →',manage:'Jikwaa',full_report:'Akụkọ Zuru Oke',
     calculating:'Na-ato ngọzi…',healthy_business:'🟢 Azụmaahịa Dị Mma',
     needs_attention:'🟡 Chọọ Nlelee',critical:'🔴 Nke Dị Oke Mkpa — Lelee Ugbu A',
-
     add_stock_item:'Tinye Ihe',item_name:'Aha Ihe',quantity:'Ọnụọgụ',
     unit_price:'Ọnụahịa Otu Ihe',low_stock_alert:'Ọkwa Ọdịmma Ngwongwo Fọdụrụ Obere',
     add_to_stock:'Tinye na Ndepụta Ihe →',stock_summary:'Nchoputa Ngwongwo',
@@ -652,15 +617,11 @@ const TRANSLATIONS = {
     full_audit:'🔒 Akụkọ Ihe Omume Zuru Oke Na-arụ Ọrụ',
     audit_desc:'A na-edekọ mgbakwunye, nchezi, nhichapụ na nweghachi niile ruo n\'ogologo oge.',
     type_delete:'Dee DELETE iji kwenye:',type_delete_ph:'Dee DELETE ebe a…',
-    yes_delete:'🗑️ Ee, Hichapụ Ihe',
-    secure_verify:'🔒 Achọrọ Nkwenye Nchedo',send_verify:'📧 Zipu Njikọ Nkwenye',
-    identity_verified:'✅ Achọpụtara onwe gị. Ị nwere ike ịdezie ugbu a.',
-    update_stock:'Mee Ngwongwo Ọhụrụ →',
-    import_title:'📥 Webata Ngwongwo Site n\'Faịlụ',
+    yes_delete:'🗑️ Ee, Hichapụ Ihe',secure_verify:'🔒 Achọrọ Nkwenye Nchedo',
+    send_verify:'📧 Zipu Njikọ Nkwenye',identity_verified:'✅ Achọpụtara onwe gị. Ị nwere ike ịdezie ugbu a.',
+    update_stock:'Mee Ngwongwo Ọhụrụ →',import_title:'📥 Webata Ngwongwo Site n\'Faịlụ',
     click_browse:'Pịa iji chọọ',drag_drop:'ma ọ bụ dọọ faịlụ gị bịa ebe a',
-    download_template:'📄 Budata Ụdị CSV',
-    import_btn:'✅ Webata Ihe →',diff_file:'← Faịlụ Ọzọ',
-
+    download_template:'📄 Budata Ụdị CSV',import_btn:'✅ Webata Ihe →',diff_file:'← Faịlụ Ọzọ',
     record_sales:'Debanye Ahịa Taa',simple_record:'Ndekọ Ahịa Dị Mfe',
     premium_record:'⭐ Ndekọ Ahịa Zuru Oke',total_sales_amount:'Ngụkọta Ọnụọgụ Ahịa (₦)',
     qty_sold:'Ọnụọgụ Niile Ere (ọhọrọ)',notes:'Ndetu (ọhọrọ)',
@@ -673,13 +634,11 @@ const TRANSLATIONS = {
     transfer_sales:'Ahịa Nnyefe Ego',pos_sales:'Ahịa POS',
     entries:'Ndekọ',save_sale_btn:'Chekwa Ndekọ Ahịa →',
     update_record:'Ndekọ dị maka ụbọchị a — ichekwa ga-eme ka ọ dị ọhụrụ.',
-
     add_expense:'Tinye Ego A Na-eji',description:'Nkọwa',amount:'Ọnụọgụ Ego (₦)',
     date:'Ụbọchị',save_expense:'Chekwa Ego A Na-eji →',
     monthly_summary_exp:'Nchoputa Ọnwa',expense_history:'Akụkọ Ego A Na-eji',
     net_profit_loss:'Uru N\'ezie ma ọ bụ Ọnwụ',sales_minus_expenses:'Ahịa wepụ Ego A Na-eji',
     no_expenses:'Achọtaghị ego a na-eji maka oge a.',
-
     add_debt:'Tinye Ụgwọ',person_name:'Aha Onye ma ọ bụ Azụmaahịa',
     debt_type:'Ụdị',due_date:'Ụbọchị Nkwụghachi (ọhọrọ)',
     owed_to_me:'Ha na-agbachi m (Kredit)',i_owe:'Agbachiri m ha (Debit)',
@@ -689,7 +648,6 @@ const TRANSLATIONS = {
     paid_settled:'Akwụọla / Emechala',mark_paid:'✓ Akwụọla',
     owed_to_me_sub:'Ndị ọzọ na-agbachi gị',i_owe_sub:'I na-agbachi ndị ọzọ',
     net_position_sub:'Mgbe ụgwọ niile gasịrị',person_ph:'dị ka Ade Bakery, Musa…',
-
     item_catalogue:'Ndepụta Ihe',current_order:'Iwu Ugbu A',
     complete_sale:'✅ Mechaa Ahịa →',clear_cart:'🗑️ Hichapụ Ụgbọ',
     customer_name:'Aha Onye Ahịa (ọhọrọ)',payment_method:'Ụzọ Ịkwụ Ụgwọ',
@@ -700,7 +658,6 @@ const TRANSLATIONS = {
     walk_in:'Onye ahịa na-abịa…',add_notes:'Nkọwa ndị ọzọ…',
     tracked_stock:'Ngwongwo A Sọrọ',service_untracked:'Ọrụ / A Ṣọghị',
     out_stock_tracked:'Agwụla Ihe (a sọrọ)',last_20:'Ọnụọgụ 20 Azụmaahịa POS Ikpeazụ',
-
     monthly:'Kwa Ọnwa',weekly:'Kwa Izu',quarterly:'Kwa Ọkara',
     pos_revenue:'Ego POS',confirmed_sales:'Ahịa E Kwenyere',
     pos_card_sales:'Ahịa Kaadị POS',outstanding_debt:'Ụgwọ A Akwụghị',
@@ -711,7 +668,6 @@ const TRANSLATIONS = {
     pos_card_payments:'POS: ịkwụ ụgwọ kaadị',unpaid_balances_r:'Ego a akwụghị',
     export_csv_btn:'📊 Bupụta CSV',print_pdf:'🖨️ Bipụta / Chekwa PDF',
     shows_pos:'Na-egosi azụmaahịa POS, ndekọ kwa ụbọchị, na ego a na-eji ọnụ.',
-
     add_reminder:'➕ Tinye Ndetu',reminder_title:'Aha',reminder_date:'Ụbọchị',
     reminder_type:'Ụdị',reminder_note:'Ndetu (ọhọrọ)',
     save_reminder:'Chekwa Ndetu →',upcoming:'🔔 Ndetu Na-abịa',
@@ -720,16 +676,13 @@ const TRANSLATIONS = {
     general_reminder:'🔔 Ndetu Izugbe',other:'📌 Nke Ọzọ',
     no_upcoming:'Enweghị ndetu na-abịa.',events_on:'Ihe omume n\'ụbọchị',
     add_one:'+ Tinye otu',title_ph:'dị ka Kwụọ ụgwọ onye nrite, Weeta ihe…',note_ph:'Nkọwa ndị ọzọ…',
-
     score_breakdown:'📊 Nkọwa Àmà',business_radar:'🕸️ Radar Azụmaahịa',
     recommendations:'💡 Ndụmọdụ',out_of_100:'n\'ime 100',
     how_each:'Otu ọ bụla mpaghara si enye aka na ngụkọta àmà gị.',
     score_based:'A na-ato ngọzi àmà dabere na data ọnwa a.',
     keep_recording:'Cọntinue idekọ ahịa na ego a na-eji maka àmà ziri ezi.',
     record_pos:'🛒 Debanye Ahịa POS',add_daily:'➕ Tinye Ndekọ Kwa Ụbọchị',
-    add_expenses:'➕ Tinye Ego A Na-eji',update_stock_btn:'📦 Mee Ngwongwo Ọhụrụ',
-    manage_debts:'🤝 Jikwaa Ụgwọ',
-
+    add_expenses:'➕ Tinye Ego A Na-eji',update_stock_btn:'📦 Mee Ngwongwo Ọhụrụ',manage_debts:'🤝 Jikwaa Ụgwọ',
     your_profile:'Profaịlụ Gị',profile:'👤 Profaịlụ',security:'🔒 Nchedo',
     preferences:'⚙️ Nhọrọ',notifications:'🔔 Ọkwa',
     danger_zone:'⚠️ Mpaghara Ihe Egwu',save_profile:'Chekwa Profaịlụ →',
@@ -746,14 +699,13 @@ const TRANSLATIONS = {
     display:'Ngosipụta',toggle_theme:'Gbanwee n\'etiti ọnọdụ oji na ọcha',
     currency_desc:'Họrọ otu esi egosi ọnụọgụ n\'ime ngwa',
     threshold_desc:'Ọdịmma mgbe ngwongwo daba n\'okpuru ọnụọgụ a',
-    low_stock_notif:'Ngosipụta ọdịmma mgbe ngwongwo dara obere',
+    low_stock_desc:'Ngosipụta ọdịmma mgbe ngwongwo dara obere',
     debt_desc:'Mee ka ndekọ ụgwọ gachara oge pụta ìhè na deshbọọdụ',
     clear_desc:'Hichapụ ahịa, ego a na-eji, ụgwọ, ngwongwo na ndetu niile. Akaụntụ na profaịlụ gị ga-anọgide.',
     delete_desc:'Hichapụ akaụntụ gị na data niile jikọrọ ya. A nweghị ike ịweghachi ya.',
     sign_out_desc:'Pụọ n\'akaụntụ gị n\'ngwaọrụ a',
     email_cannot:'A na-ejikwa njikwa Supabase iji na-ahazi mgbanwe adreesị ozi-ele.',
     profile_tab:'Profaịlụ Gị',send_reset_link:'Zipu Njikọ Ntọgharị',
-
     email_support:'Enyemaka Ozi-Ele',website:'Weebụsaịtị',documentation:'Akwụkwọ Nduzi',
     send_message:'Zipu Ozi',your_name:'Aha Gị',subject:'Isi Ihe',message:'Ozi',
     send_btn:'Zipu Ozi →',for_account:'Maka nsogbu akaụntụ ma ọ bụ ịkwụ ụgwọ',
@@ -764,7 +716,6 @@ const TRANSLATIONS = {
     billing_q:'Ajụjụ Ịkwụ Ụgwọ',feature_req:'Arịọ Ọrụ',
     bug_report:'Akụkọ Njehie',general_enquiry:'Ajụjụ Izugbe',
     describe:'Kọọ nsogbu ma ọ bụ ajụjụ gị…',back_home:'← Laghachi Ulo',
-
     loading:'Na-ebuga…',saving:'Na-echekwa…',success:'Ọ Siiri Ike!',
     error:'Njehie',cancel:'Kagbuo',confirm:'Kwenye',back:'Laghachi',
     close:'Mechie',yes:'Ee',no:'Mba',update:'Mee Ọhụrụ',search:'Chọọ',
@@ -807,26 +758,21 @@ function applyTranslations() {
 
 /* ═══════════════════════════════════════════════════════════════
    FULL PAGE AUTO-TRANSLATOR
-   Walks every visible text node and translates it using a
-   comprehensive English→target map built from TRANSLATIONS.
 ═══════════════════════════════════════════════════════════════ */
 function autoTranslatePage() {
   const lang = getLang();
   if (lang === 'en') { applyTranslations(); return; }
 
-  // Build reverse map: English text → translation key
   const en = TRANSLATIONS['en'];
   const target = TRANSLATIONS[lang] || {};
   const textMap = {};
   for (const key of Object.keys(en)) {
     if (en[key] && target[key] && en[key] !== target[key]) {
       textMap[en[key].trim()] = target[key];
-      // Also add uppercase version for CSS text-transform:uppercase elements
       textMap[en[key].trim().toUpperCase()] = target[key];
     }
   }
 
-  // Translate page title & subtitle
   const page = window.location.pathname.split('/').pop().replace('.html','') || 'index';
   const pageMeta = {
     dashboard:{'title':'dashboard_title','sub':'dashboard_sub'},
@@ -853,22 +799,17 @@ function autoTranslatePage() {
     if (subEl && meta.sub) subEl.textContent = t(meta.sub);
   }
 
-  // Walk and translate all text nodes
   translateNode(document.body, textMap);
-
-  // Apply data-lang attributes
   applyTranslations();
 }
 
 function translateNode(node, textMap) {
   if (!node) return;
-  // Skip these tags entirely
   const skip = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','INPUT','TEXTAREA','SELECT']);
   if (skip.has(node.nodeName)) return;
 
   if (node.nodeType === Node.TEXT_NODE) {
     const original = node.textContent.trim();
-    // Match exact case first, then try uppercase version (for CSS text-transform)
     const translated = textMap[original] || textMap[original.toUpperCase()] || textMap[original.toLowerCase()];
     if (original && translated) {
       node.textContent = node.textContent.replace(original, translated);
@@ -876,21 +817,17 @@ function translateNode(node, textMap) {
     return;
   }
 
-  // Don't translate these attribute-specific elements
   if (node.nodeType === Node.ELEMENT_NODE) {
-    // Translate placeholders
     if ((node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') && node.placeholder) {
       const ph = node.placeholder.trim();
       if (textMap[ph]) node.placeholder = textMap[ph];
     }
-    // Translate option text
     if (node.tagName === 'OPTION') {
       const val = node.textContent.trim();
       if (textMap[val]) { node.textContent = textMap[val]; return; }
     }
   }
 
-  // Recurse into children
   for (const child of node.childNodes) {
     translateNode(child, textMap);
   }
@@ -924,44 +861,40 @@ async function setLang(code) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   MUTATION OBSERVER — Re-translates whenever new content
-   is added to the page by JavaScript (Supabase data loads,
-   dynamic rendering etc). Works on every page automatically.
+   MUTATION OBSERVER
+   Re-translates when new content is added to page.
+   Gemini is NOT called here — dictionary handles all changes.
 ═══════════════════════════════════════════════════════════════ */
 (function startObserver() {
-  if (getLang() === 'en') return; // English needs no translation
+  if (getLang() === 'en') return;
 
   let debounceTimer;
   let isTranslating = false;
 
   const observer = new MutationObserver((mutations) => {
-    // Only react to actual content changes
     const hasNewContent = mutations.some(m =>
       m.addedNodes.length > 0 &&
       Array.from(m.addedNodes).some(n =>
-        n.nodeType === 1 || // Element node
-        (n.nodeType === 3 && n.textContent.trim()) // Text node with content
+        n.nodeType === 1 ||
+        (n.nodeType === 3 && n.textContent.trim())
       )
     );
 
     if (!hasNewContent || isTranslating) return;
 
-    // Debounce — wait for all rapid changes to finish before translating
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       isTranslating = true;
       autoTranslatePage();
       isTranslating = false;
-      // Also run Gemini for any words the dictionary missed
-      setTimeout(() => geminiTranslatePage(), 600);
+      // Gemini removed from observer — runs once on page load only
+      // This prevents excessive Edge Function invocations
     }, 400);
   });
 
-  // Start watching the whole page for new content
   if (document.body) {
     observer.observe(document.body, { childList: true, subtree: true });
   } else {
-    // If body not ready yet, wait for it
     document.addEventListener('DOMContentLoaded', () => {
       observer.observe(document.body, { childList: true, subtree: true });
     });
@@ -970,58 +903,50 @@ async function setLang(code) {
 
 /* ═══════════════════════════════════════════════════════════════
    GEMINI AUTO-TRANSLATION FALLBACK
-   For any word/phrase not in the dictionary, this calls the
-   Supabase Edge Function which uses Gemini to translate it.
-   Results are cached in localStorage forever — API called once only.
+   For any word/phrase not in the dictionary.
+   Results cached in localStorage — API called once per phrase only.
+   Runs ONCE per page load — never on content changes.
 ═══════════════════════════════════════════════════════════════ */
 
 const EDGE_FN_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co/functions/v1/translate';
-// SUPABASE_ANON_KEY loaded from supabase.js
 
-// Words/phrases that must NEVER be translated
 const PROTECTED_PHRASES = [
   'GrowthIve Monitor', 'GrowthIve', 'Monitor',
   'Supabase', 'GitHub', 'POS', 'CSV', 'PDF', 'FAQ',
   '₦', 'EN', 'HA', 'YO', 'IG'
 ];
 
-// Cache key prefix in localStorage
 const CACHE_PREFIX = 'growthive_tx_';
 
-// Get cached translation
+// Improved cache — simpler, more reliable key generation
 function getCachedTranslation(text, lang) {
   try {
-    const key = CACHE_PREFIX + lang + '_' + btoa(unescape(encodeURIComponent(text))).substring(0, 40);
-    const cached = localStorage.getItem(key);
-    return cached || null;
+    const key = CACHE_PREFIX + lang + '_' + text.trim().substring(0, 50).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    return localStorage.getItem(key) || null;
   } catch(e) { return null; }
 }
 
-// Save translation to cache
 function setCachedTranslation(text, lang, translated) {
   try {
-    const key = CACHE_PREFIX + lang + '_' + btoa(unescape(encodeURIComponent(text))).substring(0, 40);
+    const key = CACHE_PREFIX + lang + '_' + text.trim().substring(0, 50).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
     localStorage.setItem(key, translated);
   } catch(e) {}
 }
 
-// Check if text should be protected from translation
 function isProtected(text) {
   if (!text || text.trim().length < 2) return true;
-  if (/^[\d\s₦.,\-+%:\/]+$/.test(text)) return true; // numbers/symbols only
-  if (/^[A-Z]{2,4}$/.test(text.trim())) return true; // short caps like POS, CSV
+  if (/^[\d\s₦.,\-+%:\/]+$/.test(text)) return true;
+  if (/^[A-Z]{2,4}$/.test(text.trim())) return true;
   for (const phrase of PROTECTED_PHRASES) {
     if (text.includes(phrase)) return true;
   }
   return false;
 }
 
-// Translate a single text via Gemini Edge Function
 async function geminiTranslate(text, lang) {
   if (!text || !text.trim() || isProtected(text)) return null;
   if (lang === 'en') return text;
 
-  // Check cache first
   const cached = getCachedTranslation(text, lang);
   if (cached) return cached;
 
@@ -1041,7 +966,6 @@ async function geminiTranslate(text, lang) {
     const translated = data[lang];
 
     if (translated && translated !== text) {
-      // Cache for all three languages at once
       if (data.ha) setCachedTranslation(text, 'ha', data.ha);
       if (data.yo) setCachedTranslation(text, 'yo', data.yo);
       if (data.ig) setCachedTranslation(text, 'ig', data.ig);
@@ -1054,12 +978,10 @@ async function geminiTranslate(text, lang) {
   }
 }
 
-// Scan page for untranslated English text and translate via Gemini
 async function geminiTranslatePage() {
   const lang = getLang();
   if (lang === 'en') return;
 
-  // Collect all visible text nodes not yet translated
   const textNodesToTranslate = [];
   const walker = document.createTreeWalker(
     document.body,
@@ -1069,15 +991,12 @@ async function geminiTranslatePage() {
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         const tag = parent.tagName;
-        // Skip scripts, styles, inputs
         if (['SCRIPT','STYLE','NOSCRIPT','INPUT','TEXTAREA'].includes(tag)) {
           return NodeFilter.FILTER_REJECT;
         }
         const text = node.textContent.trim();
-        // Only process non-empty English-looking text
         if (!text || text.length < 2) return NodeFilter.FILTER_REJECT;
         if (isProtected(text)) return NodeFilter.FILTER_REJECT;
-        // Only translate if it looks like English (has common English letters)
         if (!/^[a-zA-Z\s\-\/&'".,:!?→←₦()0-9%+]+$/.test(text)) {
           return NodeFilter.FILTER_REJECT;
         }
@@ -1090,7 +1009,6 @@ async function geminiTranslatePage() {
     textNodesToTranslate.push(walker.currentNode);
   }
 
-  // Translate each node (check cache first, API if not cached)
   for (const node of textNodesToTranslate) {
     const original = node.textContent.trim();
     const translated = await geminiTranslate(original, lang);
@@ -1099,7 +1017,6 @@ async function geminiTranslatePage() {
     }
   }
 
-  // Also translate placeholder attributes
   document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(async el => {
     const ph = el.placeholder.trim();
     if (!ph || isProtected(ph)) return;
@@ -1109,5 +1026,15 @@ async function geminiTranslatePage() {
   });
 }
 
-// Gemini runs automatically after dictionary translation via MutationObserver
-// and is also triggered by initPage() in app.js
+// ── GEMINI RUNS ONCE ON PAGE LOAD ONLY ──
+// Never fires on content changes — this prevents excessive API calls
+// Dictionary handles all dynamic content via MutationObserver
+document.addEventListener('DOMContentLoaded', () => {
+  const lang = getLang();
+  if (lang !== 'en') {
+    // Wait 1.5 seconds for page content to fully load before running Gemini
+    // This ensures Supabase data has loaded before we scan for untranslated text
+    setTimeout(() => geminiTranslatePage(), 1500);
+  }
+});
+ 

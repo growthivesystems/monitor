@@ -1,42 +1,10 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="/monitor/manifest.json">
-<meta name="theme-color" content="#C9A84C">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GrowthIve">
-<link rel="apple-touch-icon" href="/monitor/icons/icon-192.png">
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/monitor/sw.js');}</script>
 <title>Dashboard — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
-<style>
-  /* ── Month Navigator ── */
-  .month-nav {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 20px; flex-wrap: wrap;
-  }
-  .month-nav-btn {
-    background: var(--dark3); border: 1px solid var(--gold-border);
-    color: var(--gold); border-radius: 8px; width: 36px; height: 36px;
-    cursor: pointer; font-size: 1.1rem; font-family: var(--font-body);
-    transition: var(--transition); display: flex; align-items: center; justify-content: center;
-  }
-  .month-nav-btn:hover:not(:disabled) { background: var(--gold); color: var(--dark); }
-  .month-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .month-nav-label {
-    font-family: var(--font-display); font-size: 1rem; font-weight: 600;
-    color: var(--white2); min-width: 140px; text-align: center;
-  }
-  .month-nav-badge {
-    font-size: 0.72rem; padding: 2px 10px; border-radius: 10px;
-    background: rgba(201,168,76,0.15); border: 1px solid var(--gold-border);
-    color: var(--gold); letter-spacing: 0.08em;
-  }
-</style>
 </head>
 <body>
 <div id="main-navbar"></div>
@@ -45,14 +13,6 @@
   <div class="main">
     <div class="page-title">Dashboard</div>
     <div class="page-subtitle" id="dash-date">Loading…</div>
-
-    <!-- ── Month Navigator ── -->
-    <div class="month-nav">
-      <button class="month-nav-btn" id="month-prev" onclick="changeMonth(-1)">←</button>
-      <div class="month-nav-label" id="month-label">Loading…</div>
-      <button class="month-nav-btn" id="month-next" onclick="changeMonth(1)" disabled>→</button>
-      <span class="month-nav-badge" id="month-badge" style="display:none;">Current Month</span>
-    </div>
 
     <!-- ROW 1: Today's live KPIs -->
     <div class="grid-4">
@@ -88,7 +48,7 @@
       <div class="card">
         <div class="card-title">Total Expenses</div>
         <div class="card-value danger" id="kpi-expenses">₦0.00</div>
-        <div class="card-meta" id="kpi-exp-meta">This month</div>
+        <div class="card-meta">This month</div>
       </div>
       <div class="card">
         <div class="card-title">Net Profit / Loss</div>
@@ -171,132 +131,17 @@ function stockStatus(item) {
   return 'ok';
 }
 
-// ── Month Navigator State ──
-const now = new Date();
-let navYear  = now.getFullYear();
-let navMonth = now.getMonth(); // 0-indexed
-
-function changeMonth(dir) {
-  navMonth += dir;
-  if (navMonth > 11) { navMonth = 0; navYear++; }
-  if (navMonth < 0)  { navMonth = 11; navYear--; }
-  updateMonthNav();
-  loadMonthlyKPIs();
-}
-
-function updateMonthNav() {
-  const isCurrentMonth = navYear === now.getFullYear() && navMonth === now.getMonth();
-  const label = new Date(navYear, navMonth, 1)
-    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-  document.getElementById('month-label').textContent = label;
-  document.getElementById('month-next').disabled = isCurrentMonth;
-  const badge = document.getElementById('month-badge');
-  badge.style.display = isCurrentMonth ? 'inline' : 'none';
-  // Update meta labels to reflect selected month
-  const monthShort = new Date(navYear, navMonth, 1)
-    .toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-  document.getElementById('kpi-exp-meta').textContent = monthShort;
-}
-
-// ── Load Monthly KPIs for selected month ──
-async function loadMonthlyKPIs() {
-  const user = window._dashUser;
-  if (!user) return;
-
-  // Set spinners
-  ['kpi-month-sales','kpi-expenses','kpi-profit'].forEach(id => {
-    document.getElementById(id).textContent = '…';
-  });
-  document.getElementById('kpi-month-meta').textContent = 'Loading…';
-
-  const startOfSel = new Date(navYear, navMonth, 1).toISOString().split('T')[0];
-  const endOfSel   = new Date(navYear, navMonth + 1, 0).toISOString().split('T')[0];
-
-  const [
-    { data: salesSel },
-    { data: posSel },
-    { data: expSel }
-  ] = await Promise.all([
-    _supabase.from('sales')
-      .select('total_amount, date')
-      .eq('user_id', user.id)
-      .gte('date', startOfSel)
-      .lte('date', endOfSel),
-    _supabase.from('purchase_transactions')
-      .select('total_amount, date')
-      .eq('user_id', user.id)
-      .gte('date', startOfSel)
-      .lte('date', endOfSel),
-    _supabase.from('expenses')
-      .select('amount')
-      .eq('user_id', user.id)
-      .gte('date', startOfSel)
-      .lte('date', endOfSel),
-  ]);
-
-  // Same logic as original — no double counting
-  const salesDates      = new Set((salesSel||[]).map(r => r.date));
-  const unsyncedDates   = new Set((posSel||[]).map(r => r.date).filter(d => !salesDates.has(d)));
-  const salesTotal      = (salesSel||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const unsyncedTotal   = (posSel||[]).filter(r => unsyncedDates.has(r.date)).reduce((s,r) => s + Number(r.total_amount||0), 0);
-  const totalMonthSales = salesTotal + unsyncedTotal;
-  const entryCount      = (salesSel||[]).length + unsyncedDates.size;
-  const totalExp        = (expSel||[]).reduce((s,r) => s + Number(r.amount||0), 0);
-  const profit          = totalMonthSales - totalExp;
-
-  document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
-  document.getElementById('kpi-month-meta').textContent  = `${entryCount} entr${entryCount !== 1 ? 'ies' : 'y'} this month`;
-  document.getElementById('kpi-expenses').textContent    = formatCurrency(totalExp);
-
-  const profitEl = document.getElementById('kpi-profit');
-  profitEl.textContent = formatCurrency(profit);
-  profitEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
-
-  // Update health score with selected month data
-  updateHealthScore(totalMonthSales, profit, window._dashTodaySales, window._dashInv);
-}
-
-function updateHealthScore(totalMonthSales, profit, todaySales, inv) {
-  if (!inv) return;
-  const lowStockItems = (inv||[]).filter(i => stockStatus(i) === 'low');
-  const trackedItems  = (inv||[]).filter(i => stockStatus(i) === 'ok' || stockStatus(i) === 'low');
-  const hasServices   = (inv||[]).some(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
-
-  let score = 40;
-  if (totalMonthSales > 0) score += 15;
-  if (profit > 0)          score += 20;
-  if (todaySales > 0)      score += 10;
-  if (trackedItems.length > 0) {
-    if (lowStockItems.length === 0) score += 10;
-    if (lowStockItems.length < 3)   score += 5;
-  } else if (hasServices) {
-    score += 15;
-  }
-  score = Math.min(score, 100);
-
-  document.getElementById('health-val').textContent = score;
-  const arc = document.getElementById('health-arc');
-  arc.style.strokeDashoffset = 377 - (377 * score / 100);
-  arc.style.stroke = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
-  document.getElementById('health-label').textContent =
-    score >= 70 ? '🟢 Healthy Business' :
-    score >= 40 ? '🟡 Needs Attention'  : '🔴 Critical — Review Now';
-}
-
 (async () => {
   const user = await requireAuth();
   if (!user) return;
-  window._dashUser = user;
   await initPage('dashboard');
 
+  const now          = new Date();
   const today        = now.toISOString().split('T')[0];
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
 
   document.getElementById('dash-date').textContent =
     now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-
-  // Initialise month navigator
-  updateMonthNav();
 
   const [
     { data: txnsToday },
@@ -377,10 +222,6 @@ function updateHealthScore(totalMonthSales, profit, todaySales, inv) {
   document.getElementById('kpi-cash').textContent       = formatCurrency(todayCash);
   document.getElementById('kpi-transfer').textContent   = formatCurrency(todayTransfer);
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
-
-  // Store today's sales and inventory globally for health score recalculation
-  window._dashTodaySales = todaySales;
-  window._dashInv        = inv;
 
   // ── ROW 2: Monthly Revenue — FIXED ──
   // Strategy: use sales table as primary source (covers manual + synced POS entries).
@@ -504,7 +345,28 @@ function updateHealthScore(totalMonthSales, profit, todaySales, inv) {
   }
 
   // ── Health Score ──
-  updateHealthScore(totalMonthSales, profit, todaySales, inv);
+  const trackedItems   = (inv||[]).filter(i => stockStatus(i) === 'ok' || stockStatus(i) === 'low');
+  const hasServices    = (inv||[]).some(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
+
+  let score = 40;
+  if (totalMonthSales > 0) score += 15;
+  if (profit > 0)          score += 20;
+  if (todaySales > 0)      score += 10;
+  if (trackedItems.length > 0) {
+    if (lowStockItems.length === 0) score += 10;
+    if (lowStockItems.length < 3)   score += 5;
+  } else if (hasServices) {
+    score += 15;
+  }
+  score = Math.min(score, 100);
+
+  document.getElementById('health-val').textContent = score;
+  const arc = document.getElementById('health-arc');
+  arc.style.strokeDashoffset = 377 - (377 * score / 100);
+  arc.style.stroke = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
+  document.getElementById('health-label').textContent =
+    score >= 70 ? '🟢 Healthy Business' :
+    score >= 40 ? '🟡 Needs Attention'  : '🔴 Critical — Review Now';
 })();
 </script>
 </body>

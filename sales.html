@@ -420,15 +420,31 @@ async function checkExisting() {
     .eq('user_id', currentUser.id).eq('date', date).maybeSingle();
   const badge = document.getElementById('existing-badge');
   if (data) {
-    const source = data.source === 'pos' ? '🛒 Auto-synced from Purchases/POS' : '✍️ Manual entry';
+    const isPOS = data.source === 'pos';
+    const source = isPOS ? '🛒 Auto-synced from Purchases/POS' : '✍️ Manual entry';
     badge.style.display = 'block';
-    badge.innerHTML = `
-      <div class="update-badge">⚠️ A record exists for this date — saving will update it.</div>
-      <div class="audit-row">
-        ${source}<br>
-        📅 Recorded: ${new Date(data.created_at).toLocaleString('en-GB')}<br>
-        💰 Current total: ${formatCurrency(data.total_amount)}
-      </div>`;
+    if (isPOS) {
+      badge.innerHTML = `
+        <div style="background:rgba(224,85,85,0.1);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;">
+          <div style="color:var(--danger);font-weight:700;font-size:0.85rem;margin-bottom:6px;">
+            🚨 WARNING — This date has an auto-synced POS record
+          </div>
+          <div style="font-size:0.8rem;color:var(--white2);line-height:1.7;">
+            ${source}<br>
+            📅 Recorded: ${new Date(data.created_at).toLocaleString('en-GB')}<br>
+            💰 Current POS total: <strong style="color:var(--gold);">${formatCurrency(data.total_amount)}</strong><br>
+            <span style="color:var(--danger);">Saving a manual entry will replace this amount. Only proceed if your manual figure is correct.</span>
+          </div>
+        </div>`;
+    } else {
+      badge.innerHTML = `
+        <div class="update-badge">⚠️ A record exists for this date — saving will update it.</div>
+        <div class="audit-row">
+          ${source}<br>
+          📅 Recorded: ${new Date(data.created_at).toLocaleString('en-GB')}<br>
+          💰 Current total: ${formatCurrency(data.total_amount)}
+        </div>`;
+    }
   } else {
     badge.style.display = 'none';
     badge.innerHTML = '';
@@ -579,6 +595,27 @@ async function saveSale(type) {
 
   const { data: existing } = await _supabase
     .from('sales').select('*').eq('user_id', currentUser.id).eq('date', date).maybeSingle();
+
+  // OVERWRITE PROTECTION: If replacing a POS auto-synced record with a lower manual amount, warn the user
+  if (existing && existing.source === 'pos') {
+    const existingTotal = Number(existing.total_amount);
+    const newTotal      = Number(payload.total_amount);
+    if (newTotal < existingTotal) {
+      const confirmed = confirm(
+        `⚠️ WARNING — You are about to replace an auto-synced POS record.\n\n` +
+        `Current POS total: ${formatCurrency(existingTotal)}\n` +
+        `Your manual entry: ${formatCurrency(newTotal)}\n\n` +
+        `Your manual amount is LOWER than the auto-synced total.\n` +
+        `This usually means the POS figure is correct and this entry is a mistake.\n\n` +
+        `Are you sure you want to replace ${formatCurrency(existingTotal)} with ${formatCurrency(newTotal)}?`
+      );
+      if (!confirmed) {
+        msg.innerHTML = '<div class="alert alert-gold">⚠️ Save cancelled. Your POS record has been kept.</div>';
+        setTimeout(() => msg.innerHTML = '', 5000);
+        return;
+      }
+    }
+  }
 
   let error;
   if (existing) {

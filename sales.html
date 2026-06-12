@@ -655,7 +655,8 @@ async function confirmDelete() {
     old_notes: 'RECORD DELETED', new_notes: 'RECORD DELETED'
   }).catch(e => console.warn('Delete log failed:', e));
 
-  await _supabase.from('sales_edits').delete().eq('sale_id', id);
+  // FIX: Removed the line that was deleting audit logs before the sale was deleted.
+  // That line was blocking the delete from ever completing.
   const { error } = await _supabase.from('sales').delete().eq('id', id);
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
 

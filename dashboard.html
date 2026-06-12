@@ -1,10 +1,34 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — GrowthIve Monitor</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* ── Month Navigator ── */
+  .month-nav {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .month-nav-btn {
+    background: var(--dark3); border: 1px solid var(--gold-border);
+    color: var(--gold); border-radius: 8px; width: 36px; height: 36px;
+    cursor: pointer; font-size: 1.1rem; font-family: var(--font-body);
+    transition: var(--transition); display: flex; align-items: center; justify-content: center;
+  }
+  .month-nav-btn:hover:not(:disabled) { background: var(--gold); color: var(--dark); }
+  .month-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .month-nav-label {
+    font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+    color: var(--white2); min-width: 140px; text-align: center;
+  }
+  .month-nav-badge {
+    font-size: 0.72rem; padding: 2px 10px; border-radius: 10px;
+    background: rgba(201,168,76,0.15); border: 1px solid var(--gold-border);
+    color: var(--gold); letter-spacing: 0.08em;
+  }
+</style>
 </head>
 <body>
 <div id="main-navbar"></div>
@@ -13,6 +37,14 @@
   <div class="main">
     <div class="page-title">Dashboard</div>
     <div class="page-subtitle" id="dash-date">Loading…</div>
+
+    <!-- ── Month Navigator ── -->
+    <div class="month-nav">
+      <button class="month-nav-btn" id="month-prev" onclick="changeMonth(-1)">←</button>
+      <div class="month-nav-label" id="month-label">Loading…</div>
+      <button class="month-nav-btn" id="month-next" onclick="changeMonth(1)" disabled>→</button>
+      <span class="month-nav-badge" id="month-badge" style="display:none;">Current Month</span>
+    </div>
 
     <!-- ROW 1: Today's live KPIs -->
     <div class="grid-4">
@@ -48,7 +80,7 @@
       <div class="card">
         <div class="card-title">Total Expenses</div>
         <div class="card-value danger" id="kpi-expenses">₦0.00</div>
-        <div class="card-meta">This month</div>
+        <div class="card-meta" id="kpi-exp-meta">This month</div>
       </div>
       <div class="card">
         <div class="card-title">Net Profit / Loss</div>
@@ -66,7 +98,7 @@
       <!-- Today's Transactions -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div class="card-title" style="margin:0;">🛒 Today's Transactions</div>
+          <div class="card-title" style="margin:0;" id="txn-widget-title">🛒 Today's Transactions</div>
           <a href="purchases.html" class="btn btn-outline btn-sm">View POS →</a>
         </div>
         <div id="recent-sales"><div class="spinner"></div></div>
@@ -131,17 +163,198 @@ function stockStatus(item) {
   return 'ok';
 }
 
+// ── Month Navigator State ──
+const now = new Date();
+let navYear  = now.getFullYear();
+let navMonth = now.getMonth(); // 0-indexed
+
+function changeMonth(dir) {
+  navMonth += dir;
+  if (navMonth > 11) { navMonth = 0; navYear++; }
+  if (navMonth < 0)  { navMonth = 11; navYear--; }
+  updateMonthNav();
+  loadMonthlyKPIs();
+}
+
+function updateMonthNav() {
+  const isCurrentMonth = navYear === now.getFullYear() && navMonth === now.getMonth();
+  const label = new Date(navYear, navMonth, 1)
+    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  document.getElementById('month-label').textContent = label;
+  document.getElementById('month-next').disabled = isCurrentMonth;
+  const badge = document.getElementById('month-badge');
+  badge.style.display = isCurrentMonth ? 'inline' : 'none';
+  // FIX: Update BOTH meta labels to reflect selected month consistently
+  const monthShort = new Date(navYear, navMonth, 1)
+    .toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  document.getElementById('kpi-exp-meta').textContent   = monthShort;
+  document.getElementById('kpi-month-meta').textContent = monthShort;
+  // FIX: Update transactions widget title to reflect selected month
+  const isToday = isCurrentMonth;
+  document.getElementById('txn-widget-title').textContent =
+    isToday ? '🛒 Today\'s Transactions' : `🛒 Recent Transactions — ${monthShort}`;
+}
+
+// ── Health Score (shared, called on load + on month change) ──
+function updateHealthScore(totalMonthSales, profit, todaySales, inv) {
+  if (!inv) return;
+  const lowStockItems = (inv||[]).filter(i => stockStatus(i) === 'low');
+  const trackedItems  = (inv||[]).filter(i => stockStatus(i) === 'ok' || stockStatus(i) === 'low');
+  const hasServices   = (inv||[]).some(i => stockStatus(i) === 'untracked' || stockStatus(i) === 'negative');
+
+  let score = 40;
+  if (totalMonthSales > 0) score += 15;
+  if (profit > 0)          score += 20;
+  if (todaySales > 0)      score += 10;
+  if (trackedItems.length > 0) {
+    if (lowStockItems.length === 0) score += 10;
+    if (lowStockItems.length < 3)   score += 5;
+  } else if (hasServices) {
+    score += 15;
+  }
+  score = Math.min(score, 100);
+
+  document.getElementById('health-val').textContent = score;
+  const arc = document.getElementById('health-arc');
+  arc.style.strokeDashoffset = 377 - (377 * score / 100);
+  arc.style.stroke = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--gold)' : 'var(--danger)';
+  document.getElementById('health-label').textContent =
+    score >= 70 ? '🟢 Healthy Business' :
+    score >= 40 ? '🟡 Needs Attention'  : '🔴 Critical — Review Now';
+}
+
+// ── Load Monthly KPIs + Transactions for selected month ──
+async function loadMonthlyKPIs() {
+  const user = window._dashUser;
+  if (!user) return;
+
+  const isCurrentMonth = navYear === now.getFullYear() && navMonth === now.getMonth();
+
+  // Set spinners
+  ['kpi-month-sales','kpi-expenses','kpi-profit'].forEach(id => {
+    document.getElementById(id).textContent = '…';
+  });
+
+  const startOfSel = new Date(navYear, navMonth, 1).toISOString().split('T')[0];
+  const endOfSel   = new Date(navYear, navMonth + 1, 0).toISOString().split('T')[0];
+
+  const [
+    { data: salesSel },
+    { data: posSel },
+    { data: expSel },
+    { data: txnsSel }
+  ] = await Promise.all([
+    _supabase.from('sales')
+      .select('total_amount, date')
+      .eq('user_id', user.id)
+      .gte('date', startOfSel)
+      .lte('date', endOfSel),
+    _supabase.from('purchase_transactions')
+      .select('total_amount, date')
+      .eq('user_id', user.id)
+      .gte('date', startOfSel)
+      .lte('date', endOfSel),
+    _supabase.from('expenses')
+      .select('amount')
+      .eq('user_id', user.id)
+      .gte('date', startOfSel)
+      .lte('date', endOfSel),
+    // FIX: Fetch transactions for selected month (not hardcoded today)
+    _supabase.from('purchase_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('date', startOfSel)
+      .lte('date', endOfSel)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ]);
+
+  // No double counting — same logic as original
+  const salesDates      = new Set((salesSel||[]).map(r => r.date));
+  const unsyncedDates   = new Set((posSel||[]).map(r => r.date).filter(d => !salesDates.has(d)));
+  const salesTotal      = (salesSel||[]).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const unsyncedTotal   = (posSel||[]).filter(r => unsyncedDates.has(r.date)).reduce((s,r) => s + Number(r.total_amount||0), 0);
+  const totalMonthSales = salesTotal + unsyncedTotal;
+  const entryCount      = (salesSel||[]).length + unsyncedDates.size;
+  const totalExp        = (expSel||[]).reduce((s,r) => s + Number(r.amount||0), 0);
+  const profit          = totalMonthSales - totalExp;
+
+  // FIX: Show actual month name, not "this month", for past months
+  const monthShort = new Date(navYear, navMonth, 1)
+    .toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  document.getElementById('kpi-month-sales').textContent = formatCurrency(totalMonthSales);
+  document.getElementById('kpi-month-meta').textContent  =
+    `${entryCount} entr${entryCount !== 1 ? 'ies' : 'y'} · ${monthShort}`;
+  document.getElementById('kpi-expenses').textContent    = formatCurrency(totalExp);
+  document.getElementById('kpi-exp-meta').textContent    = monthShort;
+
+  const profitEl = document.getElementById('kpi-profit');
+  profitEl.textContent = formatCurrency(profit);
+  profitEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
+
+  // FIX: Update transactions widget for the selected month
+  const rsEl = document.getElementById('recent-sales');
+  if (!txnsSel || txnsSel.length === 0) {
+    rsEl.innerHTML = `<div class="empty-state">
+      <div class="icon">🛒</div>
+      <p>${isCurrentMonth ? 'No POS transactions today yet.' : `No transactions found for ${monthShort}.`}<br>
+      <a href="purchases.html" style="color:var(--gold);">Go to Sales Point →</a>
+      &nbsp;·&nbsp;
+      <a href="sales.html" style="color:var(--muted);">Daily Sales →</a></p>
+    </div>`;
+  } else {
+    rsEl.innerHTML = `<div class="table-wrap"><table>
+      <thead>
+        <tr><th>Date</th><th>Amount</th><th>Payment</th><th>Items</th></tr>
+      </thead>
+      <tbody>
+        ${txnsSel.map(r => {
+          const itemList = Array.isArray(r.items)
+            ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
+            : r.notes || '—';
+          const dateStr  = isCurrentMonth
+            ? new Date(r.created_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+            : new Date(r.date).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+          const payColor = r.payment_method === 'cash'     ? 'var(--success)'
+                         : r.payment_method === 'transfer' ? 'var(--info)'
+                         : 'var(--gold2)';
+          const payBadge = r.payment_method
+            ? `<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;
+                background:rgba(201,168,76,0.12);color:${payColor};
+                border:1px solid var(--gold-border);text-transform:capitalize;">
+                ${r.payment_method}</span>`
+            : '—';
+          return `<tr>
+            <td style="font-size:0.82rem;color:var(--muted);">${dateStr}</td>
+            <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
+            <td>${payBadge}</td>
+            <td style="font-size:0.78rem;color:var(--muted);max-width:160px;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemList}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+  }
+
+  // Update health score with selected month data
+  updateHealthScore(totalMonthSales, profit, window._dashTodaySales, window._dashInv);
+}
+
 (async () => {
   const user = await requireAuth();
   if (!user) return;
+  window._dashUser = user;
   await initPage('dashboard');
 
-  const now          = new Date();
   const today        = now.toISOString().split('T')[0];
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const endOfMonth   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
   document.getElementById('dash-date').textContent =
     now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Initialise month navigator
+  updateMonthNav();
 
   const [
     { data: txnsToday },
@@ -164,7 +377,8 @@ function stockStatus(item) {
     _supabase.from('sales')
       .select('total_amount, cash_amount, transfer_amount, pos_amount, date')
       .eq('user_id', user.id)
-      .gte('date', startOfMonth),
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth),
 
     // ── FIX: Also fetch all POS transactions this month ──
     // This is the safety net so every purchase always counts in Monthly Revenue
@@ -172,13 +386,15 @@ function stockStatus(item) {
     _supabase.from('purchase_transactions')
       .select('total_amount, payment_method, date')
       .eq('user_id', user.id)
-      .gte('date', startOfMonth),
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth),
 
     // Expenses
     _supabase.from('expenses')
       .select('amount')
       .eq('user_id', user.id)
-      .gte('date', startOfMonth),
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth),
 
     // Debts
     _supabase.from('debts')
@@ -222,6 +438,10 @@ function stockStatus(item) {
   document.getElementById('kpi-cash').textContent       = formatCurrency(todayCash);
   document.getElementById('kpi-transfer').textContent   = formatCurrency(todayTransfer);
   document.getElementById('kpi-pos').textContent        = formatCurrency(todayPOS);
+
+  // Store today's sales and inventory globally for health score recalculation
+  window._dashTodaySales = todaySales;
+  window._dashInv        = inv;
 
   // ── ROW 2: Monthly Revenue — FIXED ──
   // Strategy: use sales table as primary source (covers manual + synced POS entries).

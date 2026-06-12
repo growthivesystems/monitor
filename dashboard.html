@@ -259,14 +259,16 @@ async function loadMonthlyKPIs() {
       .eq('user_id', user.id)
       .gte('date', startOfSel)
       .lte('date', endOfSel),
-    // FIX: Fetch transactions for selected month (not hardcoded today)
-    _supabase.from('purchase_transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('date', startOfSel)
-      .lte('date', endOfSel)
-      .order('created_at', { ascending: false })
-      .limit(5),
+    // Only fetch full transaction list for past months (current month uses today-only query from initial load)
+    isCurrentMonth
+      ? Promise.resolve({ data: [] })
+      : _supabase.from('purchase_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('date', startOfSel)
+          .lte('date', endOfSel)
+          .order('created_at', { ascending: false })
+          .limit(5),
   ]);
 
   // No double counting — same logic as original
@@ -292,7 +294,10 @@ async function loadMonthlyKPIs() {
   profitEl.textContent = formatCurrency(profit);
   profitEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
 
-  // FIX: Update transactions widget for the selected month
+  // FIX: Only update transactions widget when viewing a past month.
+  // Current month widget is handled by the initial page load (today-only query).
+  if (isCurrentMonth) return updateHealthScore(totalMonthSales, profit, window._dashTodaySales, window._dashInv);
+
   const rsEl = document.getElementById('recent-sales');
   if (!txnsSel || txnsSel.length === 0) {
     rsEl.innerHTML = `<div class="empty-state">

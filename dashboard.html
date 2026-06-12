@@ -162,6 +162,49 @@ function stockStatus(item) {
   if (qty <= Number(item.low_stock_threshold || 5)) return 'low';
   return 'ok';
 }
+// ── Render today's transactions widget (shared: used on load + when returning to current month) ──
+function renderTodayTxns(txns) {
+  const rsEl = document.getElementById('recent-sales');
+  if (!txns || txns.length === 0) {
+    rsEl.innerHTML = `<div class="empty-state">
+      <div class="icon">🛒</div>
+      <p>No POS transactions today yet.<br>
+      <a href="purchases.html" style="color:var(--gold);">Go to Sales Point →</a>
+      &nbsp;·&nbsp;
+      <a href="sales.html" style="color:var(--muted);">Daily Sales →</a></p>
+    </div>`;
+  } else {
+    rsEl.innerHTML = `<div class="table-wrap"><table>
+      <thead>
+        <tr><th>Time</th><th>Amount</th><th>Payment</th><th>Items</th></tr>
+      </thead>
+      <tbody>
+        ${txns.map(r => {
+          const itemList = Array.isArray(r.items)
+            ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
+            : r.notes || '—';
+          const timeStr  = new Date(r.created_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+          const payColor = r.payment_method === 'cash'     ? 'var(--success)'
+                         : r.payment_method === 'transfer' ? 'var(--info)'
+                         : 'var(--gold2)';
+          const payBadge = r.payment_method
+            ? `<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;
+                background:rgba(201,168,76,0.12);color:${payColor};
+                border:1px solid var(--gold-border);text-transform:capitalize;">
+                ${r.payment_method}</span>`
+            : '—';
+          return `<tr>
+            <td style="font-size:0.82rem;color:var(--muted);">${timeStr}</td>
+            <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
+            <td>${payBadge}</td>
+            <td style="font-size:0.78rem;color:var(--muted);max-width:160px;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemList}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+  }
+}
 
 // ── Month Navigator State ──
 const now = new Date();
@@ -294,9 +337,13 @@ async function loadMonthlyKPIs() {
   profitEl.textContent = formatCurrency(profit);
   profitEl.className   = 'card-value ' + (profit >= 0 ? 'success' : 'danger');
 
-  // FIX: Only update transactions widget when viewing a past month.
-  // Current month widget is handled by the initial page load (today-only query).
-  if (isCurrentMonth) return updateHealthScore(totalMonthSales, profit, window._dashTodaySales, window._dashInv);
+  // FIX: When returning to current month, restore today-only widget so past month data never lingers.
+  // When viewing a past month, render that month's transactions below.
+  if (isCurrentMonth) {
+    renderTodayTxns(window._dashTodayTxns || []);
+    document.getElementById('txn-widget-title').textContent = "🛒 Today's Transactions";
+    return updateHealthScore(totalMonthSales, profit, window._dashTodaySales, window._dashInv);
+  }
 
   const rsEl = document.getElementById('recent-sales');
   if (!txnsSel || txnsSel.length === 0) {
@@ -447,6 +494,7 @@ async function loadMonthlyKPIs() {
   // Store today's sales and inventory globally for health score recalculation
   window._dashTodaySales = todaySales;
   window._dashInv        = inv;
+  window._dashTodayTxns  = recentTxns || [];
 
   // ── ROW 2: Monthly Revenue — FIXED ──
   // Strategy: use sales table as primary source (covers manual + synced POS entries).
@@ -494,46 +542,7 @@ async function loadMonthlyKPIs() {
   document.getElementById('kpi-debts').textContent = formatCurrency(totalDebt);
 
   // ── Today's Transactions Widget ──
-  const rsEl = document.getElementById('recent-sales');
-  if (!recentTxns || recentTxns.length === 0) {
-    rsEl.innerHTML = `<div class="empty-state">
-      <div class="icon">🛒</div>
-      <p>No POS transactions today yet.<br>
-      <a href="purchases.html" style="color:var(--gold);">Go to Sales Point →</a>
-      &nbsp;·&nbsp;
-      <a href="sales.html" style="color:var(--muted);">Daily Sales →</a></p>
-    </div>`;
-  } else {
-    rsEl.innerHTML = `<div class="table-wrap"><table>
-      <thead>
-        <tr><th>Time</th><th>Amount</th><th>Payment</th><th>Items</th></tr>
-      </thead>
-      <tbody>
-        ${recentTxns.map(r => {
-          const itemList = Array.isArray(r.items)
-            ? r.items.map(i => `${i.name} ×${i.qty}`).join(', ')
-            : r.notes || '—';
-          const timeStr  = new Date(r.created_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
-          const payColor = r.payment_method === 'cash'     ? 'var(--success)'
-                         : r.payment_method === 'transfer' ? 'var(--info)'
-                         : 'var(--gold2)';
-          const payBadge = r.payment_method
-            ? `<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;
-                background:rgba(201,168,76,0.12);color:${payColor};
-                border:1px solid var(--gold-border);text-transform:capitalize;">
-                ${r.payment_method}</span>`
-            : '—';
-          return `<tr>
-            <td style="font-size:0.82rem;color:var(--muted);">${timeStr}</td>
-            <td style="color:var(--success);font-weight:700;">${formatCurrency(r.total_amount)}</td>
-            <td>${payBadge}</td>
-            <td style="font-size:0.78rem;color:var(--muted);max-width:160px;
-                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemList}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table></div>`;
-  }
+  renderTodayTxns(recentTxns);
 
   // ── Low Stock ──
   const lowStockItems = (inv||[]).filter(i => stockStatus(i) === 'low');

@@ -667,9 +667,29 @@ async function syncToSalesTable(today) {
 
     if (existing) {
       if (existing.source === 'pos' || existing.source === null) {
+        // Auto-POS entry exists — update to latest purchase total
         const { error: updateErr } = await _supabase
           .from('sales').update(payload).eq('id', existing.id);
         if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
+      } else {
+        // Manual entry exists — ADD purchase total on top, do not replace
+        const combinedTotal    = Number(existing.total_amount||0) + totalSales;
+        const combinedCash     = Number(existing.cash_amount||0) + totalCash;
+        const combinedTransfer = Number(existing.transfer_amount||0) + totalTransfer;
+        const combinedPOS      = Number(existing.pos_amount||0) + totalPOS;
+        const addPayload = {
+          total_amount:    combinedTotal,
+          cash_amount:     combinedCash,
+          transfer_amount: combinedTransfer,
+          pos_amount:      combinedPOS,
+          updated_at:      new Date().toISOString(),
+          notes:           `${existing.notes ? existing.notes + ' · ' : ''}+${formatCurrency(totalSales)} from ${txnCount} POS transaction${txnCount !== 1 ? 's' : ''}`
+        };
+        const { error: addErr } = await _supabase
+          .from('sales').update(addPayload).eq('id', existing.id);
+        if (addErr) throw new Error(`Add failed: ${addErr.message}`);
+        // Return the combined total so the sync badge shows the right number
+        return combinedTotal;
       }
     } else {
       const { error: insertErr } = await _supabase
@@ -679,23 +699,35 @@ async function syncToSalesTable(today) {
   };
 
   try {
-    await doSync();
-    syncEl.style.display = 'block';
-    syncEl.innerHTML = '<span class="sync-badge">✅ Synced to Daily Sales</span>';
-    setTimeout(() => syncEl.style.display = 'none', 4000);
+    const combinedTotal = await doSync();
+    if (syncEl) {
+      syncEl.style.display = 'block';
+      const cur = localStorage.getItem('currency') || '₦';
+      syncEl.innerHTML = combinedTotal
+        ? `<span class="sync-badge">✅ Daily Sales updated — new total: ${cur}${Number(combinedTotal).toLocaleString('en-NG',{minimumFractionDigits:2})}</span>`
+        : '<span class="sync-badge">✅ Synced to Daily Sales</span>';
+      setTimeout(() => syncEl.style.display = 'none', 5000);
+    }
   } catch (err) {
     console.warn('Sync attempt 1 failed, retrying…', err);
     await new Promise(r => setTimeout(r, 1500));
     try {
-      await doSync();
-      syncEl.style.display = 'block';
-      syncEl.innerHTML = '<span class="sync-badge">✅ Synced to Daily Sales</span>';
-      setTimeout(() => syncEl.style.display = 'none', 4000);
+      const combinedTotal = await doSync();
+      if (syncEl) {
+        syncEl.style.display = 'block';
+        const cur = localStorage.getItem('currency') || '₦';
+        syncEl.innerHTML = combinedTotal
+          ? `<span class="sync-badge">✅ Daily Sales updated — new total: ${cur}${Number(combinedTotal).toLocaleString('en-NG',{minimumFractionDigits:2})}</span>`
+          : '<span class="sync-badge">✅ Synced to Daily Sales</span>';
+        setTimeout(() => syncEl.style.display = 'none', 5000);
+      }
     } catch (retryErr) {
       console.error('Sync failed after retry:', retryErr);
-      syncEl.style.display = 'block';
-      syncEl.innerHTML = '<span class="sync-badge-error">⚠️ Sync delayed — dashboard will still update</span>';
-      setTimeout(() => syncEl.style.display = 'none', 6000);
+      if (syncEl) {
+        syncEl.style.display = 'block';
+        syncEl.innerHTML = '<span class="sync-badge-error">⚠️ Sync delayed — dashboard will still update</span>';
+        setTimeout(() => syncEl.style.display = 'none', 6000);
+      }
     }
   }
 }
@@ -719,7 +751,8 @@ async function checkout() {
     return { id: item.id, name: item.item_name, qty, price, subtotal, isUntracked };
   });
 
-  const today        = new Date().toISOString().split('T')[0];
+  // FIX 1: Use local device date (Nigerian time) instead of UTC
+  const today        = new Date().toLocaleDateString('en-CA');
   const customerName = document.getElementById('customer-name').value.trim();
   const notes        = document.getElementById('sale-notes').value.trim();
 
@@ -871,7 +904,6 @@ async function downloadReceiptImage() {
   if (!lastReceipt) return;
   buildImageReceiptCard();
   const el = document.getElementById('img-receipt-canvas');
-  // Temporarily bring on-screen for capture
   el.style.left = '-9999px';
   el.style.top  = '0';
   try {
@@ -894,7 +926,6 @@ async function shareReceiptWhatsApp() {
   const bizName  = cachedBizName || 'My Business';
   const now      = new Date();
 
-  // Try image share first (mobile) — falls back to text
   buildImageReceiptCard();
   const el = document.getElementById('img-receipt-canvas');
   try {
@@ -902,15 +933,12 @@ async function shareReceiptWhatsApp() {
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'receipt.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        // Mobile — share image directly
         await navigator.share({ files: [file], title: `Receipt from ${bizName}` });
       } else {
-        // Desktop — open WhatsApp with text receipt
         shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now);
       }
     }, 'image/png');
   } catch(e) {
-    // Fallback to text
     shareReceiptAsText(items, total, currency, bizName, customerName, payMethod, now);
   }
 }
@@ -937,7 +965,8 @@ function shareReceiptAsText(items, total, currency, bizName, customerName, payMe
 
 /* ── TODAY'S STATS ── */
 async function loadTodayStats() {
-  const today    = new Date().toISOString().split('T')[0];
+  // FIX 2: Use local device date (Nigerian time) instead of UTC
+  const today    = new Date().toLocaleDateString('en-CA');
   const currency = localStorage.getItem('currency') || '₦';
   const { data } = await _supabase
     .from('purchase_transactions')
@@ -987,6 +1016,69 @@ async function loadRecentTxns() {
       }).join('')}
     </tbody>
   </table></div>`;
+
+  // On page load, silently re-sync today's transactions to the sales table.
+  const today = new Date().toLocaleDateString('en-CA');
+  syncToSalesTable(today).catch(e => console.warn('Background sync on load failed:', e));
+
+  // Auto-create Daily Sales rows for past dates that have purchases but no sales entry.
+  // Runs silently — never touches dates that already have any existing sales entry.
+  autoCreatePastSalesRows().catch(e => console.warn('Auto-create past rows failed:', e));
+}
+
+// ── AUTO-CREATE PAST SALES ROWS ──
+async function autoCreatePastSalesRows() {
+  if (!currentUser) return;
+  const now   = new Date();
+  const today = new Date().toLocaleDateString('en-CA');
+  const yr    = now.getFullYear();
+  const mo    = String(now.getMonth() + 1).padStart(2, '0');
+  const start = yr + '-' + mo + '-01';
+
+  const { data: allTxns } = await _supabase
+    .from('purchase_transactions')
+    .select('total_amount, payment_method, date')
+    .eq('user_id', currentUser.id)
+    .gte('date', start)
+    .lte('date', today);
+
+  if (!allTxns || allTxns.length === 0) return;
+
+  const { data: existingSales } = await _supabase
+    .from('sales')
+    .select('date')
+    .eq('user_id', currentUser.id)
+    .gte('date', start)
+    .lte('date', today);
+
+  const coveredDates = new Set((existingSales || []).map(r => r.date));
+
+  const byDate = {};
+  for (const txn of allTxns) {
+    if (coveredDates.has(txn.date)) continue;
+    if (!byDate[txn.date]) byDate[txn.date] = [];
+    byDate[txn.date].push(txn);
+  }
+
+  for (const [date, txns] of Object.entries(byDate)) {
+    const totalSales    = txns.reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalCash     = txns.filter(r => r.payment_method === 'cash').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalTransfer = txns.filter(r => r.payment_method === 'transfer').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalPOS      = txns.filter(r => r.payment_method === 'pos').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const txnCount      = txns.length;
+
+    await _supabase.from('sales').insert({
+      user_id:         currentUser.id,
+      date:            date,
+      total_amount:    totalSales,
+      cash_amount:     totalCash,
+      transfer_amount: totalTransfer,
+      pos_amount:      totalPOS,
+      source:          'pos',
+      updated_at:      new Date().toISOString(),
+      notes:           'Auto-synced from ' + txnCount + ' POS transaction' + (txnCount !== 1 ? 's' : '')
+    }).catch(e => console.warn('Auto-create for ' + date + ' failed:', e));
+  }
 }
 </script>
 </body>

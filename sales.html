@@ -476,6 +476,7 @@ async function loadSales() {
   const start = `${yr}-${mo}-01`;
   const end   = new Date(yr, mo, 0).toISOString().split('T')[0];
 
+  try {
   const [{ data }, { data: posMonth }] = await Promise.all([
     _supabase.from('sales').select('*')
       .eq('user_id', currentUser.id)
@@ -527,7 +528,7 @@ async function loadSales() {
         const pos     = Number(r.pos_amount||0);
         const closing = Number(r.opening_balance||0) + Number(r.cash_amount||0) - Number(r.cash_paid_out||0);
         const recorded = new Date(r.created_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-        const isAutoSync = r.source === 'pos';
+        const isAutoSync = (r.source || '') === 'pos';
         const hasEdits   = r.updated_at && r.updated_at !== r.created_at;
 
         return `<tr>
@@ -560,6 +561,11 @@ async function loadSales() {
       }).join('')}
     </tbody>
   </table></div>`;
+  } catch(e) {
+    document.getElementById('sales-table').innerHTML =
+      `<div class="alert alert-danger">Error loading sales: ${e.message}</div>`;
+    console.error('loadSales error:', e);
+  }
 }
 
 async function saveSale(type) {
@@ -602,11 +608,19 @@ async function saveSale(type) {
     const newTotal      = Number(payload.total_amount);
     if (newTotal < existingTotal) {
       const confirmed = confirm(
-        `⚠️ WARNING — You are about to replace an auto-synced POS record.\n\n` +
-        `Current POS total: ${formatCurrency(existingTotal)}\n` +
-        `Your manual entry: ${formatCurrency(newTotal)}\n\n` +
-        `Your manual amount is LOWER than the auto-synced total.\n` +
-        `This usually means the POS figure is correct and this entry is a mistake.\n\n` +
+        `⚠️ WARNING — You are about to replace an auto-synced POS record.
+
+` +
+        `Current POS total: ${formatCurrency(existingTotal)}
+` +
+        `Your manual entry: ${formatCurrency(newTotal)}
+
+` +
+        `Your manual amount is LOWER than the auto-synced total.
+` +
+        `This usually means the POS figure is correct and this entry is a mistake.
+
+` +
         `Are you sure you want to replace ${formatCurrency(existingTotal)} with ${formatCurrency(newTotal)}?`
       );
       if (!confirmed) {
@@ -685,20 +699,30 @@ async function confirmDelete() {
   const msg = document.getElementById('delete-modal-msg');
   msg.innerHTML = '<div class="alert alert-gold">Deleting…</div>';
 
-  // Log deletion to sales_edits before deleting
-  await _supabase.from('sales_edits').insert({
-    sale_id: id, user_id: currentUser.id, edited_at: new Date().toISOString(),
-    old_total: null, new_total: null,
-    old_notes: 'RECORD DELETED', new_notes: 'RECORD DELETED'
-  }).catch(e => console.warn('Delete log failed:', e));
+  try {
+    // Attempt audit log — fire and forget, never blocks the delete
+    _supabase.from('sales_edits').insert({
+      sale_id: id, user_id: currentUser.id, edited_at: new Date().toISOString(),
+      old_total: null, new_total: null,
+      old_notes: 'RECORD DELETED', new_notes: 'RECORD DELETED'
+    }).then(() => {}).catch(e => console.warn('Delete log failed (non-blocking):', e));
 
-  // FIX: Removed the line that was deleting audit logs before the sale was deleted.
-  // That line was blocking the delete from ever completing.
-  const { error } = await _supabase.from('sales').delete().eq('id', id);
-  if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
+    // Delete the actual sale — runs immediately, not waiting for audit log
+    const { error } = await _supabase.from('sales').delete()
+      .eq('id', id).eq('user_id', currentUser.id);
 
-  closeDeleteModal();
-  loadSales();
+    if (error) {
+      msg.innerHTML = `<div class="alert alert-danger">❌ Delete failed: ${error.message}</div>`;
+      return;
+    }
+
+    closeDeleteModal();
+    await loadSales();
+
+  } catch(e) {
+    msg.innerHTML = `<div class="alert alert-danger">❌ Unexpected error: ${e.message}</div>`;
+    console.error('confirmDelete error:', e);
+  }
 }
 
 function closeDeleteModal() {

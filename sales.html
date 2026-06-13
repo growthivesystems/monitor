@@ -566,6 +566,9 @@ async function loadSales() {
       `<div class="alert alert-danger">Error loading sales: ${e.message}</div>`;
     console.error('loadSales error:', e);
   }
+
+  // Auto-create Daily Sales rows for past dates that have purchases but no sales entry.
+  autoCreatePastSalesRows().catch(e => console.warn('Auto-create past rows failed:', e));
 }
 
 async function saveSale(type) {
@@ -844,6 +847,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!opening.value) prefillOpeningBalance();
   });
 });
+
+// ── AUTO-CREATE PAST SALES ROWS ──
+async function autoCreatePastSalesRows() {
+  if (!currentUser) return;
+  const now   = new Date();
+  const today = new Date().toLocaleDateString('en-CA');
+  const yr    = now.getFullYear();
+  const mo    = String(now.getMonth() + 1).padStart(2, '0');
+  const start = yr + '-' + mo + '-01';
+
+  const { data: allTxns } = await _supabase
+    .from('purchase_transactions')
+    .select('total_amount, payment_method, date')
+    .eq('user_id', currentUser.id)
+    .gte('date', start)
+    .lte('date', today);
+
+  if (!allTxns || allTxns.length === 0) return;
+
+  const { data: existingSales } = await _supabase
+    .from('sales')
+    .select('date')
+    .eq('user_id', currentUser.id)
+    .gte('date', start)
+    .lte('date', today);
+
+  const coveredDates = new Set((existingSales || []).map(r => r.date));
+
+  const byDate = {};
+  for (const txn of allTxns) {
+    if (coveredDates.has(txn.date)) continue;
+    if (!byDate[txn.date]) byDate[txn.date] = [];
+    byDate[txn.date].push(txn);
+  }
+
+  for (const [date, txns] of Object.entries(byDate)) {
+    const totalSales    = txns.reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalCash     = txns.filter(r => r.payment_method === 'cash').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalTransfer = txns.filter(r => r.payment_method === 'transfer').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const totalPOS      = txns.filter(r => r.payment_method === 'pos').reduce((s, r) => s + Number(r.total_amount||0), 0);
+    const txnCount      = txns.length;
+
+    await _supabase.from('sales').insert({
+      user_id:         currentUser.id,
+      date:            date,
+      total_amount:    totalSales,
+      cash_amount:     totalCash,
+      transfer_amount: totalTransfer,
+      pos_amount:      totalPOS,
+      source:          'pos',
+      updated_at:      new Date().toISOString(),
+      notes:           'Auto-synced from ' + txnCount + ' POS transaction' + (txnCount !== 1 ? 's' : '')
+    }).catch(e => console.warn('Auto-create for ' + date + ' failed:', e));
+  }
+}
 </script>
 </body>
 </html>

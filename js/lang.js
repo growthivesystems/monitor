@@ -1,4 +1,6 @@
  
+
+
 // ═══════════════════════════════════════════════════════════════
 // GrowthIve Monitor — Complete Language System v3
 // Supports: English (en), Hausa (ha), Yoruba (yo), Igbo (ig)
@@ -902,10 +904,12 @@ async function setLang(code) {
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   GEMINI AUTO-TRANSLATION FALLBACK
+   GEMINI AUTO-TRANSLATION FALLBACK  (BATCHED — v4)
    For any word/phrase not in the dictionary.
    Results cached in localStorage — API called once per phrase only.
    Runs ONCE per page load — never on content changes.
+   ── ALL untranslated text on a page is now sent in ONE request,
+      instead of one Edge Function call per text node. ──
 ═══════════════════════════════════════════════════════════════ */
 
 const EDGE_FN_URL = 'https://ejuhpwiyzevuhzcdsjmi.supabase.co/functions/v1/translate';
@@ -943,13 +947,9 @@ function isProtected(text) {
   return false;
 }
 
-async function geminiTranslate(text, lang) {
-  if (!text || !text.trim() || isProtected(text)) return null;
-  if (lang === 'en') return text;
-
-  const cached = getCachedTranslation(text, lang);
-  if (cached) return cached;
-
+// ── NEW: sends ALL uncached texts for the page in ONE request ──
+async function geminiTranslateBatch(texts, lang) {
+  if (!texts.length || lang === 'en') return [];
   try {
     const response = await fetch(EDGE_FN_URL, {
       method: 'POST',
@@ -957,27 +957,32 @@ async function geminiTranslate(text, lang) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : ''}`
       },
-      body: JSON.stringify({ text: text.trim() })
+      body: JSON.stringify({ texts })
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) return texts.map(() => null);
 
     const data = await response.json();
-    const translated = data[lang];
+    const results = data.translations || [];
 
-    if (translated && translated !== text) {
-      if (data.ha) setCachedTranslation(text, 'ha', data.ha);
-      if (data.yo) setCachedTranslation(text, 'yo', data.yo);
-      if (data.ig) setCachedTranslation(text, 'ig', data.ig);
-      return translated;
-    }
-    return null;
+    return results.map((r, i) => {
+      const translated = r ? r[lang] : null;
+      if (translated && translated !== texts[i]) {
+        if (r.ha) setCachedTranslation(texts[i], 'ha', r.ha);
+        if (r.yo) setCachedTranslation(texts[i], 'yo', r.yo);
+        if (r.ig) setCachedTranslation(texts[i], 'ig', r.ig);
+        return translated;
+      }
+      return null;
+    });
   } catch(e) {
-    console.warn('Gemini translation failed:', e);
-    return null;
+    console.warn('Gemini batch translation failed:', e);
+    return texts.map(() => null);
   }
 }
 
+// ── NEW: collects every untranslated node + placeholder on the page,
+//          checks cache first, then makes AT MOST ONE network call ──
 async function geminiTranslatePage() {
   const lang = getLang();
   if (lang === 'en') return;
@@ -1009,20 +1014,52 @@ async function geminiTranslatePage() {
     textNodesToTranslate.push(walker.currentNode);
   }
 
-  for (const node of textNodesToTranslate) {
-    const original = node.textContent.trim();
-    const translated = await geminiTranslate(original, lang);
-    if (translated && translated !== original) {
-      node.textContent = node.textContent.replace(original, translated);
+  const placeholderEls = Array.from(
+    document.querySelectorAll('input[placeholder], textarea[placeholder]')
+  ).filter(el => {
+    const ph = el.placeholder.trim();
+    return ph && !isProtected(ph) && /^[a-zA-Z\s\-\/&'".,:!?→]+$/.test(ph);
+  });
+
+  const nodeEntries = textNodesToTranslate.map(node => ({
+    kind: 'node', node, original: node.textContent.trim()
+  }));
+  const placeholderEntries = placeholderEls.map(el => ({
+    kind: 'placeholder', el, original: el.placeholder.trim()
+  }));
+  const allEntries = [...nodeEntries, ...placeholderEntries];
+
+  // Use cache first — only fetch what's NOT already cached
+  const toFetch = [];
+  const toFetchEntries = [];
+  for (const entry of allEntries) {
+    const cached = getCachedTranslation(entry.original, lang);
+    if (cached) {
+      if (entry.kind === 'node') {
+        entry.node.textContent = entry.node.textContent.replace(entry.original, cached);
+      } else {
+        entry.el.placeholder = cached;
+      }
+    } else {
+      toFetch.push(entry.original);
+      toFetchEntries.push(entry);
     }
   }
 
-  document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(async el => {
-    const ph = el.placeholder.trim();
-    if (!ph || isProtected(ph)) return;
-    if (!/^[a-zA-Z\s\-\/&'".,:!?→]+$/.test(ph)) return;
-    const translated = await geminiTranslate(ph, lang);
-    if (translated) el.placeholder = translated;
+  if (toFetch.length === 0) return; // everything cached — zero API calls
+
+  // ONE network call for the entire page's uncached text
+  const translated = await geminiTranslateBatch(toFetch, lang);
+
+  toFetchEntries.forEach((entry, i) => {
+    const result = translated[i];
+    if (result && result !== entry.original) {
+      if (entry.kind === 'node') {
+        entry.node.textContent = entry.node.textContent.replace(entry.original, result);
+      } else {
+        entry.el.placeholder = result;
+      }
+    }
   });
 }
 

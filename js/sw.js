@@ -1,30 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-// GrowthIve Monitor — Service Worker v1
-// Caches all pages and assets for fast loading and offline use
+// GrowthIve Monitor — Service Worker v2
+// Smart caching — fast on mobile, never blocks Supabase data
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'growthive-monitor-v1';
+const CACHE_NAME = 'growthive-v3';
 
-// All pages and assets to pre-cache on install
-const PRECACHE_URLS = [
-  '/monitor/',
-  '/monitor/index.html',
-  '/monitor/dashboard.html',
-  '/monitor/sales.html',
-  '/monitor/expenses.html',
-  '/monitor/debts.html',
-  '/monitor/inventory.html',
-  '/monitor/purchases.html',
-  '/monitor/reports.html',
-  '/monitor/health-score.html',
-  '/monitor/calendar.html',
-  '/monitor/settings.html',
-  '/monitor/contact.html',
-  '/monitor/faq.html',
-  '/monitor/login.html',
-  '/monitor/register.html',
-  '/monitor/welcome.html',
-  '/monitor/returning.html',
+// Static assets to cache immediately on install
+// Keep this list small — only the core files needed to render pages
+const CORE_ASSETS = [
   '/monitor/css/style.css',
   '/monitor/js/supabase.js',
   '/monitor/js/auth.js',
@@ -34,98 +17,100 @@ const PRECACHE_URLS = [
   '/monitor/icons/icon-512.png',
 ];
 
-// External CDN resources to cache on first use
-const CDN_DOMAINS = [
-  'cdn.jsdelivr.net',
-  'cdnjs.cloudflare.com',
-];
-
-// ── INSTALL: pre-cache all app pages and assets ──
+// ── INSTALL: only cache core static assets ──
+// Do NOT pre-cache HTML pages — fetch them fresh every time
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // Cache what we can — skip individual failures silently
-      return Promise.allSettled(
-        PRECACHE_URLS.map(url =>
-          cache.add(url).catch(err => {
-            console.warn('Pre-cache skipped:', url, err.message);
-          })
-        )
-      );
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CORE_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch(err => {
+        console.warn('SW install cache failed:', err);
+        self.skipWaiting();
+      })
   );
 });
 
-// ── ACTIVATE: remove old caches ──
+// ── ACTIVATE: clean up old caches ──
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames =>
-      Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => {
-            console.log('Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ── FETCH: serve from cache, fall back to network ──
+// ── FETCH: smart routing ──
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests (POST to Supabase etc)
+  // ── RULE 1: Never touch non-GET requests ──
   if (event.request.method !== 'GET') return;
 
-  // Skip Supabase API calls — always need fresh data from server
+  // ── RULE 2: Never touch Supabase API calls ──
+  // Let ALL Supabase requests go directly to network — no interception
   if (url.hostname.includes('supabase.co')) return;
 
-  // Skip chrome-extension and other non-http requests
-  if (!event.request.url.startsWith('http')) return;
+  // ── RULE 3: Never touch CDN requests on first load ──
+  // Let jsdelivr and cdnjs go to network, cache for next time
+  if (url.hostname.includes('jsdelivr.net') || url.hostname.includes('cdnjs.cloudflare.com')) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+      })
+    );
+    return;
+  }
 
-  // Strategy: Cache First for app files, Network First for HTML pages
-  const isHTMLPage = url.pathname.endsWith('.html') || url.pathname.endsWith('/');
-  const isCDN = CDN_DOMAINS.some(d => url.hostname.includes(d));
+  // ── RULE 4: Skip non-http requests ──
+  if (!url.protocol.startsWith('http')) return;
 
-  if (isHTMLPage && !isCDN) {
-    // Network First for HTML — get fresh page, cache it, fall back to cache if offline
+  // ── RULE 5: HTML pages — Network First ──
+  // Always try to get fresh HTML. Fall back to cache if offline.
+  if (url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
           if (response && response.status === 200) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => {
+          return caches.match(event.request).then(cached => {
+            if (cached) return cached;
+            // Last resort — return cached dashboard if available
+            return caches.match('/monitor/dashboard.html');
+          });
+        })
     );
-  } else {
-    // Cache First for CSS, JS, images, CDN libs — serve instantly from cache
-    event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        // Not in cache — fetch, store and return
-        return fetch(event.request).then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        }).catch(() => {
-          // Truly offline and not cached — return nothing gracefully
-          console.warn('Resource not available offline:', event.request.url);
-        });
-      })
-    );
+    return;
   }
-});
 
-// ── MESSAGE: allow pages to trigger cache refresh ──
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  // ── RULE 6: Static assets (CSS, JS, images) — Cache First ──
+  // Serve instantly from cache. Update cache in background.
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      const networkFetch = fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => cached);
+
+      // Return cache immediately if available, fetch in background
+      return cached || networkFetch;
+    })
+  );
 });

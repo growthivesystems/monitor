@@ -45,6 +45,12 @@
         <div id="svc-msg"></div>
         <div class="form-group"><label>Service name</label><input type="text" id="svc-name" placeholder="e.g. Gel nails, Haircut"></div>
         <div class="form-group"><label>Price (₦)</label><input type="number" id="svc-price" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="form-group"><label>Usual time <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">(optional)</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="svc-time" placeholder="e.g. 90" min="0" step="any" style="flex:1;">
+            <select id="svc-unit" style="width:auto;"><option value="min">minutes</option><option value="hour">hours</option><option value="day">days</option></select>
+          </div>
+        </div>
         <button class="btn btn-outline" onclick="saveService()">Add to price list</button>
         <div id="svc-list" style="margin-top:18px;"></div>
       </div>
@@ -59,6 +65,7 @@
         <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);"><div class="card-title">Earned this month</div><div class="card-value success" id="m-total">₦0.00</div></div>
         <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);"><div class="card-title">Jobs</div><div class="card-value" id="m-count">0</div></div>
       </div>
+      <div id="by-service"></div>
       <div id="job-table"></div>
     </div>
   </div>
@@ -72,6 +79,16 @@
 <script src="js/biztype.js"></script>
 <script>
 let currentUser, services = [];
+const UNIT = { min: 'min', hour: 'hr', day: 'day' };
+const fmtTime = (v, u) => (v == null || v === '' || Number(v) <= 0) ? '' : (Number(v) + ' ' + (UNIT[u] || 'min') + (Number(v) !== 1 && u === 'day' ? 's' : ''));
+// Earnings rate for one job: per hour for minutes/hours, per day for days. null if no time was given.
+function rateOf(amount, v, u) {
+  v = Number(v); amount = Number(amount || 0);
+  if (!v || v <= 0) return null;
+  if (u === 'day') return { per: amount / v, label: '/day' };
+  const hours = (u === 'hour' ? v : v / 60);
+  return { per: amount / hours, label: '/hr' };
+}
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 (async () => {
   currentUser = await requireAuth();
@@ -94,14 +111,14 @@ async function loadServices() {
   else {
     services = data || [];
     document.getElementById('svc-list').innerHTML = services.length
-      ? '<div class="table-wrap"><table><thead><tr><th>Service</th><th>Price</th><th></th></tr></thead><tbody>' +
-        services.map(s => '<tr><td>' + esc(s.name) + '</td><td>' + formatCurrency(s.price) + '</td><td><button class="btn btn-danger btn-sm" onclick="removeService(\'' + s.id + '\')">Remove</button></td></tr>').join('') +
+      ? '<div class="table-wrap"><table><thead><tr><th>Service</th><th>Price</th><th>Time</th><th></th></tr></thead><tbody>' +
+        services.map(s => '<tr><td>' + esc(s.name) + '</td><td>' + formatCurrency(s.price) + '</td><td>' + (fmtTime(s.duration_value, s.duration_unit) || '—') + '</td><td><button class="btn btn-danger btn-sm" onclick="removeService(\'' + s.id + '\')">Remove</button></td></tr>').join('') +
         '</tbody></table></div>'
       : '<div class="empty-state"><p>No services yet. Add your first one above.</p></div>';
   }
   const sel = document.getElementById('job-service');
   sel.innerHTML = '<option value="">Choose a service…</option>' +
-    services.map(s => '<option value="' + s.id + '">' + esc(s.name) + ' — ' + formatCurrency(s.price) + '</option>').join('') +
+    services.map(s => '<option value="' + s.id + '">' + esc(s.name) + ' — ' + formatCurrency(s.price) + (fmtTime(s.duration_value, s.duration_unit) ? ' · ' + fmtTime(s.duration_value, s.duration_unit) : '') + '</option>').join('') +
     '<option value="__other">Other (type a name)</option>';
 }
 function pickService() {
@@ -115,10 +132,18 @@ async function saveService() {
   const price = parseFloat(document.getElementById('svc-price').value);
   const msg = document.getElementById('svc-msg');
   if (!name || isNaN(price) || price < 0) { msg.innerHTML = '<div class="alert alert-danger">Enter a name and a price.</div>'; return; }
-  const { error } = await _supabase.from('services').insert({ user_id: currentUser.id, name, price });
+  const tv = parseFloat(document.getElementById('svc-time').value);
+  const row = { user_id: currentUser.id, name, price };
+  if (!isNaN(tv) && tv > 0) { row.duration_value = tv; row.duration_unit = document.getElementById('svc-unit').value; }
+  let { error } = await _supabase.from('services').insert(row);
+  if (error && /duration/i.test(error.message)) {
+    delete row.duration_value; delete row.duration_unit;
+    ({ error } = await _supabase.from('services').insert(row));
+    if (!error) { msg.innerHTML = '<div class="alert alert-gold">Added without the time. Run the SQL file 21-service-time.sql in Supabase to save times.</div>'; document.getElementById('svc-name').value = ''; document.getElementById('svc-price').value = ''; loadServices(); return; }
+  }
   if (error) { msg.innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
   msg.innerHTML = '<div class="alert alert-success">Added.</div>';
-  document.getElementById('svc-name').value = ''; document.getElementById('svc-price').value = '';
+  document.getElementById('svc-name').value = ''; document.getElementById('svc-price').value = ''; document.getElementById('svc-time').value = '';
   loadServices();
 }
 async function removeService(id) {
@@ -137,7 +162,10 @@ async function saveJob() {
   const note = document.getElementById('job-note').value.trim() || null;
   if (!date || !service_name || isNaN(amount) || amount < 0) { msg.innerHTML = '<div class="alert alert-danger">Choose a service, enter the amount and the date.</div>'; return; }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
-  const { error } = await _supabase.from('service_jobs').insert({ user_id: currentUser.id, date, service_name, amount, payment_method, note });
+  const jobRow = { user_id: currentUser.id, date, service_name, amount, payment_method, note };
+  if (svc && svc.duration_value) { jobRow.duration_value = svc.duration_value; jobRow.duration_unit = svc.duration_unit || 'min'; }
+  let { error } = await _supabase.from('service_jobs').insert(jobRow);
+  if (error && /duration/i.test(error.message)) { delete jobRow.duration_value; delete jobRow.duration_unit; ({ error } = await _supabase.from('service_jobs').insert(jobRow)); }
   if (error) { msg.innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
   try { await syncSalesForDate(currentUser.id, date, { amount, method: payment_method }); }
   catch (e) { msg.innerHTML = '<div class="alert alert-danger">Job saved, but Daily Sales could not be updated: ' + esc(e.message) + '</div>'; loadJobs(); return; }
@@ -157,9 +185,22 @@ async function loadJobs() {
   const total = jobs.reduce((s, r) => s + Number(r.amount || 0), 0);
   document.getElementById('m-total').textContent = formatCurrency(total);
   document.getElementById('m-count').textContent = jobs.length;
+  // Earnings by service, with a rate when a time was set
+  const groups = {};
+  jobs.forEach(r => {
+    const g = groups[r.service_name] || (groups[r.service_name] = { n: 0, total: 0, rate: 0, rateN: 0, label: '' });
+    g.n++; g.total += Number(r.amount || 0);
+    const rt = rateOf(r.amount, r.duration_value, r.duration_unit);
+    if (rt) { g.rate += rt.per; g.rateN++; g.label = rt.label; }
+  });
+  const names = Object.keys(groups).sort((a, b) => groups[b].total - groups[a].total);
+  document.getElementById('by-service').innerHTML = names.length
+    ? '<div class="table-wrap" style="margin-bottom:16px;"><table><thead><tr><th>Earnings by service</th><th>Jobs</th><th>Total</th><th>Earns</th></tr></thead><tbody>' +
+      names.map(n => { const g = groups[n]; return '<tr><td>' + esc(n) + '</td><td>' + g.n + '</td><td>' + formatCurrency(g.total) + '</td><td>' + (g.rateN ? formatCurrency(g.rate / g.rateN) + g.label : '—') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' : '';
   if (!jobs.length) { el.innerHTML = '<div class="empty-state"><div class="icon">✂️</div><p>No jobs recorded for this month.</p></div>'; return; }
-  el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Service</th><th>Paid by</th><th>Amount</th><th></th></tr></thead><tbody>' +
-    jobs.map(r => '<tr><td>' + formatDate(r.date) + '</td><td>' + esc(r.service_name) + (r.note ? '<div style="font-size:0.75rem;color:var(--muted);">' + esc(r.note) + '</div>' : '') + '</td><td>' + esc(r.payment_method) + '</td><td style="color:var(--success);font-weight:600;">' + formatCurrency(r.amount) + '</td><td><button class="btn btn-danger btn-sm" onclick="deleteJob(\'' + r.id + '\')">Delete</button></td></tr>').join('') +
+  el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Service</th><th>Time</th><th>Paid by</th><th>Amount</th><th></th></tr></thead><tbody>' +
+    jobs.map(r => '<tr><td>' + formatDate(r.date) + '</td><td>' + esc(r.service_name) + (r.note ? '<div style="font-size:0.75rem;color:var(--muted);">' + esc(r.note) + '</div>' : '') + '</td><td>' + (fmtTime(r.duration_value, r.duration_unit) || '—') + '</td><td>' + esc(r.payment_method) + '</td><td style="color:var(--success);font-weight:600;">' + formatCurrency(r.amount) + '</td><td><button class="btn btn-danger btn-sm" onclick="deleteJob(\'' + r.id + '\')">Delete</button></td></tr>').join('') +
     '</tbody></table></div>';
 }
 async function deleteJob(id) {

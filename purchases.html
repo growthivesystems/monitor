@@ -371,6 +371,7 @@
 <script src="js/auth.js"></script>
 <script src="js/lang.js"></script>
 <script src="js/app.js"></script>
+<script src="js/biztype.js"></script>
 <script>
 let currentUser;
 let allInventory      = [];
@@ -653,13 +654,26 @@ async function syncToSalesTable(today) {
 
     if (checkErr) throw new Error(`Check failed: ${checkErr.message}`);
 
+    // Service jobs done today (for businesses that also provide services). Ignored if the table is not there yet.
+    const svc = { total: 0, cash: 0, transfer: 0, pos: 0 };
+    try {
+      const { data: sj, error: sjErr } = await _supabase.from('service_jobs')
+        .select('amount, payment_method').eq('user_id', currentUser.id).eq('date', today);
+      if (!sjErr) (sj || []).forEach(r => {
+        const a = Number(r.amount || 0); svc.total += a;
+        if (r.payment_method === 'cash') svc.cash += a;
+        else if (r.payment_method === 'transfer') svc.transfer += a;
+        else if (r.payment_method === 'pos') svc.pos += a;
+      });
+    } catch (e) { /* no services table yet */ }
+
     const payload = {
       user_id:         currentUser.id,
       date:            today,
-      total_amount:    totalSales,
-      cash_amount:     totalCash,
-      transfer_amount: totalTransfer,
-      pos_amount:      totalPOS,
+      total_amount:    totalSales + svc.total,
+      cash_amount:     totalCash + svc.cash,
+      transfer_amount: totalTransfer + svc.transfer,
+      pos_amount:      totalPOS + svc.pos,
       source:          'pos',
       updated_at:      new Date().toISOString(),
       notes:           `Auto-synced from ${txnCount} POS transaction${txnCount !== 1 ? 's' : ''}`

@@ -228,6 +228,19 @@
           </select>
         </div>
 
+        <!-- ── BUSINESS TYPE ── -->
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Business type</div>
+            <div class="settings-row-desc">Changes labels and tools only. Your records are never changed or deleted.</div>
+          </div>
+          <select id="biztype-select" onchange="saveBizTypeSetting()" style="width:auto;">
+            <option value="products">I sell products</option>
+            <option value="services">I provide services</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+
         <!-- ── LANGUAGE PREFERENCE ── -->
         <div class="settings-row" style="align-items:flex-start;">
           <div>
@@ -343,6 +356,7 @@
 <script src="js/auth.js"></script>
 <script src="js/lang.js"></script>
 <script src="js/app.js"></script>
+<script src="js/biztype.js"></script>
 <script>
 let currentUser;
 
@@ -494,6 +508,22 @@ async function saveCurrency() {
   } catch(e) { console.warn('Could not save currency to Supabase:', e); }
   showGlobalMsg('✅ Currency preference saved.');
 }
+
+async function saveBizTypeSetting() {
+  const val = document.getElementById('biztype-select').value;
+  const ok = await saveBizType(val, currentUser.id);
+  if (ok) { showGlobalMsg('✅ Business type saved.'); setTimeout(() => window.location.reload(), 600); }
+  else showGlobalMsg('Could not save. Has the SQL file been run in Supabase?');
+}
+(async () => {
+  const wait = setInterval(() => {
+    if (typeof currentUser !== 'undefined' && currentUser && typeof getBizType === 'function') {
+      clearInterval(wait);
+      document.getElementById('biztype-select').value = getBizType();
+      loadBizType().then(() => { document.getElementById('biztype-select').value = getBizType(); });
+    }
+  }, 300);
+})();
 
 function saveThreshold() {
   localStorage.setItem('stockThreshold', document.getElementById('stock-threshold').value);

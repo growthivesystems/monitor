@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/monitor/manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GrowthIve">
+<link rel="apple-touch-icon" href="/monitor/icons/icon-192.png">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/monitor/sw.js');}</script>
+<title>Services — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Services</div>
+    <div class="page-subtitle">Keep your price list, then record each job in two taps. Today's total goes into Daily Sales automatically.</div>
+    <div id="type-note"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">✅ Record a job done</div>
+        <div id="job-msg"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="job-date"></div>
+        <div class="form-group"><label>Service</label>
+          <select id="job-service" onchange="pickService()"><option value="">Loading…</option></select>
+        </div>
+        <div class="form-group" id="job-name-wrap" style="display:none;"><label>Service name</label><input type="text" id="job-name" placeholder="e.g. Gel nails"></div>
+        <div class="form-group"><label>Amount paid (₦)</label><input type="number" id="job-amount" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="form-group"><label>Paid by</label>
+          <select id="job-method"><option value="cash">Cash</option><option value="transfer">Transfer</option><option value="pos">POS</option></select>
+        </div>
+        <div class="form-group"><label>Note (optional)</label><input type="text" id="job-note" placeholder="e.g. client name"></div>
+        <button class="btn btn-gold" onclick="saveJob()">Save job →</button>
+      </div>
+
+      <div class="card">
+        <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">🏷️ Price list</div>
+        <div id="svc-msg"></div>
+        <div class="form-group"><label>Service name</label><input type="text" id="svc-name" placeholder="e.g. Gel nails, Haircut"></div>
+        <div class="form-group"><label>Price (₦)</label><input type="number" id="svc-price" placeholder="0.00" min="0" step="0.01"></div>
+        <button class="btn btn-outline" onclick="saveService()">Add to price list</button>
+        <div id="svc-list" style="margin-top:18px;"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div class="modal-title" style="font-size:1.1rem;margin:0;">📋 Jobs done</div>
+        <input type="month" id="filter-month" onchange="loadJobs()" style="width:auto;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);"><div class="card-title">Earned this month</div><div class="card-value success" id="m-total">₦0.00</div></div>
+        <div style="text-align:center;padding:16px;background:var(--dark3);border-radius:var(--radius-sm);"><div class="card-title">Jobs</div><div class="card-value" id="m-count">0</div></div>
+      </div>
+      <div id="job-table"></div>
+    </div>
+  </div>
+</div>
+<div id="main-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
+<script src="js/biztype.js"></script>
+<script>
+let currentUser, services = [];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('services');
+  await loadBizType();
+  if (getBizType() === 'products') {
+    document.getElementById('type-note').innerHTML = '<div class="alert alert-gold" style="margin-bottom:16px;">This page is for businesses that provide services. Your business is set to <strong>I sell products</strong>. You can change that in <a href="settings.html">Settings</a>.</div>';
+  }
+  document.getElementById('job-date').value = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  document.getElementById('filter-month').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  await loadServices();
+  loadJobs();
+})();
+
+async function loadServices() {
+  const { data, error } = await _supabase.from('services').select('*').eq('user_id', currentUser.id).eq('active', true).order('name');
+  if (error) { document.getElementById('svc-list').innerHTML = '<div class="alert alert-danger">Could not load the price list. Has the SQL file been run? (' + esc(error.message) + ')</div>'; services = []; }
+  else {
+    services = data || [];
+    document.getElementById('svc-list').innerHTML = services.length
+      ? '<div class="table-wrap"><table><thead><tr><th>Service</th><th>Price</th><th></th></tr></thead><tbody>' +
+        services.map(s => '<tr><td>' + esc(s.name) + '</td><td>' + formatCurrency(s.price) + '</td><td><button class="btn btn-danger btn-sm" onclick="removeService(\'' + s.id + '\')">Remove</button></td></tr>').join('') +
+        '</tbody></table></div>'
+      : '<div class="empty-state"><p>No services yet. Add your first one above.</p></div>';
+  }
+  const sel = document.getElementById('job-service');
+  sel.innerHTML = '<option value="">Choose a service…</option>' +
+    services.map(s => '<option value="' + s.id + '">' + esc(s.name) + ' — ' + formatCurrency(s.price) + '</option>').join('') +
+    '<option value="__other">Other (type a name)</option>';
+}
+function pickService() {
+  const v = document.getElementById('job-service').value;
+  document.getElementById('job-name-wrap').style.display = v === '__other' ? '' : 'none';
+  const s = services.find(x => x.id === v);
+  if (s) document.getElementById('job-amount').value = s.price;
+}
+async function saveService() {
+  const name = document.getElementById('svc-name').value.trim();
+  const price = parseFloat(document.getElementById('svc-price').value);
+  const msg = document.getElementById('svc-msg');
+  if (!name || isNaN(price) || price < 0) { msg.innerHTML = '<div class="alert alert-danger">Enter a name and a price.</div>'; return; }
+  const { error } = await _supabase.from('services').insert({ user_id: currentUser.id, name, price });
+  if (error) { msg.innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
+  msg.innerHTML = '<div class="alert alert-success">Added.</div>';
+  document.getElementById('svc-name').value = ''; document.getElementById('svc-price').value = '';
+  loadServices();
+}
+async function removeService(id) {
+  if (!confirm('Remove this service from your price list? Jobs already recorded are kept.')) return;
+  await _supabase.from('services').update({ active: false }).eq('id', id).eq('user_id', currentUser.id);
+  loadServices();
+}
+async function saveJob() {
+  const msg = document.getElementById('job-msg');
+  const date = document.getElementById('job-date').value;
+  const sel = document.getElementById('job-service').value;
+  const svc = services.find(x => x.id === sel);
+  const service_name = svc ? svc.name : document.getElementById('job-name').value.trim();
+  const amount = parseFloat(document.getElementById('job-amount').value);
+  const payment_method = document.getElementById('job-method').value;
+  const note = document.getElementById('job-note').value.trim() || null;
+  if (!date || !service_name || isNaN(amount) || amount < 0) { msg.innerHTML = '<div class="alert alert-danger">Choose a service, enter the amount and the date.</div>'; return; }
+  msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
+  const { error } = await _supabase.from('service_jobs').insert({ user_id: currentUser.id, date, service_name, amount, payment_method, note });
+  if (error) { msg.innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
+  try { await syncSalesForDate(currentUser.id, date, { amount, method: payment_method }); }
+  catch (e) { msg.innerHTML = '<div class="alert alert-danger">Job saved, but Daily Sales could not be updated: ' + esc(e.message) + '</div>'; loadJobs(); return; }
+  msg.innerHTML = '<div class="alert alert-success">Saved. Daily Sales updated.</div>';
+  document.getElementById('job-amount').value = ''; document.getElementById('job-note').value = ''; document.getElementById('job-name').value = '';
+  loadJobs();
+}
+async function loadJobs() {
+  const month = document.getElementById('filter-month').value; if (!month) return;
+  const [yr, mo] = month.split('-');
+  const start = yr + '-' + mo + '-01';
+  const end = new Date(yr, mo, 0).toISOString().split('T')[0];
+  const { data, error } = await _supabase.from('service_jobs').select('*').eq('user_id', currentUser.id).gte('date', start).lte('date', end).order('date', { ascending: false }).order('created_at', { ascending: false });
+  const el = document.getElementById('job-table');
+  if (error) { el.innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
+  const jobs = data || [];
+  const total = jobs.reduce((s, r) => s + Number(r.amount || 0), 0);
+  document.getElementById('m-total').textContent = formatCurrency(total);
+  document.getElementById('m-count').textContent = jobs.length;
+  if (!jobs.length) { el.innerHTML = '<div class="empty-state"><div class="icon">✂️</div><p>No jobs recorded for this month.</p></div>'; return; }
+  el.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Service</th><th>Paid by</th><th>Amount</th><th></th></tr></thead><tbody>' +
+    jobs.map(r => '<tr><td>' + formatDate(r.date) + '</td><td>' + esc(r.service_name) + (r.note ? '<div style="font-size:0.75rem;color:var(--muted);">' + esc(r.note) + '</div>' : '') + '</td><td>' + esc(r.payment_method) + '</td><td style="color:var(--success);font-weight:600;">' + formatCurrency(r.amount) + '</td><td><button class="btn btn-danger btn-sm" onclick="deleteJob(\'' + r.id + '\')">Delete</button></td></tr>').join('') +
+    '</tbody></table></div>';
+}
+async function deleteJob(id) {
+  if (!confirm('Delete this job? Daily Sales for that day will be reduced.')) return;
+  const { data: job } = await _supabase.from('service_jobs').select('date, amount, payment_method').eq('id', id).eq('user_id', currentUser.id).single();
+  const { error } = await _supabase.from('service_jobs').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { alert(error.message); return; }
+  if (job) { try { await syncSalesForDate(currentUser.id, job.date, { amount: -Number(job.amount), method: job.payment_method }); } catch (e) { alert('Job deleted, but Daily Sales could not be updated: ' + e.message); } }
+  loadJobs();
+}
+</script>
+</body>
+</html>

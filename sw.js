@@ -3,7 +3,7 @@
 // Smart caching — fast on mobile, never blocks Supabase data
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'growthive-v5';
+const CACHE_NAME = 'growthive-v6';
 
 // Static assets to cache immediately on install
 // Keep this list small — only the core files needed to render pages
@@ -15,6 +15,7 @@ const CORE_ASSETS = [
   '/monitor/js/app.js',
   '/monitor/js/biztype.js',
   '/monitor/js/today-profit.js',
+  '/monitor/js/print-report.js',
   '/monitor/icons/icon-192.png',
   '/monitor/icons/icon-512.png',
 ];

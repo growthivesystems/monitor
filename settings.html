@@ -203,15 +203,16 @@
       <div class="card">
         <div class="settings-section-title">Display</div>
 
-        <div class="settings-row">
+        <div class="settings-row" style="align-items:flex-start;">
           <div>
-            <div class="settings-row-label">Dark Mode</div>
-            <div class="settings-row-desc">Toggle between dark and light theme</div>
+            <div class="settings-row-label">Colours</div>
+            <div class="settings-row-desc">Dark, Light, or "Book look" (white and blue, like Growthive Book)</div>
           </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-theme" onchange="toggleTheme()">
-            <span class="toggle-slider"></span>
-          </label>
+          <div id="theme-btns" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" data-m="dark" onclick="setTheme('dark')">🌙 Dark</button>
+            <button class="btn btn-outline btn-sm" data-m="light" onclick="setTheme('light')">☀️ Light</button>
+            <button class="btn btn-outline btn-sm" data-m="book" onclick="setTheme('book')">📘 Book look</button>
+          </div>
         </div>
 
         <div class="settings-row">
@@ -486,8 +487,7 @@ async function doSignOut() {
 
 // Load Preferences
 function loadPrefs() {
-  const theme = localStorage.getItem('theme');
-  document.getElementById('toggle-theme').checked = theme === 'light';
+  setTheme(getTheme());
   const currency = localStorage.getItem('currency') || '₦';
   document.getElementById('currency-select').value = currency;
   const threshold = localStorage.getItem('stockThreshold') || '5';
@@ -496,17 +496,6 @@ function loadPrefs() {
   document.getElementById('toggle-stock-alert').checked = stockAlert;
   const debtAlert = localStorage.getItem('debtAlert') !== 'false';
   document.getElementById('toggle-debt-alert').checked = debtAlert;
-}
-
-function toggleTheme() {
-  const isLight = document.getElementById('toggle-theme').checked;
-  if (isLight) {
-    document.documentElement.setAttribute('data-theme', 'light');
-    localStorage.setItem('theme', 'light');
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('theme', 'dark');
-  }
 }
 
 // Save Currency — saves to BOTH localStorage AND Supabase
@@ -706,8 +695,7 @@ function showGlobalMsg(text) {
   setTimeout(() => el.innerHTML = '', 4000);
 }
 
-const saved = localStorage.getItem('theme');
-if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+if (typeof getTheme === 'function') setTheme(getTheme());
 
 (async () => {
   const wait = setInterval(async () => {

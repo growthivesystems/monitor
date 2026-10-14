@@ -475,7 +475,7 @@
   </div>
   <div class="pdf-summary" id="pdf-summary"></div>
   <table>
-    <thead><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th></tr></thead>
+    <thead id="pdf-thead"><tr><th>#</th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Stock Value</th><th>Status</th></tr></thead>
     <tbody id="pdf-tbody"></tbody>
   </table>
   <div class="pdf-footer">Generated from GrowthIve Monitor &nbsp;|&nbsp; <span id="pdf-footer-date"></span></div>
@@ -1349,27 +1349,43 @@ async function exportPDF() {
   document.getElementById('pdf-printed-on').textContent = `Generated: ${timeStr}`;
   document.getElementById('pdf-footer-date').textContent= dateStr;
 
+  const eh = x => String(x == null ? '' : x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const hasCost = allItems.some(i => Number(i.cost_price) > 0);
+  const paidStock = allItems.reduce((s,i)=>{const q=Number(i.quantity),c=Number(i.cost_price);return s+(q>0&&c>0?q*c:0);},0);
+  const expProfit = allItems.reduce((s,i)=>{const q=Number(i.quantity),c=Number(i.cost_price);return s+(q>0&&c>0?q*(Number(i.unit_price||0)-c):0);},0);
+  const hasSupplier = allItems.some(i => i.supplier);
+
   document.getElementById('pdf-summary').innerHTML = `
     <div class="pdf-sum-item"><div class="pdf-sum-label">Total Items</div><div class="pdf-sum-val">${allItems.length}</div></div>
-    <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">${formatCurrency(totalVal)}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Stock Value</div><div class="pdf-sum-val">${formatCurrency(totalVal)}</div></div>` +
+    (hasCost ? `<div class="pdf-sum-item"><div class="pdf-sum-label">What You Paid (stock)</div><div class="pdf-sum-val">${formatCurrency(paidStock)}</div></div>
+    <div class="pdf-sum-item"><div class="pdf-sum-label">Expected Profit</div><div class="pdf-sum-val" style="color:#1a7a1a;">${formatCurrency(expProfit)}</div></div>` : '') + `
     <div class="pdf-sum-item"><div class="pdf-sum-label">Low Stock</div><div class="pdf-sum-val" style="color:${lowCount>0?'#cc0000':'#1a7a1a'};">${lowCount}</div></div>
     <div class="pdf-sum-item"><div class="pdf-sum-label">Untracked/Services</div><div class="pdf-sum-val" style="color:#888;">${untrkCount}</div></div>`;
+
+  document.getElementById('pdf-thead').innerHTML = '<tr><th>#</th><th>Item Name</th><th>Qty</th>' +
+    (hasCost ? '<th>Bought For</th>' : '') + '<th>Sells For</th>' + (hasCost ? '<th>Profit Each</th>' : '') +
+    '<th>Stock Value</th>' + (hasSupplier ? '<th>Supplier</th>' : '') + '<th>Status</th></tr>';
 
   document.getElementById('pdf-tbody').innerHTML = allItems.map((item,idx) => {
     const qty    = Number(item.quantity);
     const status = stockStatus(item);
     const value  = qty > 0 ? qty * Number(item.unit_price||0) : 0;
+    const cost   = Number(item.cost_price) > 0 ? Number(item.cost_price) : 0;
     const statusHtml =
       status === 'untracked' ? '<span class="pdf-status-unstocked">— Service/Untracked</span>'
       : status === 'negative' ? `<span class="pdf-status-negative">⬇ ${qty} (sold untracked)</span>`
       : status === 'low'      ? '<span class="pdf-status-low">⚠ Low Stock</span>'
       : '<span class="pdf-status-ok">✓ OK</span>';
     const qtyColor = status==='low' ? '#cc0000' : (status==='negative'||status==='untracked') ? '#888' : '#111';
-    return `<tr><td>${idx+1}</td><td><strong>${item.item_name}</strong></td>
-      <td style="text-align:center;font-weight:700;color:${qtyColor};">${qty}</td>
-      <td>${formatCurrency(item.unit_price||0)}</td>
-      <td>${qty > 0 ? formatCurrency(value) : '—'}</td>
-      <td>${statusHtml}</td></tr>`;
+    return `<tr><td>${idx+1}</td><td><strong>${eh(item.item_name)}</strong></td>
+      <td style="text-align:center;font-weight:700;color:${qtyColor};">${qty}</td>` +
+      (hasCost ? `<td>${cost ? formatCurrency(cost) : '—'}</td>` : '') +
+      `<td>${formatCurrency(item.unit_price||0)}</td>` +
+      (hasCost ? `<td>${cost ? formatCurrency(Number(item.unit_price||0) - cost) : '—'}</td>` : '') +
+      `<td>${qty > 0 ? formatCurrency(value) : '—'}</td>` +
+      (hasSupplier ? `<td>${eh(item.supplier || '')}</td>` : '') +
+      `<td>${statusHtml}</td></tr>`;
   }).join('');
 
   document.getElementById('pdf-area').style.display = 'block';

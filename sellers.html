@@ -26,6 +26,7 @@
         <option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option>
       </select>
       <button class="btn btn-outline btn-sm" onclick="exportXLSX()">📗 Excel</button>
+      <button class="btn btn-outline btn-sm" onclick="exportPDF()">🖨️ PDF</button>
     </div>
     <div id="msg"></div>
     <div class="card" style="margin-bottom:16px;"><div class="modal-title" style="font-size:1.05rem;margin-bottom:12px;">🏆 Best sellers</div><div id="best"><div class="spinner"></div></div></div>
@@ -42,8 +43,9 @@
 <script src="js/lang.js"></script>
 <script src="js/app.js"></script>
 <script src="js/biztype.js"></script>
+<script src="js/print-report.js"></script>
 <script>
-let currentUser, bestRows = [], slowRows = [];
+let currentUser, bestRows = [], slowRows = [], allSoldRows = [];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 (async () => {
   currentUser = await requireAuth();
@@ -73,7 +75,8 @@ async function load() {
     const c = costById[it.id];
     if (c) { a.profit += sub - c * q; a.hasCost = true; }
   }));
-  bestRows = Object.values(agg).sort((a, b) => b.qty - a.qty).slice(0, 10);
+  allSoldRows = Object.values(agg).sort((a, b) => b.qty - a.qty);
+  bestRows = allSoldRows.slice(0, 10);
   const soldIds = new Set(Object.values(agg).map(a => a.id).filter(Boolean));
   const soldNames = new Set(Object.values(agg).map(a => String(a.name).toLowerCase()));
   slowRows = inv.filter(i => Number(i.quantity) > 0 && !soldIds.has(i.id) && !soldNames.has(String(i.item_name).toLowerCase()))
@@ -88,6 +91,32 @@ async function load() {
     ? '<div class="table-wrap"><table><thead><tr><th>Item</th><th>In stock</th><th>Money tied up</th><th>Supplier</th></tr></thead><tbody>' +
       slowRows.map(r => '<tr><td>' + esc(r.name) + '</td><td>' + r.qty + '</td><td>' + formatCurrency(r.tied) + '<div style="font-size:0.7rem;color:var(--muted);">at ' + r.basis + '</div></td><td>' + (esc(r.supplier) || '—') + '</td></tr>').join('') + '</tbody></table></div>'
     : '<div class="empty-state"><div class="icon">👍</div><p>Everything in stock sold at least once in this period.</p></div>';
+}
+
+async function exportPDF() {
+  if (!allSoldRows.length && !slowRows.length) { alert('Nothing to print yet.'); return; }
+  let biz = 'My Business';
+  try { const { data } = await _supabase.from('profiles').select('business_name').eq('id', currentUser.id).maybeSingle(); if (data && data.business_name) biz = data.business_name; } catch (e) {}
+  const days = document.getElementById('period').value;
+  const money = formatCurrency;
+  const totRev = allSoldRows.reduce((s, r) => s + r.revenue, 0);
+  const totProfit = allSoldRows.reduce((s, r) => s + (r.hasCost ? r.profit : 0), 0);
+  const withCost = allSoldRows.filter(r => r.hasCost);
+  const tied = slowRows.reduce((s, r) => s + r.tied, 0);
+  const margin = r => (r.hasCost && r.revenue > 0) ? Math.round(r.profit / r.revenue * 100) + '%' : '—';
+  gvPrintReport({
+    title: 'Profit by product', business: biz, subtitle: 'Last ' + days + ' days · ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    summary: [['Money in', money(totRev)], ['Profit (items with buying price)', money(totProfit)], ['Products sold', String(allSoldRows.length)], ['Money tied up in slow sellers', money(tied)]],
+    sections: [
+      { heading: 'Products sold, best first', note: withCost.length < allSoldRows.length ? 'Items showing "—" have no buying price yet. Add it in Inventory to see the profit.' : '',
+        head: ['#', 'Item', 'Sold', 'Money in', 'Profit', 'Margin'],
+        rows: allSoldRows.map((r, i) => [i + 1, r.name, r.qty, money(r.revenue), r.hasCost ? money(r.profit) : '—', margin(r)]),
+        foot: ['', 'Total', allSoldRows.reduce((s, r) => s + r.qty, 0), money(totRev), money(totProfit), ''] },
+      { heading: 'Slow sellers (did not sell in this period)', note: 'Money tied up is the stock multiplied by its buying price (or selling price if no buying price).',
+        head: ['Item', 'In stock', 'Money tied up', 'Supplier'],
+        rows: slowRows.map(r => [r.name, r.qty, money(r.tied), r.supplier || '—']), foot: ['Total', '', money(tied), ''] }
+    ]
+  });
 }
 
 function exportXLSX() {

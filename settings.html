@@ -229,16 +229,17 @@
         </div>
 
         <!-- ── BUSINESS TYPE ── -->
-        <div class="settings-row">
+        <div class="settings-row" style="align-items:flex-start;">
           <div>
             <div class="settings-row-label">Business type</div>
-            <div class="settings-row-desc">Changes labels and tools only. Your records are never changed or deleted.</div>
+            <div class="settings-row-desc">Changes labels and tools only. Your records are never changed or deleted. You can switch back at any time.</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;" id="biztype-msg">Loading…</div>
           </div>
-          <select id="biztype-select" onchange="saveBizTypeSetting()" style="width:auto;">
-            <option value="products">I sell products</option>
-            <option value="services">I provide services</option>
-            <option value="both">Both</option>
-          </select>
+          <div id="biztype-btns" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" data-t="products" disabled>🛍️ I sell products</button>
+            <button class="btn btn-outline btn-sm" data-t="services" disabled>✂️ I provide services</button>
+            <button class="btn btn-outline btn-sm" data-t="both" disabled>Both</button>
+          </div>
         </div>
 
         <!-- ── LANGUAGE PREFERENCE ── -->
@@ -509,18 +510,36 @@ async function saveCurrency() {
   showGlobalMsg('✅ Currency preference saved.');
 }
 
-async function saveBizTypeSetting() {
-  const val = document.getElementById('biztype-select').value;
-  const ok = await saveBizType(val, currentUser.id);
-  if (ok) { showGlobalMsg('✅ Business type saved.'); setTimeout(() => window.location.reload(), 600); }
-  else showGlobalMsg('Could not save. Has the SQL file been run in Supabase?');
+function paintBizButtons(cur) {
+  document.querySelectorAll('#biztype-btns button').forEach(b => {
+    const on = b.dataset.t === cur;
+    b.disabled = false;
+    b.className = 'btn btn-sm ' + (on ? 'btn-gold' : 'btn-outline');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.getElementById('biztype-msg').textContent = '';
 }
+async function saveBizTypeSetting(type) {
+  const btns = document.querySelectorAll('#biztype-btns button');
+  btns.forEach(b => b.disabled = true);
+  const res = await saveBizType(type, currentUser.id);
+  if (res.ok) { showGlobalMsg('✅ Business type saved.'); setTimeout(() => window.location.reload(), 600); }
+  else {
+    paintBizButtons(getBizType());
+    document.getElementById('biztype-msg').innerHTML = '<span style="color:var(--danger);">Could not switch: ' + (res.error || 'unknown error') + '</span>';
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('#biztype-btns button'); if (!b || b.disabled) return;
+  if (b.dataset.t === getBizType()) return;
+  saveBizTypeSetting(b.dataset.t);
+});
 (async () => {
-  const wait = setInterval(() => {
-    if (typeof currentUser !== 'undefined' && currentUser && typeof getBizType === 'function') {
+  const wait = setInterval(async () => {
+    if (typeof currentUser !== 'undefined' && currentUser && typeof loadBizType === 'function') {
       clearInterval(wait);
-      document.getElementById('biztype-select').value = getBizType();
-      loadBizType().then(() => { document.getElementById('biztype-select').value = getBizType(); });
+      await loadBizType();
+      paintBizButtons(getBizType());
     }
   }, 300);
 })();

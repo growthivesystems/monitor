@@ -98,7 +98,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
   if (getBizType() === 'products') {
     document.getElementById('type-note').innerHTML = '<div class="alert alert-gold" style="margin-bottom:16px;">This page is for businesses that provide services. Your business is set to <strong>I sell products</strong>. You can change that in <a href="settings.html">Settings</a>.</div>';
   }
-  document.getElementById('job-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('job-date').value = new Date().toLocaleDateString('en-CA');
   const now = new Date();
   document.getElementById('filter-month').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   await loadServices();

@@ -260,7 +260,20 @@
         </div>
         <div class="form-group">
           <label>Unit Price (₦)</label>
-          <input type="number" id="item-price" placeholder="0.00" min="0" step="0.01">
+          <input type="number" id="item-price" placeholder="0.00" min="0" step="0.01" oninput="showProfitHint('item')">
+        </div>
+        <div class="form-group">
+          <label>I bought it for (₦)
+            <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">— optional, shows your profit</span>
+          </label>
+          <input type="number" id="item-cost" placeholder="0.00" min="0" step="0.01" oninput="showProfitHint('item')">
+          <div id="item-profit-hint" style="font-size:0.8rem;margin-top:6px;min-height:18px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Supplier
+            <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">— optional, who you buy it from</span>
+          </label>
+          <input type="text" id="item-supplier" placeholder="e.g. Mama Ngozi, Balogun Market" maxlength="80">
         </div>
         <div class="form-group">
           <label>
@@ -294,6 +307,16 @@
             <div class="card-title" style="margin:0;">Total Stock Value</div>
             <div class="card-value gold" id="total-value">₦0.00</div>
           </div>
+          <div id="cost-cards" style="display:none;flex-direction:column;gap:10px;">
+            <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+              <div class="card-title" style="margin:0;">What You Paid (stock)</div>
+              <div class="card-value" style="color:var(--muted);" id="total-cost">₦0.00</div>
+            </div>
+            <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
+              <div class="card-title" style="margin:0;">Expected Profit</div>
+              <div class="card-value success" id="expected-profit">₦0.00</div>
+            </div>
+          </div>
           <div style="padding:14px 16px;background:var(--dark3);border-radius:var(--radius-sm);display:flex;justify-content:space-between;">
             <div class="card-title" style="margin:0;">Recently Deleted</div>
             <div class="card-value danger" id="deleted-count">0</div>
@@ -320,6 +343,7 @@
           <div class="export-row">
             <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 Import</button>
             <button class="btn btn-outline btn-sm" onclick="exportCSV()">📊 CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportXLSX()">📗 Excel</button>
             <button class="btn btn-outline btn-sm" onclick="exportPDF()">🖨️ PDF</button>
           </div>
         </div>
@@ -529,7 +553,16 @@
     </div>
     <div class="form-group">
       <label>New Unit Price</label>
-      <input type="number" id="edit-price" min="0" step="0.01">
+      <input type="number" id="edit-price" min="0" step="0.01" oninput="showProfitHint('edit')">
+    </div>
+    <div class="form-group">
+      <label>I bought it for <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">(optional)</span></label>
+      <input type="number" id="edit-cost" min="0" step="0.01" placeholder="0.00" oninput="showProfitHint('edit')">
+      <div id="edit-profit-hint" style="font-size:0.8rem;margin-top:6px;min-height:18px;"></div>
+    </div>
+    <div class="form-group">
+      <label>Supplier <span style="color:var(--muted);font-weight:400;font-size:0.78rem;">(optional)</span></label>
+      <input type="text" id="edit-supplier" maxlength="80" placeholder="Who you buy it from">
     </div>
     <div style="display:flex;gap:10px;">
       <button class="btn btn-gold" onclick="updateItem()">Update Stock →</button>
@@ -539,6 +572,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/lang.js"></script>
@@ -647,11 +681,19 @@ async function loadInventory() {
     return s + (qty > 0 ? qty * Number(i.unit_price || 0) : 0);
   }, 0);
   document.getElementById('total-value').textContent = formatCurrency(totalVal);
+  // Only for items that have a cost price. Hidden if none do, so nothing changes for existing users.
+  const withCost = allItems.filter(i => Number(i.cost_price) > 0 && Number(i.quantity) > 0);
+  const costBox = document.getElementById('cost-cards');
+  if (costBox) {
+    costBox.style.display = withCost.length ? 'flex' : 'none';
+    document.getElementById('total-cost').textContent = formatCurrency(withCost.reduce((s, i) => s + Number(i.quantity) * Number(i.cost_price), 0));
+    document.getElementById('expected-profit').textContent = formatCurrency(withCost.reduce((s, i) => s + Number(i.quantity) * (Number(i.unit_price || 0) - Number(i.cost_price)), 0));
+  }
 
   // Banner only for genuinely low items
   const banner = document.getElementById('low-stock-banner');
   if (lowItems.length > 0) {
-    banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i=>i.item_name).join(', ')}</div>`;
+    banner.innerHTML = `<div class="alert alert-danger" style="margin-bottom:20px;">⚠️ <strong>${lowItems.length} item(s) running low:</strong> ${lowItems.map(i=>i.item_name).join(', ')} &nbsp;<a href="buy-list.html" style="color:var(--gold);font-weight:600;white-space:nowrap;">Make a buy list →</a></div>`;
   } else {
     banner.innerHTML = '';
   }
@@ -724,9 +766,9 @@ function renderList(items) {
 
     return `<div class="inv-item${isDeleted?' deleted-item':''}">
       <div class="inv-num">${idx+1}</div>
-      <div class="inv-name">${r.item_name}${badge}${restoreInfo}</div>
+      <div class="inv-name">${r.item_name}${badge}${restoreInfo}${r.supplier ? `<div style="font-size:0.7rem;color:var(--muted);font-weight:400;">from ${String(r.supplier).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>` : ''}</div>
       <div class="inv-qty" style="color:${qtyColor};">${qty}</div>
-      <div class="inv-price">${formatCurrency(r.unit_price)}</div>
+      <div class="inv-price">${formatCurrency(r.unit_price)}${(!isDeleted && Number(r.cost_price) > 0 && Number(r.unit_price) > 0) ? `<div style="font-size:0.68rem;color:${Number(r.unit_price) >= Number(r.cost_price) ? 'var(--success)' : 'var(--danger)'};">${Number(r.unit_price) >= Number(r.cost_price) ? '+' : '−'}${formatCurrency(Math.abs(Number(r.unit_price) - Number(r.cost_price)))} each</div>` : ''}</div>
       <div class="inv-value">${qty > 0 ? formatCurrency(qty * Number(r.unit_price||0)) : '—'}</div>
       <div class="inv-actions">${actions}</div>
     </div>`;
@@ -843,6 +885,19 @@ async function loadAuditLog() {
   }).join('')}</div>`;
 }
 
+/* Live profit hint under the price boxes */
+function showProfitHint(prefix) {
+  const price = parseFloat(document.getElementById(prefix === 'item' ? 'item-price' : 'edit-price').value);
+  const cost  = parseFloat(document.getElementById(prefix === 'item' ? 'item-cost' : 'edit-cost').value);
+  const el = document.getElementById(prefix + '-profit-hint');
+  if (!el) return;
+  if (isNaN(price) || isNaN(cost) || cost <= 0 || price <= 0) { el.innerHTML = ''; return; }
+  const p = price - cost, pct = Math.round(p / cost * 100);
+  el.innerHTML = p >= 0
+    ? `<span style="color:var(--success);">Profit: ${formatCurrency(p)} on each (${pct}%)</span>`
+    : `<span style="color:var(--danger);">You would lose ${formatCurrency(-p)} on each. Check your prices.</span>`;
+}
+
 /* ══════════════════════════════════════════
    ADD ITEM
 ══════════════════════════════════════════ */
@@ -851,6 +906,8 @@ async function saveItem() {
   const qtyRaw              = document.getElementById('item-qty').value;
   const quantity            = qtyRaw === '' ? 0 : parseInt(qtyRaw);
   const unit_price          = parseFloat(document.getElementById('item-price').value) || 0;
+  const costRaw             = parseFloat(document.getElementById('item-cost').value);
+  const cost_price          = (isNaN(costRaw) || costRaw <= 0) ? null : costRaw;
   const low_stock_threshold = parseInt(document.getElementById('item-threshold').value) || 5;
   const msg = document.getElementById('form-msg');
 
@@ -859,14 +916,23 @@ async function saveItem() {
   }
   msg.innerHTML = '<div class="alert alert-gold">Saving…</div>';
 
-  const { data: inserted, error } = await _supabase.from('inventory').insert({
-    user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold, deleted_at: null
-  }).select().single();
+  const newRow = { user_id: currentUser.id, item_name, quantity, unit_price, low_stock_threshold, deleted_at: null };
+  if (cost_price !== null) newRow.cost_price = cost_price;
+  const supplierVal = document.getElementById('item-supplier').value.trim();
+  if (supplierVal) newRow.supplier = supplierVal;
+  let { data: inserted, error } = await _supabase.from('inventory').insert(newRow).select().single();
+  let costNote = '';
+  if (error && /cost_price|supplier/i.test(error.message)) {   // SQL 22/23 not run yet: save without the optional boxes
+    delete newRow.cost_price; delete newRow.supplier;
+    ({ data: inserted, error } = await _supabase.from('inventory').insert(newRow).select().single());
+    costNote = ' (cost price / supplier not saved yet: run the SQL files 22 and 23 in Supabase)';
+  }
 
   if (error) { msg.innerHTML = `<div class="alert alert-danger">${error.message}</div>`; return; }
   await writeLog('added', inserted?.id, item_name, null, quantity, null, unit_price);
-  msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!</div>';
-  ['item-name','item-qty','item-price'].forEach(id => document.getElementById(id).value = '');
+  msg.innerHTML = '<div class="alert alert-success">✅ Item added to stock list!' + costNote + '</div>';
+  ['item-name','item-qty','item-price','item-cost','item-supplier'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('item-profit-hint').innerHTML = '';
   loadInventory();
   if (auditLogOpen) loadAuditLog();
   setTimeout(() => msg.innerHTML = '', 3000);
@@ -984,6 +1050,10 @@ function openEditModal(id, name, qty, price) {
   document.getElementById('edit-price').value     = price;
   document.getElementById('edit-old-qty').value   = qty;
   document.getElementById('edit-old-price').value = price;
+  const cur = (allItems || []).find(i => i.id === id);
+  document.getElementById('edit-cost').value = cur && cur.cost_price ? cur.cost_price : '';
+  document.getElementById('edit-supplier').value = cur && cur.supplier ? cur.supplier : '';
+  showProfitHint('edit');
   document.getElementById('edit-modal').classList.add('show');
 }
 
@@ -999,7 +1069,15 @@ async function updateItem() {
   const oldPrice   = parseFloat(document.getElementById('edit-old-price').value);
   const quantity   = parseInt(document.getElementById('edit-qty').value) || 0;
   const unit_price = parseFloat(document.getElementById('edit-price').value) || 0;
-  await _supabase.from('inventory').update({ quantity, unit_price }).eq('id', id);
+  const editCostRaw = parseFloat(document.getElementById('edit-cost').value);
+  const upd = { quantity, unit_price, cost_price: (isNaN(editCostRaw) || editCostRaw <= 0) ? null : editCostRaw,
+                supplier: document.getElementById('edit-supplier').value.trim() || null };
+  let { error: updErr } = await _supabase.from('inventory').update(upd).eq('id', id);
+  if (updErr && /cost_price|supplier/i.test(updErr.message)) {   // SQL 22/23 not run yet
+    delete upd.cost_price; delete upd.supplier;
+    await _supabase.from('inventory').update(upd).eq('id', id);
+    alert('Saved, but the cost price / supplier were not stored yet. Run the SQL files 22 and 23 in Supabase.');
+  }
   await writeLog('edited', id, name, oldQty, quantity, oldPrice, unit_price);
   closeEditModal(); loadInventory();
   if (auditLogOpen) loadAuditLog();
@@ -1061,10 +1139,14 @@ function parseCSV(text) {
   const lines   = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
   const headers = splitCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z0-9 ]/g,''));
+  const costIdx = headers.findIndex(h => /^(cost price|buying price|buy price|bought for|purchase price|i bought it for)$/.test(h));
+  const priceHeaders = headers.map((h, i) => i === costIdx ? '#' : h);   // keep "cost price" out of the selling-price match
   const colMap  = {
+    cost_price: costIdx,
+    supplier:   headers.findIndex(h => h === 'supplier' || h === 'bought from' || h === 'vendor'),
     item_name:           findCol(headers, ['item name','name','product','description','item','stock name','product name','article']),
     quantity:            findCol(headers, ['quantity','qty','stock','units','amount','count','on hand','stock qty']),
-    unit_price:          findCol(headers, ['unit price','price','cost','unit cost','selling price','value','rate','each']),
+    unit_price:          findCol(priceHeaders, ['unit price','price','cost','unit cost','selling price','value','rate','each']),
     low_stock_threshold: findCol(headers, ['low stock threshold','threshold','min stock','minimum','reorder level','alert level']),
   };
   const rows = [];
@@ -1073,11 +1155,15 @@ function parseCSV(text) {
     const name   = colMap.item_name !== -1 ? (cols[colMap.item_name] || '').trim() : '';
     const qty    = colMap.quantity   !== -1 ? parseFloat(cols[colMap.quantity]  || '0') : 0;
     const price  = colMap.unit_price !== -1 ? parseFloat(cols[colMap.unit_price] || '0') : 0;
+    const cost   = colMap.cost_price !== -1 ? parseFloat(cols[colMap.cost_price] || '') : NaN;
+    const supp   = colMap.supplier !== -1 ? (cols[colMap.supplier] || '').trim().replace(/^"|"$/g,'') : '';
     const thresh = colMap.low_stock_threshold !== -1 ? parseInt(cols[colMap.low_stock_threshold] || '5') : 5;
     rows.push({
       item_name:           name.replace(/^"|"$/g,''),
       quantity:            isNaN(qty)    ? 0 : Math.max(0, qty),
       unit_price:          isNaN(price)  ? 0 : Math.max(0, price),
+      cost_price:          (isNaN(cost) || cost <= 0) ? null : cost,
+      supplier:            supp || null,
       low_stock_threshold: isNaN(thresh) ? 5 : Math.max(1, thresh),
       _status: name ? (price > 0 ? 'valid' : 'warning') : 'error'
     });
@@ -1148,9 +1234,15 @@ async function confirmImport() {
     const batch = importRows.slice(i, i+batchSize).map(r => ({
       user_id: currentUser.id, item_name: r.item_name,
       quantity: r.quantity, unit_price: r.unit_price,
-      low_stock_threshold: r.low_stock_threshold, deleted_at: null
+      low_stock_threshold: r.low_stock_threshold, deleted_at: null,
+      ...(r.cost_price ? { cost_price: r.cost_price } : {}),
+      ...(r.supplier ? { supplier: r.supplier } : {})
     }));
-    const { data: inserted, error } = await _supabase.from('inventory').insert(batch).select();
+    let { data: inserted, error } = await _supabase.from('inventory').insert(batch).select();
+    if (error && /cost_price|supplier/i.test(error.message)) {   // SQL 22/23 not run yet: import without them
+      batch.forEach(b => { delete b.cost_price; delete b.supplier; });
+      ({ data: inserted, error } = await _supabase.from('inventory').insert(batch).select());
+    }
     if (error) { failCount += batch.length; }
     else {
       successCount += (inserted || batch).length;
@@ -1172,7 +1264,7 @@ async function confirmImport() {
 }
 
 function downloadTemplate() {
-  const template = ['Item Name,Quantity,Unit Price,Low Stock Threshold','Rice (50kg bag),20,45000,5','Engine Oil (1L),10,8500,3','Haircut Service,,5000,','BIAB Extension,,15000,'].join('\n');
+  const template = ['Item Name,Quantity,Unit Price,Cost Price,Low Stock Threshold,Supplier','Rice (50kg bag),20,45000,41000,5,Mama Ngozi','Engine Oil (1L),10,8500,7200,3,Apo Market','Haircut Service,,5000,,,','BIAB Extension,,15000,,,'].join('\n');
   const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'growthive-inventory-template.csv'; a.click();
@@ -1185,7 +1277,7 @@ function downloadTemplate() {
 function exportCSV() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   const now     = new Date().toLocaleDateString('en-GB');
-  const headers = ['#','Item Name','Quantity','Unit Price','Stock Value','Low Stock Threshold','Status'];
+  const headers = ['#','Item Name','Quantity','Unit Price','Cost Price','Profit Each','Stock Value','Low Stock Threshold','Status','Supplier'];
   const rows    = allItems.map((item,idx) => {
     const qty    = Number(item.quantity);
     const status = stockStatus(item);
@@ -1194,7 +1286,10 @@ function exportCSV() {
                  : status === 'low'       ? 'Low Stock' : 'OK';
     const value  = qty > 0 ? qty * Number(item.unit_price||0) : 0;
     return [idx+1,`"${item.item_name.replace(/"/g,'""')}"`,qty,
-      Number(item.unit_price||0).toFixed(2),value.toFixed(2),item.low_stock_threshold||5,label].join(',');
+      Number(item.unit_price||0).toFixed(2),
+      Number(item.cost_price) > 0 ? Number(item.cost_price).toFixed(2) : '',
+      Number(item.cost_price) > 0 ? (Number(item.unit_price||0) - Number(item.cost_price)).toFixed(2) : '',
+      value.toFixed(2),item.low_stock_threshold||5,label,`"${String(item.supplier||'').replace(/"/g,'""')}"`].join(',');
   });
   const totalVal = allItems.reduce((s,i)=>{const q=Number(i.quantity);return s+(q>0?q*Number(i.unit_price||0):0);},0);
   const lowCount = allItems.filter(i=>stockStatus(i)==='low').length;
@@ -1213,6 +1308,27 @@ function exportCSV() {
 /* ══════════════════════════════════════════
    EXPORT PDF
 ══════════════════════════════════════════ */
+function exportXLSX() {
+  if (allItems.length === 0) { alert('No inventory items to export.'); return; }
+  if (typeof XLSX === 'undefined') { alert('The Excel tool could not load (check your internet). Use the CSV button, it opens in Excel too.'); return; }
+  const rows = allItems.map((item, idx) => {
+    const qty = Number(item.quantity), price = Number(item.unit_price || 0), cost = Number(item.cost_price || 0);
+    const st = stockStatus(item);
+    return {
+      '#': idx + 1, 'Item': item.item_name, 'Quantity': qty, 'Selling price': price,
+      'Cost price': cost > 0 ? cost : '', 'Profit each': cost > 0 ? price - cost : '',
+      'Stock value (selling)': qty > 0 ? qty * price : 0,
+      'Supplier': item.supplier || '', 'Low-stock alert at': item.low_stock_threshold || 5,
+      'Status': st === 'untracked' ? 'Untracked / service' : st === 'negative' ? 'Negative' : st === 'low' ? 'Low stock' : 'OK'
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:4},{wch:30},{wch:10},{wch:14},{wch:12},{wch:12},{wch:20},{wch:20},{wch:16},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+  XLSX.writeFile(wb, 'growthive-inventory-' + new Date().toLocaleDateString('en-CA') + '.xlsx');
+}
+
 async function exportPDF() {
   if (allItems.length === 0) { alert('No inventory items to export.'); return; }
   let bizName = 'My Business';

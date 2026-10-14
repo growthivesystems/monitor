@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/monitor/manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GrowthIve">
+<link rel="apple-touch-icon" href="/monitor/icons/icon-192.png">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/monitor/sw.js');}</script>
+<title>Best Sellers — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">Best and slow sellers</div>
+    <div class="page-subtitle">See what sells fast, and what is just sitting on your shelf. Based on the sales you rang up in Purchases.</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+      <select id="period" onchange="load()" style="width:auto;">
+        <option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportXLSX()">📗 Excel</button>
+    </div>
+    <div id="msg"></div>
+    <div class="card" style="margin-bottom:16px;"><div class="modal-title" style="font-size:1.05rem;margin-bottom:12px;">🏆 Best sellers</div><div id="best"><div class="spinner"></div></div></div>
+    <div class="card"><div class="modal-title" style="font-size:1.05rem;margin-bottom:6px;">🐌 Slow sellers</div>
+      <div style="color:var(--muted);font-size:0.82rem;margin-bottom:12px;">Items in stock that did not sell in this period. The money tied up in them is shown, so you know what to stop buying.</div>
+      <div id="slow"></div></div>
+  </div>
+</div>
+<div id="main-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
+<script src="js/biztype.js"></script>
+<script>
+let currentUser, bestRows = [], slowRows = [];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('sellers');
+  load();
+})();
+
+async function load() {
+  const days = parseInt(document.getElementById('period').value, 10);
+  const from = new Date(Date.now() - days * 86400000).toLocaleDateString('en-CA');
+  const [tx, iv] = await Promise.all([
+    _supabase.from('purchase_transactions').select('items, date').eq('user_id', currentUser.id).gte('date', from),
+    _supabase.from('inventory').select('*').eq('user_id', currentUser.id).is('deleted_at', null)
+  ]);
+  if (tx.error || iv.error) { document.getElementById('msg').innerHTML = '<div class="alert alert-danger">' + esc((tx.error || iv.error).message) + '</div>'; return; }
+  const inv = iv.data || [];
+  const costById = {}, byId = {};
+  inv.forEach(i => { byId[i.id] = i; if (Number(i.cost_price) > 0) costById[i.id] = Number(i.cost_price); });
+
+  const agg = {};
+  (tx.data || []).forEach(t => (Array.isArray(t.items) ? t.items : []).forEach(it => {
+    const key = it.id || ('n:' + String(it.name || '').toLowerCase());
+    const a = agg[key] || (agg[key] = { id: it.id, name: it.name || 'Item', qty: 0, revenue: 0, profit: 0, hasCost: false });
+    const q = Number(it.qty || 0), sub = Number(it.subtotal || (Number(it.price || 0) * q));
+    a.qty += q; a.revenue += sub;
+    const c = costById[it.id];
+    if (c) { a.profit += sub - c * q; a.hasCost = true; }
+  }));
+  bestRows = Object.values(agg).sort((a, b) => b.qty - a.qty).slice(0, 10);
+  const soldIds = new Set(Object.values(agg).map(a => a.id).filter(Boolean));
+  const soldNames = new Set(Object.values(agg).map(a => String(a.name).toLowerCase()));
+  slowRows = inv.filter(i => Number(i.quantity) > 0 && !soldIds.has(i.id) && !soldNames.has(String(i.item_name).toLowerCase()))
+    .map(i => ({ name: i.item_name, qty: Number(i.quantity), tied: Number(i.quantity) * Number(i.cost_price > 0 ? i.cost_price : i.unit_price || 0), basis: i.cost_price > 0 ? 'cost' : 'selling price', supplier: i.supplier || '' }))
+    .sort((a, b) => b.tied - a.tied).slice(0, 20);
+
+  document.getElementById('best').innerHTML = bestRows.length
+    ? '<div class="table-wrap"><table><thead><tr><th>#</th><th>Item</th><th>Sold</th><th>Money in</th><th>Profit</th></tr></thead><tbody>' +
+      bestRows.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(r.name) + '</td><td>' + r.qty + '</td><td>' + formatCurrency(r.revenue) + '</td><td>' + (r.hasCost ? '<span style="color:' + (r.profit >= 0 ? 'var(--success)' : 'var(--danger)') + ';">' + formatCurrency(r.profit) + '</span>' : '<span style="color:var(--muted);">add buying price</span>') + '</td></tr>').join('') + '</tbody></table></div>'
+    : '<div class="empty-state"><div class="icon">🛒</div><p>No sales rung up in this period yet.</p></div>';
+  document.getElementById('slow').innerHTML = slowRows.length
+    ? '<div class="table-wrap"><table><thead><tr><th>Item</th><th>In stock</th><th>Money tied up</th><th>Supplier</th></tr></thead><tbody>' +
+      slowRows.map(r => '<tr><td>' + esc(r.name) + '</td><td>' + r.qty + '</td><td>' + formatCurrency(r.tied) + '<div style="font-size:0.7rem;color:var(--muted);">at ' + r.basis + '</div></td><td>' + (esc(r.supplier) || '—') + '</td></tr>').join('') + '</tbody></table></div>'
+    : '<div class="empty-state"><div class="icon">👍</div><p>Everything in stock sold at least once in this period.</p></div>';
+}
+
+function exportXLSX() {
+  if (typeof XLSX === 'undefined') { alert('The Excel tool could not load (check your internet).'); return; }
+  if (!bestRows.length && !slowRows.length) { alert('Nothing to export yet.'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bestRows.map((r, i) => ({ '#': i + 1, 'Item': r.name, 'Sold': r.qty, 'Money in': r.revenue, 'Profit': r.hasCost ? r.profit : '' }))), 'Best sellers');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(slowRows.map(r => ({ 'Item': r.name, 'In stock': r.qty, 'Money tied up': r.tied, 'Based on': r.basis, 'Supplier': r.supplier }))), 'Slow sellers');
+  XLSX.writeFile(wb, 'growthive-sellers-' + new Date().toLocaleDateString('en-CA') + '.xlsx');
+}
+</script>
+</body>
+</html>

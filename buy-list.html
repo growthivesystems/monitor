@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/monitor/manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GrowthIve">
+<link rel="apple-touch-icon" href="/monitor/icons/icon-192.png">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/monitor/sw.js');}</script>
+<title>Buy List — GrowthIve Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .bl-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--dark4); flex-wrap:wrap; }
+  .bl-row:last-child { border-bottom:0; }
+  .bl-name { flex:1 1 180px; min-width:140px; }
+  .bl-left { font-size:0.78rem; color:var(--muted); }
+  .bl-qty { width:90px; }
+  .bl-est { width:110px; text-align:right; color:var(--gold); font-size:0.85rem; }
+  .bl-check { appearance:auto; -webkit-appearance:checkbox; width:22px; height:22px; min-width:22px; padding:0; margin:0; accent-color:#C9A84C; cursor:pointer; }
+  @media print { .sidebar, #main-navbar, #main-footer, .no-print { display:none !important; } .main { margin:0 !important; } }
+</style>
+</head>
+<body>
+<div id="main-navbar"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="page-title">What to buy</div>
+    <div class="page-subtitle">Items that are running low, ready to send to your supplier. Tick what you need, set how many, and share.</div>
+    <div id="msg"></div>
+    <div id="groups"><div class="spinner"></div></div>
+  </div>
+</div>
+<div id="main-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
+<script src="js/biztype.js"></script>
+<script>
+let currentUser, items = [];      // items: { id, name, left, supplier, cost, qty, on, low }
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async () => {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  await initPage('buy-list');
+  load();
+})();
+
+async function load() {
+  const { data, error } = await _supabase.from('inventory').select('*').eq('user_id', currentUser.id).is('deleted_at', null).order('item_name');
+  if (error) { document.getElementById('groups').innerHTML = '<div class="alert alert-danger">' + esc(error.message) + '</div>'; return; }
+  items = (data || []).filter(i => {
+    const q = Number(i.quantity); return q === 0 || (q > 0 && q <= Number(i.low_stock_threshold || 5));
+  }).map(i => {
+    const q = Number(i.quantity), th = Number(i.low_stock_threshold || 5), low = q > 0;
+    return { id: i.id, name: i.item_name, left: q, supplier: (i.supplier || '').trim(), cost: Number(i.cost_price || 0),
+             qty: Math.max(1, th * 2 - q), on: low, low };
+  });
+  render();
+}
+
+function groupKey(i) { return i.supplier || ''; }
+function render() {
+  const el = document.getElementById('groups');
+  if (!items.length) { el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">✅</div><p>Nothing is running low. Your stock looks fine.</p></div></div>'; return; }
+  const keys = [...new Set(items.map(groupKey))].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)));
+  el.innerHTML = keys.map(k => {
+    const rows = items.filter(i => groupKey(i) === k);
+    const est = rows.filter(r => r.on && r.cost > 0).reduce((s, r) => s + r.cost * r.qty, 0);
+    return '<div class="card" style="margin-bottom:16px;" data-g="' + esc(k) + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px;">' +
+      '<div class="modal-title" style="font-size:1.05rem;margin:0;">' + (k ? '🏪 ' + esc(k) : '🛒 No supplier set') + '</div>' +
+      '<div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button class="btn btn-gold btn-sm" onclick="sendWA(this)">📲 Send on WhatsApp</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="copyList(this)">Copy</button></div></div>' +
+      rows.map(r => '<div class="bl-row">' +
+        '<input type="checkbox" class="bl-check" ' + (r.on ? 'checked' : '') + ' onchange="tick(\'' + r.id + '\', this.checked)" aria-label="Buy ' + esc(r.name) + '">' +
+        '<div class="bl-name"><div>' + esc(r.name) + '</div><div class="bl-left">' + (r.low ? r.left + ' left (low)' : 'None left') + '</div></div>' +
+        '<input type="number" class="bl-qty" min="1" step="1" value="' + r.qty + '" oninput="setQty(\'' + r.id + '\', this.value)" aria-label="How many ' + esc(r.name) + '">' +
+        '<div class="bl-est">' + (r.cost > 0 ? '≈ ' + formatCurrency(r.cost * r.qty) : '') + '</div></div>').join('') +
+      '<div class="bl-total" style="text-align:right;margin-top:8px;font-size:0.9rem;' + (est > 0 ? '' : 'display:none;') + '">Estimated cost: <strong style="color:var(--gold);">' + formatCurrency(est) + '</strong></div>' +
+      '</div>';
+  }).join('') +
+  '<div class="no-print" style="margin-top:4px;"><button class="btn btn-outline" onclick="window.print()">🖨️ Print</button></div>';
+}
+function tick(id, v) { const i = items.find(x => x.id === id); if (i) { i.on = v; render(); } }
+function setQty(id, v) {
+  const i = items.find(x => x.id === id); if (!i) return;
+  i.qty = Math.max(1, parseInt(v, 10) || 1);
+  // update only the estimate text (re-rendering would drop focus while typing)
+  const row = [...document.querySelectorAll('.bl-row')].find(r => r.querySelector('input.bl-qty') && r.querySelector('input.bl-qty') === document.activeElement);
+  if (row) row.querySelector('.bl-est').textContent = i.cost > 0 ? '≈ ' + formatCurrency(i.cost * i.qty) : '';
+  const card = row && row.closest('.card');
+  if (card) {
+    const k = card.getAttribute('data-g');
+    const est = items.filter(r => groupKey(r) === k && r.on && r.cost > 0).reduce((s, r) => s + r.cost * r.qty, 0);
+    const tot = card.querySelector('.bl-total');
+    tot.style.display = est > 0 ? '' : 'none';
+    tot.querySelector('strong').textContent = formatCurrency(est);
+  }
+}
+function textFor(card) {
+  const k = card.getAttribute('data-g');
+  const rows = items.filter(i => groupKey(i) === k && i.on);
+  if (!rows.length) return '';
+  const biz = document.getElementById('user-display-name');
+  const who = biz && biz.textContent && biz.textContent !== 'Loading...' ? ' (' + biz.textContent + ')' : '';
+  return 'Hello' + (k ? ' ' + k : '') + ', please I need:\n' + rows.map(r => '• ' + r.name + ' × ' + r.qty).join('\n') + '\n\nThank you' + who + '.';
+}
+function sendWA(btn) {
+  const txt = textFor(btn.closest('.card'));
+  if (!txt) { document.getElementById('msg').innerHTML = '<div class="alert alert-danger">Tick at least one item first.</div>'; return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+async function copyList(btn) {
+  const txt = textFor(btn.closest('.card'));
+  if (!txt) { document.getElementById('msg').innerHTML = '<div class="alert alert-danger">Tick at least one item first.</div>'; return; }
+  try { await navigator.clipboard.writeText(txt); document.getElementById('msg').innerHTML = '<div class="alert alert-success">Copied. Paste it anywhere.</div>'; }
+  catch (e) { prompt('Copy this list:', txt); }
+}
+</script>
+</body>
+</html>

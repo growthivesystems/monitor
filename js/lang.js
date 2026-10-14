@@ -739,6 +739,22 @@ const TRANSLATIONS = {
 /* ═══════════════════════════════════════════════════════════════
    LANGUAGE ENGINE
 ═══════════════════════════════════════════════════════════════ */
+/* ── Labels added for services / supplies / buy list / colours. Hausa, Yoruba and Igbo should be checked by a native speaker. ── */
+(function(){
+  var NX = [["Services", "Ayyuka", "Àwọn Iṣẹ́", "Ọrụ"], ["Supplies", "Kayan Aiki", "Àwọn Ohun Èlò", "Ihe Eji Arụ Ọrụ"], ["Buy List", "Jerin Siyayya", "Àtòkọ Ohun Tí A Ó Rà", "Ndepụta Ihe Ị Ga-azụta"], ["Best Sellers", "Mafi Sayuwa", "Àwọn Tó Ń Tà Jù", "Ihe Kachasị Ere"], ["Price list", "Jerin farashi", "Àtòkọ owó", "Ndepụta ọnụ ahịa"], ["Add to price list", "Ƙara a jerin farashi", "Fi kún àtòkọ owó", "Tinye na ndepụta ọnụ ahịa"], ["Service name", "Sunan aiki", "Orúkọ iṣẹ́", "Aha ọrụ"], ["Price (₦)", "Farashi (₦)", "Owó (₦)", "Ọnụ ahịa (₦)"], ["Amount paid (₦)", "Kuɗin da aka biya (₦)", "Owó tí a san (₦)", "Ego e kwụrụ (₦)"], ["Paid by", "An biya ta", "A san án nípasẹ̀", "E ji kwụọ ya"], ["Save job →", "Ajiye aikin →", "Fi iṣẹ́ pamọ́ →", "Chekwaa ọrụ →"], ["Record a job done", "Rubuta aikin da aka gama", "Kọ iṣẹ́ tí a parí sílẹ̀", "Dee ọrụ emechara"], ["Jobs done", "Ayyukan da aka gama", "Àwọn iṣẹ́ tí a parí", "Ọrụ ndị emechara"], ["Earnings by service", "Kuɗin shiga ta aiki", "Owó tí iṣẹ́ kọ̀ọ̀kan mú wá", "Ego ọrụ nke ọ bụla weta"], ["Usual time (optional)", "Lokacin da aka saba (ba dole ba)", "Àkókò tí ó máa ń gbà (kì í ṣe dandan)", "Oge ọ na-ewekarị (ọ bụghị ihe dị mkpa)"], ["minutes", "mintuna", "ìṣẹ́jú", "nkeji"], ["hours", "awanni", "wákàtí", "awa"], ["days", "kwanaki", "ọjọ́", "ụbọchị"], ["No services yet. Add your first one above.", "Ba ka da wani aiki tukuna. Ƙara na farko a sama.", "Kò sí iṣẹ́ kankan síbẹ̀. Fi àkọ́kọ́ kún lókè.", "Enweghị ọrụ ọ bụla ugbu a. Tinye nke mbụ n'elu."], ["You sold", "Ka sayar", "O tà", "I rere"], ["You spent", "Ka kashe", "O ná", "I mefuru"], ["Money left", "Kuɗin da suka rage", "Owó tó ṣẹ́kù", "Ego fọdụrụ"], ["I sell products", "Ina sayar da kaya", "Mo ń tà ọjà", "Ana m ere ngwaahịa"], ["I provide services", "Ina yin ayyuka", "Mo ń ṣe iṣẹ́ fún àwọn èèyàn", "Ana m enye ọrụ"], ["Business type", "Nau'in kasuwanci", "Irú iṣẹ́ òwò", "Ụdị azụmahịa"], ["Colours", "Launuka", "Àwọ̀", "Agba"], ["Dark", "Duhu", "Òkùnkùn", "Ọchịchịrị"], ["Light", "Haske", "Ìmọ́lẹ̀", "Ìhè"], ["Book look", "Salon Book", "Ìrísí Book", "Ọdịdị Book"], ["Used", "An yi amfani", "A lò ó", "Ejirila"], ["+ Restock", "+ Ƙara kaya", "+ Tún kún", "+ Tinyekwa ọzọ"], ["Supplier", "Mai kaya", "Olùpèsè", "Onye na-ere ya"], ["What to buy", "Abin da za a saya", "Ohun tí a ó rà", "Ihe a ga-azụta"], ["Money tied up", "Kuɗin da ke kulle", "Owó tó dúró nínú ọjà", "Ego a kpọchiri"], ["Money in", "Kuɗin shiga", "Owó wọlé", "Ego batara"], ["Best and slow sellers", "Mafi sayuwa da masu jinkiri", "Àwọn tó ń tà jù àti àwọn tó ń falẹ̀", "Ndị na-ere ọsọ na ndị na-ere nwayọ"], ["Last 7 days", "Kwanaki 7 da suka wuce", "Ọjọ́ 7 tó kọjá", "Ụbọchị 7 gara aga"], ["Last 30 days", "Kwanaki 30 da suka wuce", "Ọjọ́ 30 tó kọjá", "Ụbọchị 30 gara aga"], ["Last 90 days", "Kwanaki 90 da suka wuce", "Ọjọ́ 90 tó kọjá", "Ụbọchị 90 gara aga"], ["Nothing is running low. Your stock looks fine.", "Babu abin da ke ƙarewa. Kayanka suna da kyau.", "Kò sí ohun tó ń tán. Ọjà rẹ dára.", "Ọ nweghị ihe na-agwụ. Ngwaahịa gị dị mma."], ["from Book", "daga Book", "láti Book", "site na Book"], ["I bought it for (₦) — optional, shows your profit", "Na saya a kan (₦) — ba dole ba, yana nuna ribarka", "Mo rà á ní (₦) — kì í ṣe dandan, ó máa fi èrè rẹ hàn", "Zụtara m ya na (₦) — ọ bụghị ihe dị mkpa, ọ ga-egosi uru gị"], ["Supplier — optional, who you buy it from", "Mai kaya — ba dole ba, daga wa kake saya", "Olùpèsè — kì í ṣe dandan, ibi tí o ti ń rà á", "Onye na-ere ya — ọ bụghị ihe dị mkpa, onye ị na-azụta n'aka ya"], ["Profit", "Riba", "Èrè", "Uru"], ["In stock", "Akwai a hannu", "Tó wà ní ọjà", "Dị n'aka"], ["Earns", "Yana samu", "Ó ń mú wá", "Na-ewetara"], ["Jobs", "Ayyuka", "Àwọn iṣẹ́", "Ọrụ"], ["Item", "Kaya", "Ohun", "Ihe"], ["Service", "Aiki", "Iṣẹ́", "Ọrụ"],["Choose a service…", "Zaɓi aiki…", "Yan iṣẹ́ kan…", "Họrọ ọrụ…"],["Keep your price list, then record each job in two taps. Today's total goes into Daily Sales automatically.", "Ajiye jerin farashinka, sannan ka rubuta kowane aiki da taɓawa biyu. Jimillar yau na shiga Tallace-tallace na yau da kullum kai tsaye.", "Tọ́jú àtòkọ owó rẹ, lẹ́yìn náà kọ iṣẹ́ kọ̀ọ̀kan sílẹ̀ pẹ̀lú ìfọwọ́kàn méjì. Àpapọ̀ òní máa wọ Tita Ojoojúmọ́ fúnra rẹ̀.", "Debe ndepụta ọnụ ahịa gị, ọzọ dee ọrụ ọ bụla site n'ịpị abụọ. Mkpokọta taa na-abanye n'Ahịa Kwa Ụbọchị n'onwe ya."],["Daily Totals","Jimillar Yau da Kullum","Àpapọ̀ Ojoojúmọ́","Mkpokọta Kwa Ụbọchị"],["Disconnect", "Cire haɗi", "Ṣí ìsopọ̀ kúrò", "Kwụsị njikọ"], ["Expected Profit", "Ribar da ake tsammani", "Èrè tí a retí", "Uru a tụrụ anya"], ["What You Paid (stock)", "Abin da ka biya (kaya)", "Ohun tí o san (ọjà)", "Ihe ị kwụrụ (ngwaahịa)"], ["Tick at least one item first.", "Zaɓi aƙalla abu ɗaya tukuna.", "Yan ohun kan ó kéré tán ná.", "Họrọ ọ bụ opekata mpe otu ihe buru ụzọ."], ["Copy", "Kwafa", "Ṣẹ̀dà", "Detuo"]];
+  NX.forEach(function(r, i){ ['en','ha','yo','ig'].forEach(function(l){ if (TRANSLATIONS[l]) TRANSLATIONS[l]['nx_' + i] = r[['en','ha','yo','ig'].indexOf(l)]; }); });
+})();
+
+/* Translate an English label made in JavaScript (sidebar, buttons) */
+function gvT(s) {
+  var lang = getLang(); if (lang === 'en') return s;
+  var en = TRANSLATIONS.en, tg = TRANSLATIONS[lang] || {};
+  for (var k in en) { if (en[k] === s && tg[k]) return tg[k]; }
+  return s;
+}
+/* Re-run the page translator after a page draws new content */
+function gvRetranslate() { try { if (typeof autoTranslatePage === 'function') autoTranslatePage(); } catch (e) {} }
+
 function getLang() { return localStorage.getItem('growthive_lang') || 'en'; }
 
 function t(key) {
@@ -807,7 +823,7 @@ function autoTranslatePage() {
 
 function translateNode(node, textMap) {
   if (!node) return;
-  const skip = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','INPUT','TEXTAREA','SELECT']);
+  const skip = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','INPUT','TEXTAREA']);
   if (skip.has(node.nodeName)) return;
 
   if (node.nodeType === Node.TEXT_NODE) {
@@ -815,6 +831,13 @@ function translateNode(node, textMap) {
     const translated = textMap[original] || textMap[original.toUpperCase()] || textMap[original.toLowerCase()];
     if (original && translated) {
       node.textContent = node.textContent.replace(original, translated);
+      return;
+    }
+    // Text that starts with an emoji or symbol, e.g. "✅ Record a job done": translate the words after it
+    const m = original.match(/^([^A-Za-z0-9]{1,6}\s+)(.+)$/u);
+    if (m) {
+      const rest = textMap[m[2]] || textMap[m[2].toUpperCase()];
+      if (rest) node.textContent = node.textContent.replace(original, m[1] + rest);
     }
     return;
   }

@@ -17,10 +17,21 @@
   window.renderSidebar = function (activePage) {
     origSidebar(activePage);
     var type = getBizType();
-    if (type === 'products') return;
     var el = document.getElementById('sidebar');
     if (!el) return;
     function link(href) { return el.querySelector('a[href="' + href + '"]'); }
+    function addLink(afterHref, href, id, icon, label) {
+      var after = link(afterHref);
+      if (!after || link(href)) return;
+      var a = document.createElement('a');
+      a.href = href;
+      if (activePage === id) a.className = 'active';
+      a.innerHTML = '<span class="icon">' + icon + '</span> ' + label;
+      after.parentNode.insertBefore(a, after.nextSibling);
+    }
+    addLink('inventory.html', 'buy-list.html', 'buy-list', '📝', 'Buy List');
+    if (type !== 'services') addLink('reports.html', 'sellers.html', 'sellers', '🏅', 'Best Sellers');
+    if (type === 'products') return;
     function setLabel(a, text) {
       if (!a) return;
       Array.prototype.slice.call(a.childNodes).forEach(function (n) { if (n.nodeType === 3) a.removeChild(n); });
@@ -60,12 +71,16 @@
     } catch (e) { return null; }
   };
 
+  // Saves the type, then reads it back so a silent failure can never look like success.
   window.saveBizType = async function (type, userId) {
-    if (!VALID[type]) return false;
+    if (!VALID[type]) return { ok: false, error: 'Unknown type' };
     var r = await _supabase.from('profiles').update({ business_type: type, business_type_chosen: true }).eq('id', userId);
-    if (r.error) return false;
+    if (r.error) return { ok: false, error: r.error.message };
+    var chk = await _supabase.from('profiles').select('business_type').eq('id', userId).single();
+    if (chk.error) return { ok: false, error: chk.error.message };
+    if (chk.data.business_type !== type) return { ok: false, error: 'The change was not saved (database refused it). Please try again or contact support.' };
     setCache(type);
-    return true;
+    return { ok: true };
   };
 
   var origInit = window.initPage;
@@ -96,8 +111,8 @@
     card.addEventListener('click', async function (e) {
       var b = e.target.closest('button[data-t]'); if (!b) return;
       b.disabled = true;
-      var ok = await saveBizType(b.getAttribute('data-t'), user.id);
-      if (ok) window.location.reload(); else b.disabled = false;
+      var res = await saveBizType(b.getAttribute('data-t'), user.id);
+      if (res.ok) window.location.reload(); else { b.disabled = false; alert('Could not save: ' + res.error); }
     });
   };
 
@@ -193,7 +208,7 @@
     var up = await _supabase.from('inventory').update({ quantity: newQ }).eq('id', id).eq('user_id', currentUser.id);
     if (up.error) { msg.innerHTML = '<div class="alert alert-danger">' + up.error.message + '</div>'; return; }
     if (mode === 'restock' && cost > 0) {
-      var today = new Date().toISOString().split('T')[0];
+      var today = new Date().toLocaleDateString('en-CA');
       var ex = await _supabase.from('expenses').insert({ user_id: currentUser.id, date: today, description: 'Supplies: ' + name + ' x' + n, amount: cost });
       if (ex.error) { msg.innerHTML = '<div class="alert alert-danger">Stock updated but the expense was not saved: ' + ex.error.message + '</div>'; return; }
     }

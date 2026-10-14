@@ -122,22 +122,27 @@ function toggleSidebar() {
   ov.classList.toggle('show');
 }
 
+const THEMES = ['dark', 'light', 'book'];
+function getTheme() { const t = localStorage.getItem('theme'); return THEMES.includes(t) ? t : 'dark'; }
+function setTheme(mode) {
+  if (!THEMES.includes(mode)) mode = 'dark';
+  if (mode === 'dark') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', mode);
+  try { localStorage.setItem('theme', mode); } catch (e) {}
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.textContent = mode === 'dark' ? '🌙' : mode === 'light' ? '☀️' : '📘';
+  document.querySelectorAll('#theme-btns button').forEach(b => {
+    const on = b.dataset.m === mode;
+    b.className = 'btn btn-sm ' + (on ? 'btn-gold' : 'btn-outline');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next === 'dark' ? '' : 'light');
-  localStorage.setItem('theme', next);
-  document.querySelector('.theme-toggle').textContent = next === 'light' ? '🌙' : '☀️';
+  const cur = getTheme();
+  setTheme(THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length]);
 }
-
-function applyTheme() {
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
-    const btn = document.querySelector('.theme-toggle');
-    if (btn) btn.textContent = '☀️';
-  }
-}
+function applyTheme() { setTheme(getTheme()); }
+try { const _t = getTheme(); if (_t !== 'dark') document.documentElement.setAttribute('data-theme', _t); } catch (e) {}
 
 function formatCurrency(amount) {
   const currency = localStorage.getItem('currency') || '₦';
@@ -164,6 +169,7 @@ async function initPage(activeId) {
   renderNavbar();
   renderSidebar(activeId);
   renderFooter();
+  applyTheme();
   // Apply translations if lang.js is loaded
   if (typeof applyTranslations === 'function') applyTranslations();
   await loadUserHeader();

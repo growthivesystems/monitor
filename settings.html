@@ -242,6 +242,15 @@
           </div>
         </div>
 
+        <!-- ── BOOK LINK ── -->
+        <div class="settings-row" id="booklink-row" style="align-items:flex-start;display:none;">
+          <div>
+            <div class="settings-row-label">Growthive Book</div>
+            <div class="settings-row-desc" id="booklink-desc"></div>
+          </div>
+          <button class="btn btn-outline btn-sm" id="booklink-off">Disconnect</button>
+        </div>
+
         <!-- ── LANGUAGE PREFERENCE ── -->
         <div class="settings-row" style="align-items:flex-start;">
           <div>
@@ -699,6 +708,25 @@ function showGlobalMsg(text) {
 
 const saved = localStorage.getItem('theme');
 if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+(async () => {
+  const wait = setInterval(async () => {
+    if (typeof currentUser !== 'undefined' && currentUser) {
+      clearInterval(wait);
+      try {
+        const { data } = await _supabase.from('book_links').select('*').eq('user_id', currentUser.id).eq('active', true);
+        if (!data || !data.length) return;
+        document.getElementById('booklink-row').style.display = '';
+        document.getElementById('booklink-desc').textContent = 'Connected to "' + (data[0].book_business_name || 'your Book business') + '" since ' + String(data[0].connected_at).slice(0, 10) + '. Finished bookings are added to your sales automatically.';
+        document.getElementById('booklink-off').onclick = async () => {
+          if (!confirm('Disconnect Book? Jobs already added stay in Monitor.')) return;
+          await _supabase.from('book_links').update({ active: false }).eq('user_id', currentUser.id);
+          window.location.reload();
+        };
+      } catch (e) { /* 24-book-link.sql not run yet: nothing to show */ }
+    }
+  }, 300);
+})();
 </script>
 </body>
 </html>

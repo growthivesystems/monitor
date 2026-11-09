@@ -1,0 +1,47 @@
+# Supabase's free plan pauses a project that gets no requests for 7 days.
+# This robot asks BOTH Growthive databases (Monitor and Book) for one tiny piece of
+# information on a schedule, so neither ever goes quiet. The same robot lives in both
+# repos on different days, so if GitHub ever switches one off, the other still covers both.
+# It uses only the public keys that are already inside the websites. No secrets.
+# If a database fails to answer, the run is marked failed and GitHub emails you.
+
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: "17 6 * * 1,3,5"   # 06:17 UTC on Mon, Wed and Fri
+  workflow_dispatch: {}          # also lets you press "Run workflow" by hand
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake both Growthive databases
+        run: |
+          MONITOR_URL="${MONITOR_URL:-https://ejuhpwiyzevuhzcdsjmi.supabase.co}"
+          MONITOR_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqdWhwd2l5emV2dWh6Y2Rzam1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDA3NzcsImV4cCI6MjA5NDA3Njc3N30.YVIC1qcywVycAEOIQeg0WfDyFzFnqfRPP-WMbcM2QC4"
+          BOOK_URL="${BOOK_URL:-https://wjmyyvccpsacqpvrbgch.supabase.co}"
+          BOOK_KEY="sb_publishable_yBtPRB9MZpeg_s1Wsq_Fcg_1QCOk4po"
+
+          # Monitor uses the older key type, sent the usual two ways
+          m=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 --retry 2 --retry-delay 10 \
+            "$MONITOR_URL/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: $MONITOR_KEY" -H "Authorization: Bearer $MONITOR_KEY" || true)
+          echo "Growthive Monitor answered with HTTP status: $m"
+
+          # Book uses the newer publishable key, which goes in the apikey header only
+          b=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 --retry 2 --retry-delay 10 \
+            "$BOOK_URL/rest/v1/businesses?select=id&limit=1" \
+            -H "apikey: $BOOK_KEY" || true)
+          echo "Growthive Book answered with HTTP status: $b"
+
+          failed=0
+          if [ "$m" != "200" ]; then
+            echo "::error::Growthive MONITOR did not answer normally (status: $m). It may be paused: open its project (ejuhpwiyzevuhzcdsjmi) in the Supabase dashboard and press Restore."
+            failed=1
+          fi
+          if [ "$b" != "200" ]; then
+            echo "::error::Growthive BOOK did not answer normally (status: $b). It may be paused: open its project (wjmyyvccpsacqpvrbgch) in the Supabase dashboard and press Restore."
+            failed=1
+          fi
+          exit $failed
